@@ -1,0 +1,65 @@
+{
+  "name": "carbonorm/carbonwordpressexample",
+  "description": "WordPress bindings and GUI for CarbonPHP. A wordpress Plugin.",
+  "type": "library",
+  "license": "mit",
+  "version": "0.0.2",
+  "authors": [
+    {
+      "name": "richardtmiles",
+      "email": "richard@miles.systems"
+    }
+  ],
+  "minimum-stability": "dev",
+  "require": {
+    "php": ">=8.2",
+    "carbonorm/carbonwordpress": "dev-main"
+  },
+  "scripts": {
+    "post-install-cmd": [
+      "@wp",
+      "PhpGitHooks\\PhpGitHooks::install",
+      "@apache:linkApplication"
+    ],
+    "post-update-cmd": [
+      "@wp",
+      "PhpGitHooks\\PhpGitHooks::install"
+    ],
+    "start": [
+      "php -S 127.0.0.1:8080 dev-routing.php -d display_errors=1"
+    ],
+    "wp:cli": "echo 'php -d error_reporting=E_ALL&~E_DEPRECATED&~E_STRICT -f ./vendor/wp-cli/wp-cli/php/boot-fs.php '",
+    "wp": [
+      "@wordpress:download:latest-stable",
+      "@wordpress:install"
+    ],
+    "wordpress:download:latest-stable": [
+      "php -r \"copy('https://wordpress.org/latest.tar.gz', 'latest.tar.gz');\"",
+      "tar xfz latest.tar.gz",
+      "cp -R wordpress/* ./",
+      "rm -rf wordpress",
+      "rm -f latest.tar.gz"
+    ],
+    "wordpress:install": "$( composer run wp:cli ) core install --url=127.0.0.1:8080 --title=CarbonWordPress --admin_user=root --admin_password=password --admin_email=test@example.com",
+    "apache:linkApplication": [
+      "mkdir -p ./logs/httpd/",
+      "rm /usr/local/var/www",
+      "ln -s $(pwd) /usr/local/var/www"
+    ]
+  },
+  "config": {
+    "allow-plugins": {
+      "composer/installers": true
+    }
+  },
+  "extra": {
+    "installer-paths": {
+      "wp-content/mu-plugins/{$name}/": ["type:wordpress-muplugin"],
+      "wp-content/plugins/{$name}/": ["type:wordpress-plugin"],
+      "wp-content/themes/{$name}/": ["type:wordpress-theme"]
+    }
+  },
+  "require-dev": {
+    "richardtmiles/php-git-hooks": "dev-main"
+  }
+}
