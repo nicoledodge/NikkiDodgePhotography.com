@@ -3,7 +3,7 @@
   "description": "WordPress bindings and GUI for CarbonPHP. A wordpress Plugin.",
   "type": "library",
   "license": "mit",
-  "version": "0.0.2",
+  "version": "0.0.0",
   "authors": [
     {
       "name": "richardtmiles",
