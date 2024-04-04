@@ -19,7 +19,7 @@
     "post-install-cmd": [
       "@wp",
       "PhpGitHooks\\PhpGitHooks::install",
-      "@apache:linkApplication"
+      "if [ -d /usr/local/var/www ]; then composer run apache:linkApplication ; fi"
     ],
     "post-update-cmd": [
       "@wp",
@@ -40,7 +40,7 @@
       "rm -rf wordpress",
       "rm -f latest.tar.gz"
     ],
-    "wordpress:install": "$( composer run wp:cli ) core install --url=127.0.0.1:8080 --title=CarbonWordPress --admin_user=root --admin_password=password --admin_email=test@example.com",
+    "wordpress:install": "$( composer run wp:cli ) core install --url=127.0.0.1:8080 '--title=Nikki Dodge Photography' '--admin_user=NikkiDodge' '--admin_password=asdfD^SAR3GBHT4@$$FDSAFJ&*@' --admin_email=richard@miles.systems",
     "apache:linkApplication": [
       "mkdir -p ./logs/httpd/",
       "rm /usr/local/var/www",
