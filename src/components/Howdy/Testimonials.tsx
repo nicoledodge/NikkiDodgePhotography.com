@@ -1,0 +1,90 @@
+import React from "react";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation, Pagination, Autoplay } from "swiper/modules";
+
+
+const testimonialsData = [
+    {
+        text: "I had always adored Nikki’s beautiful style of photographing weddings, so when we got engaged we basically picked our wedding date around Nikki’s availability! She perfectly captured our day and our loved ones, and her photos serve as constant reminders of our happy day. We especially loved how she captured the simple, subtle moments and details like flowers and fabrics to create a story of the day. Nikki is fantastic, warm, and highly professional!",
+        name: "Sally & Dan",
+        userId: "User #007704",
+        image: "assets/images/author.jpg",
+    },
+    {
+        text: "Nikki is a gifted photographer, artist, and human being. Her depth of experience, creative vision, artistic insight, and eye for compositions are unrivaled. Nikki has a wonderful love affair with light and nature. It is the way she sees the world and how she captures photographs that sets her apart. She doesn’t just capture a shot, she captures an experience. We entrusted Nikki with our special day, and we are so thankful to her for beautifully capturing the heart and soul of our wedding.",
+        name: "Ria & Andrew",
+        userId: "User #007772",
+        image: "assets/images/author.jpg",
+    }
+];
+
+const clientLogos = [
+    "assets/images/contest-01.jpg",
+    "assets/images/contest-02.jpg",
+    "assets/images/contest-01.jpg",
+    "assets/images/contest-02.jpg",
+    "assets/images/contest-01.jpg",
+    "assets/images/contest-02.jpg",
+];
+
+const Testimonials: React.FC = () => {
+    return (
+        <section className="testimonials">
+            <div className="container">
+                <div className="row">
+                    <div className="col-lg-12">
+                        <div className="section-heading text-center">
+                            <h6>What Clients Say</h6>
+                            <h4>What <em>My Clients</em> Are <em>Saying</em></h4>
+                        </div>
+                    </div>
+
+                    {/* Swiper Carousel */}
+                    <div className="col-lg-8 offset-lg-2">
+                        <Swiper
+                            modules={[Navigation, Pagination, Autoplay]}
+                            spaceBetween={20}
+                            slidesPerView={1}
+                            navigation
+                            pagination={{ clickable: true }}
+                            autoplay={{ delay: 5000, disableOnInteraction: false }}
+                            loop
+                        >
+                            {testimonialsData.map((testimonial, index) => (
+                                <SwiperSlide key={index}>
+                                    <div className="item">
+                                        <div className="content">
+                                            <div className="left-content">
+                                                <p>{testimonial.text}</p>
+                                                <h4>{testimonial.name}</h4>
+                                                <span>{testimonial.userId}</span>
+                                            </div>
+                                            <div className="image">
+                                                <img src={testimonial.image} alt={testimonial.name} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </SwiperSlide>
+                            ))}
+                        </Swiper>
+                    </div>
+
+                    {/* Client Logos Section */}
+                    <div className="col-lg-12 mt-5">
+                        <div className="clients">
+                            <div className="row">
+                                {clientLogos.map((logo, index) => (
+                                    <div className="col-lg-2 col-4" key={index}>
+                                        <img src={logo} alt="Client Logo" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+};
+
+export default Testimonials;

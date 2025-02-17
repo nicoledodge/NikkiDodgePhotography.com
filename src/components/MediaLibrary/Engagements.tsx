@@ -1,0 +1,108 @@
+import {Category, Paths, Session} from "./MediaTypes.tsx";
+
+const EngagementSessions: Session[] =  [
+    {
+        name: "Carmen&Blake",
+        featuredHorizontal: "IMG_9021.jpg",
+        featuredVertical: "IMG_8625.jpg",
+        mediaFiles: [
+            "IMG_8625.jpg",
+            "IMG_8633.jpg",
+            "IMG_8641.jpg",
+            "IMG_8644.jpg",
+            "IMG_8662.jpg",
+            "IMG_8687.jpg",
+            "IMG_8692.jpg",
+            "IMG_8697.jpg",
+            "IMG_8710.jpg",
+            "IMG_8731.jpg",
+            "IMG_8746.jpg",
+            "IMG_8751.jpg",
+            "IMG_8763.jpg",
+            "IMG_8765.jpg",
+            "IMG_8775.jpg",
+            "IMG_8795.jpg",
+            "IMG_8813.jpg",
+            "IMG_8841.jpg",
+            "IMG_8891.jpg",
+            "IMG_8908.jpg",
+            "IMG_8917.jpg",
+            "IMG_8928.jpg",
+            "IMG_8953.jpg",
+            "IMG_8959.jpg",
+            "IMG_8964.jpg",
+            "IMG_8984.jpg",
+            "IMG_8995.jpg",
+            "IMG_9021.jpg",
+            "IMG_9032.jpg"
+        ]
+    },
+    {
+        name: "Ivan&Mikayla",
+        featuredHorizontal: "IMG_5494.jpg",
+        featuredVertical: "IMG_5642.jpg",
+        mediaFiles: [
+            "IMG_5478.jpg",
+            "IMG_5479.jpg",
+            "IMG_5483.jpg",
+            "IMG_5487.jpg",
+            "IMG_5494.jpg",
+            "IMG_5496.jpg",
+            "IMG_5500.jpg",
+            "IMG_5504.jpg",
+            "IMG_5512.jpg",
+            "IMG_5521.jpg",
+            "IMG_5525.jpg",
+            "IMG_5539.jpg",
+            "IMG_5547.jpg",
+            "IMG_5553.jpg",
+            "IMG_5557.jpg",
+            "IMG_5568.jpg",
+            "IMG_5571.jpg",
+            "IMG_5574.jpg",
+            "IMG_5575.jpg",
+            "IMG_5581.jpg",
+            "IMG_5586.jpg",
+            "IMG_5591.jpg",
+            "IMG_5597.jpg",
+            "IMG_5600.jpg",
+            "IMG_5616.jpg",
+            "IMG_5621.jpg",
+            "IMG_5625.jpg",
+            "IMG_5629.jpg",
+            "IMG_5642.jpg",
+            "IMG_5646.jpg",
+            "IMG_5650.jpg",
+            "IMG_5663.jpg",
+            "IMG_5671.jpg",
+            "IMG_5681.jpg"
+        ]
+    },
+    {
+        name: "Sam&Sky",
+        featuredHorizontal: "_Z2A0300.jpg",
+        featuredVertical: "_Z2A0063.jpg",
+        mediaFiles: [
+            "_Z2A0040.jpg" ,
+            "_Z2A0063.jpg" ,
+            "_Z2A0099.jpg" ,
+            "_Z2A0130.jpg" ,
+            "_Z2A0183.jpg" ,
+            "_Z2A0218.jpg" ,
+            "_Z2A0229.jpg" ,
+            "_Z2A0299.jpg" ,
+            "_Z2A0300.jpg" ,
+            "_Z2A9731.jpg" ,
+            "_Z2A9757.jpg" ,
+        ]
+    }
+]
+
+export const Engagements: Category = {
+    name: "Engagement Sessions",
+    category: "Engagements",
+    path: Paths.Engagements,
+    featuredHorizontal: EngagementSessions[0].name + '/' + EngagementSessions[0].featuredHorizontal,
+    featuredVertical: EngagementSessions[0].name + '/' + EngagementSessions[0].featuredVertical,
+    sessions: EngagementSessions
+}
