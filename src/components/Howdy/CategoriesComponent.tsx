@@ -1,8 +1,8 @@
 import React from "react";
-import {Categories} from "../MediaLibrary/MediaTypes.tsx";
-import mediaLibrary from "../MediaLibrary/MediaLibrary.tsx";
+import {Categories} from "../MediaLibrary/MediaTypes";
+import mediaLibrary from "../MediaLibrary/MediaLibrary";
 import {Link} from "react-router-dom";
-import {PORTFOLIO} from "../../pages/Portfolio.tsx";
+import {PORTFOLIO} from "../../pages/Portfolio";
 
 const categories: {
     imgSrc: string;

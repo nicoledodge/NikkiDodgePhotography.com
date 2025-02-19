@@ -1,9 +1,9 @@
-import React, {useState} from "react";
-import mediaLibrary from "../MediaLibrary/MediaLibrary.tsx";
+import {useState} from "react";
+import mediaLibrary from "../MediaLibrary/MediaLibrary";
 import {Link} from "react-router-dom";
-import {GALLERY} from "../../pages/Gallery.tsx";
-import {Search} from "./SearchForm.tsx";
-import {normalize} from "../../functions/normalize.tsx";
+import {GALLERY} from "../../pages/Gallery";
+import type {Search} from "./SearchForm.types";
+import {normalize} from "../../functions/normalize";
 
 const itemsPerPage = 4; // Change this to control sessions per page
 
@@ -26,11 +26,11 @@ export const Sessions = Object.values(mediaLibrary)
     })
     .sort(() => Math.random() - 0.5);
 
-const SessionExplorer: React.FC<Search> = (
+const SessionExplorer = (
     {
         categorySearch,
         sessionSearch
-    }
+    } : Search
 ) => {
 
     const [currentPage, setCurrentPage] = useState(1);

@@ -1,4 +1,4 @@
-import MediaLibrary from "../MediaLibrary/MediaLibrary.tsx";
+import MediaLibrary from "../MediaLibrary/MediaLibrary";
 
 interface pricingPlan {
     title: string,

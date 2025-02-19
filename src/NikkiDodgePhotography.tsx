@@ -8,16 +8,16 @@ import './NikkiDodgePhotography.css'
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-import Header from "./components/Header.tsx";
-import Footer from "./components/Footer.tsx";
-import Home from "./pages/Home.tsx";
-import Users from "./pages/Users.tsx";
-import Pricing, {PRICING} from "./pages/Pricing.tsx";
-import Portfolio, {PORTFOLIO} from "./pages/Portfolio.tsx";
-import Contact, {CONTACT} from "./pages/Contact.tsx";
-import Howdy, {HOWDY} from "./pages/Howdy.tsx";
-import Blog, {BLOG} from "./pages/Blog.tsx";
-import Gallery, {GALLERY} from "./pages/Gallery.tsx";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
+import Home from "./pages/Home";
+import Users from "./pages/Users";
+import Pricing, {PRICING} from "./pages/Pricing";
+import Portfolio, {PORTFOLIO} from "./pages/Portfolio";
+import Contact, {CONTACT} from "./pages/Contact";
+import Howdy, {HOWDY} from "./pages/Howdy";
+import Blog, {BLOG} from "./pages/Blog";
+import Gallery, {GALLERY} from "./pages/Gallery";
 
 const NikkiDodgePhotography = () => {
     return (

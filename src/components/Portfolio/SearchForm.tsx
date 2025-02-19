@@ -1,18 +1,13 @@
 import React, {useState} from "react";
-import mediaLibrary from "../MediaLibrary/MediaLibrary.tsx";
-import Photos from "./SessionExplorer.tsx";
-import Masonry from "../Galery/Masonry.tsx";
+import Photos from "./SessionExplorer";
+import Masonry from "../Galery/Masonry";
 import {Link, useParams} from "react-router-dom";
-import {PORTFOLIO} from "../../pages/Portfolio.tsx";
-import MediaLibrary from "../MediaLibrary/MediaLibrary.tsx";
-import {normalize} from "../../functions/normalize.tsx";
+import {PORTFOLIO} from "../../pages/Portfolio";
+import MediaLibrary from "../MediaLibrary/MediaLibrary";
+import {normalize} from "../../functions/normalize";
 
-export interface Search {
-    categorySearch: string;
-    sessionSearch: string;
-}
 
-const SearchForm: React.FC = () => {
+const SearchForm = () => {
 
     const {categoryName, sessionName} = useParams();
     const [sessionSearch, setSessionSearch] = useState(sessionName || '');
@@ -149,7 +144,7 @@ const SearchForm: React.FC = () => {
                                             onChange={(e) => setCategorySearch(e.target.value)}
                                         >
                                             <option value="">Choose a category</option>
-                                            {Object.values(mediaLibrary).map((category) =>
+                                            {Object.values(MediaLibrary).map((category) =>
                                                 <option value={category.category}>
                                                     {category.category} Photography
                                                     ({category.sessions.length} Sessions)

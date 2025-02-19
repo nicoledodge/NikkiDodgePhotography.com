@@ -1,9 +1,9 @@
 import {Link} from "react-router-dom";
-import {PORTFOLIO} from "../pages/Portfolio.tsx";
-import {HOWDY} from "../pages/Howdy.tsx";
-import {CONTACT} from "../pages/Contact.tsx";
-import {PRICING} from "../pages/Pricing.tsx";
-import {BLOG} from "../pages/Blog.tsx";
+import {PORTFOLIO} from "../pages/Portfolio";
+import {HOWDY} from "../pages/Howdy";
+import {CONTACT} from "../pages/Contact";
+import {PRICING} from "../pages/Pricing";
+import {BLOG} from "../pages/Blog";
 
 
 const Header = () => {

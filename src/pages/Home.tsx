@@ -1,9 +1,9 @@
-import Banner from "../components/Homes/Banner.tsx";
-import Features from "../components/Homes/Features.tsx";
-import Categories from "../components/Homes/Categories.tsx";
-import Contests from "../components/Homes/Contests.tsx";
-import About from "../components/Homes/About.tsx";
-import Masonry from "../components/Galery/Masonry.tsx";
+import Banner from "../components/Homes/Banner";
+import Features from "../components/Homes/Features";
+import Categories from "../components/Homes/Categories";
+import Contests from "../components/Homes/Contests";
+import About from "../components/Homes/About";
+import Masonry from "../components/Galery/Masonry";
 
 
 function Home() {

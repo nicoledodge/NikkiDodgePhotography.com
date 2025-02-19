@@ -1,6 +1,6 @@
-import Heading from "../components/Contacts/Heading.tsx";
-import Info from "../components/Contacts/Info.tsx";
-import ContactForum from "../components/Contacts/Contact.tsx";
+import Heading from "../components/Contacts/Heading";
+import Info from "../components/Contacts/Info";
+import ContactForum from "../components/Contacts/Contact";
 
 export const CONTACT = '/Contact'
 

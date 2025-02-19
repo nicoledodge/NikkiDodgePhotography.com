@@ -1,6 +1,6 @@
 import React from "react";
 import {Link} from "react-router-dom";
-import {CONTACT} from "../../pages/Contact.tsx";
+import {CONTACT} from "../../pages/Contact";
 
 const Heading: React.FC = () => {
     return (

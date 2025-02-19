@@ -1,4 +1,4 @@
-import mediaLibrary from "../MediaLibrary/MediaLibrary.tsx";
+import mediaLibrary from "../MediaLibrary/MediaLibrary";
 
 const Categories = () => {
     return (

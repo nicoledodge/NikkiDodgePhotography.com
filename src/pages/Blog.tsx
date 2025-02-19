@@ -1,5 +1,5 @@
-import Heading from "../components/Blog/Heading.tsx";
-import ContestDetailsMock from "../components/Blog/ContestDetails.tsx";
+import Heading from "../components/Blog/Heading";
+import ContestDetailsMock from "../components/Blog/ContestDetails";
 
 
 export const BLOG = '/blog'

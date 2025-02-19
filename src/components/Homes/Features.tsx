@@ -1,7 +1,7 @@
 import {Swiper, SwiperSlide} from "swiper/react";
 import {Autoplay, Navigation, Pagination} from "swiper/modules";
-import MediaLibrary from "../MediaLibrary/MediaLibrary.tsx";
-import {shuffleArray} from "../../functions/shuffleArray.tsx";
+import MediaLibrary from "../MediaLibrary/MediaLibrary";
+import {shuffleArray} from "../../functions/shuffleArray";
 
 const featuredItems = shuffleArray(MediaLibrary.Featured.sessions
     .filter(s => s.name === "Horizontal")

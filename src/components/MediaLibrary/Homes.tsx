@@ -1,5 +1,5 @@
 
-import {Category, Paths, Session} from "./MediaTypes.tsx";
+import {Category, Paths, Session} from "./MediaTypes";
 
 
 const HomesSessions: Session[] = []

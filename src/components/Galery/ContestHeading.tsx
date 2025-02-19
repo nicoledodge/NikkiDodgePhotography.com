@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, FC } from "react";
 
 interface ContestHeadingProps {
     title: string;
     deadline: string; // Format: "YYYY-MM-DD HH:MM:SS"
 }
 
-const WeddingTitleAndTimer: React.FC<ContestHeadingProps> = ({ title, deadline }) => {
+const WeddingTitleAndTimer: FC<ContestHeadingProps> = ({ title, deadline }) => {
     const calculateTimeLeft = () => {
         const now = new Date().getTime();
         const targetTime = new Date(deadline).getTime();

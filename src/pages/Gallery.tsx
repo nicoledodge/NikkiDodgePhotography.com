@@ -1,10 +1,10 @@
-import WeddingTitleAndTimer from "../components/Galery/ContestHeading.tsx";
-import OtherPhotosInCategory from "../components/Galery/OtherPhotosInCategory.tsx";
-import Masonry, {getSession} from "../components/Galery/Masonry.tsx";
+import WeddingTitleAndTimer from "../components/Galery/ContestHeading";
+import OtherPhotosInCategory from "../components/Galery/OtherPhotosInCategory";
+import Masonry, {getSession} from "../components/Galery/Masonry";
 import React from "react";
-import mediaLibrary from "../components/MediaLibrary/MediaLibrary.tsx";
+import mediaLibrary from "../components/MediaLibrary/MediaLibrary";
 import {useParams} from "react-router-dom";
-import {Categories} from "../components/MediaLibrary/MediaTypes.tsx";
+import {Categories} from "../components/MediaLibrary/MediaTypes";
 
 
 export const GALLERY = '/gallery'

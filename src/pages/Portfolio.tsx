@@ -1,5 +1,5 @@
-import Heading from "../components/Portfolio/Heading.tsx";
-import SearchForm from "../components/Portfolio/SearchForm.tsx";
+import Heading from "../components/Portfolio/Heading";
+import SearchForm from "../components/Portfolio/SearchForm";
 
 export const PORTFOLIO = '/Portfolio'
 

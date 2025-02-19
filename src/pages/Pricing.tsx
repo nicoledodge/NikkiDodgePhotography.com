@@ -1,6 +1,6 @@
-import Heading from "../components/Details/Heading.tsx";
-import ContestWin from "../components/Details/ContestWin.tsx";
-import PricingSection from "../components/Details/Pricing.tsx";
+import Heading from "../components/Details/Heading";
+import ContestWin from "../components/Details/ContestWin";
+import PricingSection from "../components/Details/Pricing";
 
 
 export const PRICING = '/pricing'

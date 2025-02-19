@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import NikkiDodgePhotography from './NikkiDodgePhotography.tsx'
+import NikkiDodgePhotography from './NikkiDodgePhotography'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

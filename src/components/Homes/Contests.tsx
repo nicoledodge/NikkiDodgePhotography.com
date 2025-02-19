@@ -1,6 +1,6 @@
 import {Swiper, SwiperSlide} from "swiper/react";
 import {Navigation, Pagination} from "swiper/modules";
-import mediaLibrary from "../MediaLibrary/MediaLibrary.tsx";
+import mediaLibrary from "../MediaLibrary/MediaLibrary";
 
 const closedContests = [
     {

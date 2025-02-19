@@ -1,7 +1,7 @@
-import Heading from "../components/Howdy/Heading.tsx";
-import CategoriesComponent from "../components/Howdy/CategoriesComponent.tsx";
-import Testimonials from "../components/Howdy/Testimonials.tsx";
-import Info from "../components/Howdy/Info.tsx";
+import Heading from "../components/Howdy/Heading";
+import CategoriesComponent from "../components/Howdy/CategoriesComponent";
+import Testimonials from "../components/Howdy/Testimonials";
+import Info from "../components/Howdy/Info";
 
 export const HOWDY = '/howdy'
 

@@ -1,8 +1,8 @@
 import React, {useEffect, useRef} from "react";
-import mediaLibrary from "../MediaLibrary/MediaLibrary.tsx";
-import {Category, SpecificSession} from "../MediaLibrary/MediaTypes.tsx";
+import mediaLibrary from "../MediaLibrary/MediaLibrary";
+import {Category, SpecificSession} from "../MediaLibrary/MediaTypes";
 import {Link} from "react-router-dom";
-import {GALLERY} from "../../pages/Gallery.tsx";
+import {GALLERY} from "../../pages/Gallery";
 
 
 export const getSession = ({categoryName, sessionName}: {

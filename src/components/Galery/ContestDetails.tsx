@@ -1,5 +1,3 @@
-import React from "react";
-
 interface ContestDetailsProps {
     award: string;
     timeLeft: string;
@@ -17,7 +15,7 @@ interface ResourceItem {
     winner: string;
 }
 
-const ContestDetails: React.FC<ContestDetailsProps> = ({
+const ContestDetails = ({
                                                            award,
                                                            timeLeft,
                                                            participants,
@@ -26,7 +24,7 @@ const ContestDetails: React.FC<ContestDetailsProps> = ({
                                                            allowedUses,
                                                            notAllowedUses,
                                                            resources,
-                                                       }) => {
+                                                       }: ContestDetailsProps) => {
     return (
         <div className="contest-details">
             <div className="container">
