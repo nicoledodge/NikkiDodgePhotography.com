@@ -6,12 +6,12 @@ const Info: React.FC = () => {
             <div className="container">
                 <div className="row">
                     {[
-                        { title: "Client Ratings", value: "4.9", subtitle: "of 5.00 Stars" },
-                        { title: "Portfolio Views", value: "12,500", subtitle: "Monthly" },
-                        { title: "Weddings Captured", value: "250+", subtitle: "Since 2015" },
-                        { title: "Graduation Sessions", value: "85", subtitle: "Booked Last Year" },
-                        { title: "Professional Headshots", value: "120", subtitle: "Clients Served" },
-                        { title: "Family Photoshoots", value: "150", subtitle: "Memories Captured" },
+                        { title: <>Client<br/>Ratings</>, value: "4.9", subtitle: "of 5.00 Stars" },
+                        { title: <>Portfolio<br/>Views</>, value: "12,500", subtitle: "Monthly" },
+                        { title: <>Weddings<br/>Captured</>, value: "250+", subtitle: "Since 2015" },
+                        { title: <>Graduation<br/>Sessions</>, value: "85", subtitle: "Booked Last Year" },
+                        { title: <>Professional<br/>Headshots</>, value: "120", subtitle: "Clients Served" },
+                        { title: <>Family<br/>Photoshoots</>, value: "150", subtitle: "Memories Captured" },
                     ].map((item, index) => (
                         <div className="col-lg-2 col-sm-6" key={index}>
                             <div className="info" style={{

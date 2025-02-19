@@ -34,9 +34,11 @@ font & reset css
     --fourth-color: #fff;
     --fifth-color: #afafaf;
     --sixth-color: #c197d2;
-    --seventh-color: #e7f9ff;
+    --seventh-color: #131008;
     --eighth-color: #A89A78;
 }
+
+
 
 .masonry {
     column-count: 3; /* Number of columns */
@@ -248,7 +250,7 @@ section {
     font-size: 30px;
     font-weight: 700;
     text-transform: capitalize;
-    color: #212741;
+    color: var(--primary-color);
 }
 
 .section-heading h4 em {
@@ -258,6 +260,61 @@ section {
 
 .section-heading p {
     margin-top: 30px;
+}
+
+.swiper {
+    width: 100%;
+    height: auto;
+    overflow: hidden;
+    padding: 20px 0;
+}
+
+.swiper-slide {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    overflow: hidden;
+}
+
+.swiper-slide img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    border-radius: 10px;
+    transition: transform 0.3s ease-in-out;
+}
+
+.swiper-slide:hover img {
+    transform: scale(1.05);
+}
+
+/* 🔹 Navigation Arrows */
+.swiper-button-next, .swiper-button-prev {
+    color: #fff; /* Change arrow color */
+    padding: 10px 15px;
+    transition: background 0.3s ease-in-out;
+}
+
+/* Move Pagination Dots Below */
+.swiper-pagination {
+    bottom: 0 !important; /* Moves dots further below */
+}
+
+/* 🔹 Pagination Dots */
+.swiper-pagination-bullet {
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 1;
+    width: 12px;
+    height: 12px;
+    margin: 5px;
+    transition: background 0.3s ease-in-out;
+}
+
+.swiper-pagination-bullet-active {
+    background: #fff;
+    width: 14px;
+    height: 14px;
 }
 
 
@@ -1015,7 +1072,7 @@ Banner Style
 
 .main-banner {
     /*noinspection CssUnknownTarget*/
-    background-image: url(/assets/images/banner-bg.JPG);
+    background-image: url(/assets/images/banner-bg.jpg);
     background-repeat: no-repeat;
     background-position: center center;
     background-size: cover;
@@ -1335,11 +1392,16 @@ closed contests
 */
 
 section.closed-contests {
-    background-image: url('/assets/images/closed-bg.jpg');
-    background-repeat: no-repeat;
-    background-position: center center;
-    background-size: cover;
+    background-color: var(--primary-color);
     padding: 120px 0px;
+}
+
+section.closed-contests h6, section.closed-contests h4 {
+    color: var(--fourth-color);
+}
+
+section.closed-contests em {
+    color: var(--third-color);
 }
 
 .closed-item .thumb {
@@ -1928,7 +1990,7 @@ Contest Details Page
 */
 
 .contest-details .top-content {
-    background-color: #e7f9ff;
+    background-color: var(--seventh-color);
     border-top-right-radius: 10px;
     border-top-left-radius: 10px;
     padding: 30px 45px;
@@ -1989,11 +2051,13 @@ Contest Details Page
     font-size: 30px;
     font-weight: 700;
     margin-bottom: 25px;
+    color: var(--eighth-color);
 }
 
 .contest-details .main-content h6 {
     font-size: 15px;
     font-weight: 600;
+    color: var(--eighth-color);
 }
 
 .contest-details .main-content h6.second-title {
@@ -2042,6 +2106,7 @@ Contest Details Page
     font-size: 15px;
     font-weight: 700;
     margin-bottom: 10px;
+    color: var(--eighth-color);
 }
 
 .contest-details .main-content .item h6 {
@@ -2315,7 +2380,7 @@ Categories Page
 }
 
 .testimonials {
-    background-color: #f1fbff;
+    background-color: var(--seventh-color);
     padding: 120px 0px;
 }
 
@@ -2774,4 +2839,6 @@ body {
         display: none;
     }
 }
+
+
 

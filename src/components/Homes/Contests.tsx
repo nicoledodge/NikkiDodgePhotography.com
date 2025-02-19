@@ -36,8 +36,12 @@ const Contests = () => {
                 <div className="row">
                     <div className="col-lg-12">
                         <div className="section-heading text-center">
-                            <h6>Some of Our Favorite Sessions</h6>
-                            <h4>
+                            <h6 style={{
+                                color: "var(--fourth-color)"
+                            }}>Some of Our Favorite Sessions</h6>
+                            <h4 style={{
+                                color: "var(--fourth-color)"
+                            }}>
                                 Handpicked <em>Goodness</em> That Makes Us <em>Smile</em>
                             </h4>
                         </div>

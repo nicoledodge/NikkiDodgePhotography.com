@@ -1,6 +1,7 @@
 export type Categories =
     "Engagements"
     | "Family"
+    | "Featured"
     | "Graduations"
     | "Homes"
     | "Headshots"
@@ -16,6 +17,7 @@ export const PortfolioPath = "/assets/images/Portfolio";
 export const Paths: Record<Categories, string> = {
     Engagements: PortfolioPath + "/Engagements",
     Family: PortfolioPath + "/Family",
+    Featured: PortfolioPath + "/Featured",
     Graduations: PortfolioPath + "/Graduations",
     Homes: PortfolioPath + "/Homes",
     Headshots: PortfolioPath + "/Headshots",

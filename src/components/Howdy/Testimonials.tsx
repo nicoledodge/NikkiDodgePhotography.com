@@ -1,6 +1,9 @@
 import React from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
+import mediaLibrary from "../MediaLibrary/MediaLibrary.tsx";
+import {Link} from "react-router-dom";
+import {GALLERY} from "../../pages/Gallery.tsx";
 
 
 const testimonialsData = [
@@ -19,12 +22,24 @@ const testimonialsData = [
 ];
 
 const clientLogos = [
-    "assets/images/contest-01.jpg",
-    "assets/images/contest-02.jpg",
-    "assets/images/contest-01.jpg",
-    "assets/images/contest-02.jpg",
-    "assets/images/contest-01.jpg",
-    "assets/images/contest-02.jpg",
+    <Link to={GALLERY + '/' + mediaLibrary.Family.category + '/' + mediaLibrary.Family.featuredVertical.split('/')[0]}>
+        <img src={mediaLibrary.Family.path + '/' + mediaLibrary.Family.featuredVertical} alt="Client Logo"/>
+    </Link>,
+    <Link to={GALLERY + '/' + mediaLibrary.Sports.category + '/' + mediaLibrary.Sports.featuredVertical.split('/')[0]}>
+        <img src={mediaLibrary.Sports.path + '/' + mediaLibrary.Sports.featuredVertical} alt="Client Logo"/>
+    </Link>,
+    <Link to={GALLERY + '/' + mediaLibrary.Graduations.category + '/' + mediaLibrary.Graduations.featuredVertical.split('/')[0]}>
+        <img src={mediaLibrary.Graduations.path + '/' + mediaLibrary.Graduations.featuredVertical} alt="Client Logo"/>
+    </Link>,
+    <Link to={GALLERY + '/' + mediaLibrary.Music.category + '/' + mediaLibrary.Music.featuredVertical.split('/')[0]}>
+        <img src={mediaLibrary.Music.path + '/' + mediaLibrary.Music.featuredVertical} alt="Client Logo"/>
+    </Link>,
+    <Link to={GALLERY + '/' + mediaLibrary.Engagements.category + '/' + mediaLibrary.Engagements.featuredVertical.split('/')[0]}>
+        <img src={mediaLibrary.Engagements.path + '/' + mediaLibrary.Engagements.featuredVertical} alt="Client Logo"/>
+    </Link>,
+    <Link to={GALLERY + '/' + mediaLibrary.Lifestyles.category + '/' + mediaLibrary.Lifestyles.featuredVertical.split('/')[0]}>
+        <img src={mediaLibrary.Lifestyles.path + '/' + mediaLibrary.Lifestyles.featuredVertical} alt="Client Logo"/>
+    </Link>
 ];
 
 const Testimonials: React.FC = () => {
@@ -34,7 +49,7 @@ const Testimonials: React.FC = () => {
                 <div className="row">
                     <div className="col-lg-12">
                         <div className="section-heading text-center">
-                            <h6>What Clients Say</h6>
+                            <h6>Testimonials</h6>
                             <h4>What <em>My Clients</em> Are <em>Saying</em></h4>
                         </div>
                     </div>
@@ -75,7 +90,7 @@ const Testimonials: React.FC = () => {
                             <div className="row">
                                 {clientLogos.map((logo, index) => (
                                     <div className="col-lg-2 col-4" key={index}>
-                                        <img src={logo} alt="Client Logo" />
+                                        {logo}
                                     </div>
                                 ))}
                             </div>

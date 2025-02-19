@@ -18,23 +18,27 @@ const SearchForm: React.FC = () => {
     const [sessionSearch, setSessionSearch] = useState(sessionName || '');
     const [categorySearch, setCategorySearch] = useState(categoryName || '');
 
+    console.log(
+        'sessionSearch', sessionSearch,
+        'categorySearch', categorySearch
+    );
+
     const handleSubmit = (event: React.FormEvent) => {
         event.preventDefault();
         console.log("Searching for:", {contest: sessionSearch, category: categorySearch});
     };
 
     console.log('sessionSearch', sessionSearch)
-    console.log('categorySearch',categorySearch === '', categorySearch === undefined)
+    console.log('categorySearch', categorySearch === '', categorySearch === undefined)
 
     const categories = Object.values(MediaLibrary)
+        .filter((category) => categorySearch === '' || categorySearch === category.category)
         .filter((category) =>
             category.featuredVertical
             && (
-                (categorySearch === ''
-                    && categorySearch === '')
-                || normalize(categorySearch)
+                sessionSearch === '' ||
+                normalize(sessionSearch)
                     .includes(normalize(category.category))
-                || categorySearch === category.category
             ));
 
     const categoriesMarkup = <section className="photos-videos">
@@ -115,7 +119,7 @@ const SearchForm: React.FC = () => {
                     <div className="col-lg-12">
                         <form id="search-form" name="gs" onSubmit={handleSubmit} role="search">
                             <div className="row">
-                                <div className="col-lg-5">
+                                <div className="col-lg-6">
                                     <fieldset>
                                         <label htmlFor="contest" className="form-label">
                                             Search Any Contest
@@ -132,7 +136,7 @@ const SearchForm: React.FC = () => {
                                         />
                                     </fieldset>
                                 </div>
-                                <div className="col-lg-5">
+                                <div className="col-lg-6">
                                     <fieldset>
                                         <label htmlFor="category" className="form-label">
                                             Pick Category
@@ -153,13 +157,6 @@ const SearchForm: React.FC = () => {
                                         </select>
                                     </fieldset>
                                 </div>
-                                <div className="col-lg-2">
-                                    <fieldset>
-                                        <button type="submit" className="main-button">
-                                            Search Now
-                                        </button>
-                                    </fieldset>
-                                </div>
                             </div>
                         </form>
                     </div>
@@ -172,7 +169,7 @@ const SearchForm: React.FC = () => {
             : <>{photosMarkup}{categoriesMarkup}</>}
 
         {(categorySearch === ''
-            || categorySearch === "Weddings")
+                || categorySearch === "Weddings")
             && <Masonry/>}
     </>);
 };

@@ -1,3 +1,5 @@
+import MediaLibrary from "../MediaLibrary/MediaLibrary.tsx";
+
 interface pricingPlan {
     title: string,
     image: string,
@@ -7,7 +9,7 @@ interface pricingPlan {
 
 const basic: pricingPlan = {
     title: "The Basic",
-    image: "pricing-01.jpg",
+    image: MediaLibrary.Weddings.path + '/' + MediaLibrary.Weddings.sessions[2].name + '/' + MediaLibrary.Weddings.sessions[2].featuredHorizontal,
     price: 1500,
     features: [
         "Access to online gallery including all your photos",
@@ -19,7 +21,7 @@ const basic: pricingPlan = {
 
 const deluxe: pricingPlan = {
     title: "The Deluxe",
-    image: "pricing-02.jpg",
+    image: MediaLibrary.Weddings.path + '/' + MediaLibrary.Weddings.sessions[0].name + '/' + MediaLibrary.Weddings.sessions[0].featuredHorizontal,
     price: 1750,
     features: [
         ...basic.features,
@@ -28,7 +30,7 @@ const deluxe: pricingPlan = {
 }
 const premium: pricingPlan = {
     title: "The Premium",
-    image: "pricing-03.jpg",
+    image: MediaLibrary.Weddings.path + '/' + MediaLibrary.Weddings.sessions[5].name + '/' + MediaLibrary.Weddings.sessions[5].featuredHorizontal,
     price: 2000,
     features: [
         ...deluxe.features,
@@ -57,7 +59,7 @@ const Pricing = () => {
                     {pricingPlans.map((plan, key) => (
                         <div className="col-lg-4" key={key}>
                             <div className="pricing-item">
-                                <img src={`/assets/images/${plan.image}`} alt=""/>
+                                <img src={`${plan.image}`} alt=""/>
                                 <h4>{plan.title}</h4>
                                 <ul className={`plan-${key}`} style={{
                                     minHeight: "200px"

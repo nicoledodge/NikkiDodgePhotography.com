@@ -49,7 +49,7 @@ const WeddingTitleAndTimer: React.FC<ContestHeadingProps> = ({ title, deadline }
                 <div className="row">
                     <div id="heading-box" className="col-lg-8 offset-lg-2 header-text mt-5">
                         <h2 className="space-need"><em>{title}</em></h2>
-                        <h6>Our Wedding Day</h6>
+                        {/*<h6>Our Wedding Day</h6>*/}
                         <div className="main-content">
                             <div className="counter">
                                 <div className="days">

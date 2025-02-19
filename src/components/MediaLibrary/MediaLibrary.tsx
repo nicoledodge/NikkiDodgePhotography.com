@@ -10,10 +10,12 @@ import {Representatives} from "./Representatives.tsx";
 import {Sports} from "./Sports.tsx";
 import {Videos} from "./Videos.tsx";
 import {Weddings} from "./Weddings.tsx";
+import {Featured} from "./Featured.tsx";
 
 export const mediaLibrary: Record<Categories, Category> = {
     Engagements,
     Family,
+    Featured,
     Graduations,
     Headshots,
     Homes,

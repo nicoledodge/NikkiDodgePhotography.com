@@ -2,7 +2,7 @@ import React from "react";
 
 const Heading: React.FC = () => {
     return (
-        <div className="page-heading">
+        <div className="page-heading mb-5">
             <div className="container">
                 <div className="row">
                     <div id="heading-box" className="col-lg-8 offset-lg-2 header-text mt-5">
