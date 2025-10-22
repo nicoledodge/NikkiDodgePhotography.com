@@ -1,9 +1,9 @@
 {
   "name": "nikkidodgephotography",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "serve": "serve -s dist -l 80",
     "build": "tsc -b && vite build",
     "deploy": "gh-pages -d dist",
     "build:common": "tsc",
@@ -31,6 +31,7 @@
     "react-dom": "^19.0.0",
     "react-owl-carousel": "^2.3.3",
     "react-router-dom": "^7.1.5",
+    "serve": "^14.2.5",
     "sharp": "^0.33.5",
     "swiper": "^11.2.3"
   },
