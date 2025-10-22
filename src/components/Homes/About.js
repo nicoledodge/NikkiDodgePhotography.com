@@ -1,4 +1,0 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-export default function About() {
-    return _jsx("div", { className: "container", children: _jsx("div", { className: "row", children: _jsx("div", { className: "col-lg-10 offset-lg-1", children: _jsxs("div", { className: "header-text mt-5", children: [_jsxs("h1", { children: ["Capturing ", _jsx("em", { children: "Love" }), " & Timeless ", _jsx("em", { children: "Memories" })] }), _jsx("br", {}), _jsxs("p", { className: "h5", children: ["Denver, Colorado-based ", _jsx("b", { children: "wedding photographer" }), " specializing in capturing love stories with authenticity and emotion. Whether it\u2019s a wedding, engagement, or lifestyle session, I strive to create images that make you relive the moment forever."] })] }) }) }) });
-}

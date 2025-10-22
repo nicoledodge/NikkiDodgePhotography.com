@@ -1,8 +1,0 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-const OtherPhotosInCategory = ({ mediaFiles }) => {
-    if (!mediaFiles.length) {
-        return _jsx("p", { children: "No photo session found." });
-    }
-    return (_jsx("section", { className: "contest-waiting mb-5", children: _jsx("div", { className: "container", children: _jsxs("div", { className: "row", children: [_jsx("div", { className: "col-lg-12", children: _jsx("h5", { children: "Other Contests Waiting For You:" }) }), mediaFiles.map((shoot, index) => (_jsx("div", { className: "col-lg-3 col-sm-6", children: _jsxs("div", { className: "waiting-item", children: [_jsx("img", { src: shoot, alt: "shoot.title" }), _jsxs("div", { className: "down-content", children: [_jsx("h4", { children: " shoot.title" }), _jsx("p", { children: " shoot.description" }), _jsxs("span", { className: "price", children: ["Price: ", _jsx("em", { children: "shoot.price" })] }), _jsxs("span", { className: "deadline", children: ["Deadline: ", _jsx("em", { children: "shoot.deadline" })] })] })] }) }, index))), _jsx("div", { className: "col-lg-12", children: _jsxs("ul", { className: "pagination", children: [_jsx("li", { children: _jsx("a", { href: "#", children: _jsx("i", { className: "fa fa-arrow-left" }) }) }), _jsx("li", { children: _jsx("a", { href: "#", children: "1" }) }), _jsx("li", { className: "active", children: _jsx("a", { href: "#", children: "2" }) }), _jsx("li", { children: _jsx("a", { href: "#", children: "3" }) }), _jsx("li", { children: _jsx("a", { href: "#", children: _jsx("i", { className: "fa fa-arrow-right" }) }) })] }) })] }) }) }));
-};
-export default OtherPhotosInCategory;

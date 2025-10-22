@@ -1,0 +1,219 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - www
+  workflow_dispatch:
+    inputs:
+      use_last_image:
+        description: "Skip build and redeploy last branch image"
+        required: false
+        type: boolean
+        default: false
+      namespace:
+        description: "Override target namespace"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  APP_NAME: express
+  SERVICE_TYPE: ClusterIP
+
+jobs:
+  docker-build-push:
+    name: Build & Push Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+      latest_tag: ${{ steps.meta.outputs.latest_tag }}
+      branch_slug: ${{ steps.meta.outputs.branch_slug }}
+      use_last_image: ${{ steps.decision.outputs.use_last_image }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Decide whether to reuse existing image
+        id: decision
+        shell: bash
+        run: |
+          set -euo pipefail
+          reuse="false"
+          event="${{ github.event_name }}"
+          dispatch_flag="${{ github.event.inputs.use_last_image || 'false' }}"
+          commit_message="${{ github.event.head_commit.message || '' }}"
+          if [[ "$event" == "workflow_dispatch" && "$dispatch_flag" == "true" ]]; then
+            reuse="true"
+          elif [[ "$event" == "push" ]]; then
+            shopt -s nocasematch
+            if [[ "$commit_message" =~ \[use-last-image\] || "$commit_message" =~ \[deploy:last\] ]]; then
+              reuse="true"
+            fi
+            shopt -u nocasematch
+          fi
+          echo "use_last_image=${reuse}" | tee -a "$GITHUB_OUTPUT"
+
+      - name: Compute image metadata
+        if: steps.decision.outputs.use_last_image != 'true'
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch="${GITHUB_REF_NAME:-${GITHUB_HEAD_REF:-}}"
+          if [[ -z "$branch" ]]; then
+            branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+          fi
+          slug=$(echo "$branch" | tr '[:upper:]' '[:lower:]' | sed -E 's#[^a-z0-9_.-]+#-#g; s#-+#-#g; s#^-+##; s#-+$##')
+          if [[ -z "$slug" ]]; then
+            slug="branch"
+          fi
+          repo="${GITHUB_REPOSITORY,,}"
+          image_repo="${REGISTRY}/${repo}"
+          short_sha="${GITHUB_SHA::12}"
+          image_tag="${slug}-${short_sha}"
+          echo "branch_slug=${slug}" >> "$GITHUB_OUTPUT"
+          echo "image_repo=${image_repo}" >> "$GITHUB_OUTPUT"
+          echo "image=${image_repo}:${image_tag}" >> "$GITHUB_OUTPUT"
+          echo "latest_tag=${slug}-latest" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        if: steps.decision.outputs.use_last_image != 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: steps.decision.outputs.use_last_image != 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        if: steps.decision.outputs.use_last_image != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.image }}
+            ${{ steps.meta.outputs.image_repo }}:${{ steps.meta.outputs.latest_tag }}
+
+      - name: Export reused metadata
+        if: steps.decision.outputs.use_last_image == 'true'
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch="${GITHUB_REF_NAME:-${GITHUB_HEAD_REF:-}}"
+          if [[ -z "$branch" ]]; then
+            branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+          fi
+          slug=$(echo "$branch" | tr '[:upper:]' '[:lower:]' | sed -E 's#[^a-z0-9_.-]+#-#g; s#-+#-#g; s#^-+##; s#-+$##')
+          if [[ -z "$slug" ]]; then
+            slug="branch"
+          fi
+          repo="${GITHUB_REPOSITORY,,}"
+          image_repo="${REGISTRY}/${repo}"
+          echo "branch_slug=${slug}" >> "$GITHUB_OUTPUT"
+          echo "image_repo=${image_repo}" >> "$GITHUB_OUTPUT"
+          echo "image=${image_repo}:${slug}-latest" >> "$GITHUB_OUTPUT"
+          echo "latest_tag=${slug}-latest" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    name: Deploy to Kubernetes
+    runs-on: assessorly-runners
+    needs: docker-build-push
+    permissions:
+      contents: read
+      packages: read
+    env:
+      IMAGE: ${{ needs.docker-build-push.outputs.image }}
+      BRANCH_SLUG: ${{ needs.docker-build-push.outputs.branch_slug }}
+      USE_LAST_IMAGE: ${{ needs.docker-build-push.outputs.use_last_image }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install kubectl
+        run: |
+          curl -sSL "https://dl.k8s.io/release/v1.30.4/bin/linux/amd64/kubectl" -o kubectl
+          sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+      - name: Prepare kubeconfig
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.kube
+          cat > ~/.kube/config <<'KUBECONFIG'
+${{ secrets.HARVESTER_KUBECONFIG }}
+KUBECONFIG
+          chmod 600 ~/.kube/config
+          kubectl config view
+
+      - name: Pick namespace
+        id: namespace
+        shell: bash
+        env:
+          INPUT_NAMESPACE: ${{ github.event.inputs.namespace }}
+        run: |
+          set -euo pipefail
+          branch="${GITHUB_REF_NAME:-${GITHUB_HEAD_REF:-}}"
+          if [[ -z "$branch" ]]; then
+            branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+          fi
+          default_branch="${{ github.event.repository.default_branch }}"
+          if [[ -n "$INPUT_NAMESPACE" ]]; then
+            namespace="$INPUT_NAMESPACE"
+          elif [[ -n "$branch" && "$branch" == "$default_branch" ]]; then
+            namespace="production"
+          else
+            namespace="development"
+          fi
+          echo "namespace=${namespace}" | tee -a "$GITHUB_OUTPUT"
+
+      - name: Compute hostname
+        id: hostname
+        shell: bash
+        env:
+          BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
+          PROD_HOSTNAME: ${{ vars.PROD_HOSTNAME }}
+        run: |
+          set -euo pipefail
+          namespace="${{ steps.namespace.outputs.namespace }}"
+          if [[ -n "$PROD_HOSTNAME" && "$namespace" == "production" ]]; then
+            echo "hostname=${PROD_HOSTNAME}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ -z "$BASE_DOMAIN" ]]; then
+            echo "hostname=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          slug="${BRANCH_SLUG:-${{ needs.docker-build-push.outputs.branch_slug }}}"
+          echo "hostname=${slug}.${BASE_DOMAIN}" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy manifests
+        env:
+          KUBECONFIG: /home/runner/.kube/config
+          NAMESPACE: ${{ steps.namespace.outputs.namespace }}
+          APP_NAME: ${{ env.APP_NAME }}
+          IMAGE_PULL_SECRET: ${{ vars.IMAGE_PULL_SECRET_NAME }}
+          HOSTNAME: ${{ steps.hostname.outputs.hostname }}
+          TLS_SECRET: ${{ vars.TLS_SECRET_NAME }}
+          SERVICE_TYPE: ${{ env.SERVICE_TYPE }}
+        run: |
+          set -euo pipefail
+          chmod +x scripts/deploy-k8s.sh
+          ./scripts/deploy-k8s.sh
+
+      - name: Show service summary
+        run: |
+          kubectl -n ${{ steps.namespace.outputs.namespace }} get deploy,svc,ingress -o wide || true
