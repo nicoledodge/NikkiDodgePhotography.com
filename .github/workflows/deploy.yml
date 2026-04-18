@@ -154,8 +154,8 @@ jobs:
           set -euo pipefail
           mkdir -p ~/.kube
           cat > ~/.kube/config <<'KUBECONFIG'
-${{ secrets.HARVESTER_KUBECONFIG }}
-KUBECONFIG
+          ${{ secrets.HARVESTER_KUBECONFIG }}
+          KUBECONFIG
           chmod 600 ~/.kube/config
           kubectl config view
 
