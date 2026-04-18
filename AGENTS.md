@@ -29,6 +29,7 @@ This repository powers the Nikki Dodge Photography website. Treat it as a lead-g
 
 - GitHub Actions deployment is defined in [`deploy.yml`](/Users/rtm/Developer/NikkiDodgePhotography.com/.github/workflows/deploy.yml).
 - Kubernetes manifests are applied by [`scripts/deploy-k8s.sh`](/Users/rtm/Developer/NikkiDodgePhotography.com/scripts/deploy-k8s.sh).
+- After Codex finishes work that changes this repo, it should commit and push those changes, then watch the rollout against the local cluster with `KUBECONFIG=~/.kube/local.yaml` to confirm the update lands there successfully.
 - For local cluster checks, use `KUBECONFIG=~/.kube/local.yaml kubectl ...`.
 - If `kubectl` is missing from PATH on macOS, try `/usr/local/bin/kubectl`.
 - Prefer moving portfolio binaries to object storage and serving them via `VITE_PORTFOLIO_IMAGE_BASE_URL` rather than baking 4GB+ of images into the app image forever.
