@@ -20,6 +20,17 @@ SECRET_NAME="${SECRET_NAME:-}"
 CONFIGMAP_NAME="${CONFIGMAP_NAME:-}"
 IMAGE_PULL_SECRET="${IMAGE_PULL_SECRET:-}"
 
+hosts=()
+if [[ -n "$HOSTNAME" ]]; then
+  IFS=',' read -r -a raw_hosts <<< "$HOSTNAME"
+  for host in "${raw_hosts[@]}"; do
+    trimmed_host="$(echo "$host" | xargs)"
+    if [[ -n "$trimmed_host" ]]; then
+      hosts+=("$trimmed_host")
+    fi
+  done
+fi
+
 kubectl get namespace "$NAMESPACE" >/dev/null 2>&1 || kubectl create namespace "$NAMESPACE"
 
 tmp_dir="$(mktemp -d)"
@@ -39,6 +50,12 @@ metadata:
     app: ${APP_NAME}
 spec:
   replicas: ${REPLICAS}
+  revisionHistoryLimit: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: ${APP_NAME}
@@ -68,6 +85,18 @@ cat <<EOF >> "$deployment_file"
               value: production
             - name: PORT
               value: "${PORT}"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: ${PORT}
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: ${PORT}
+            initialDelaySeconds: 10
+            periodSeconds: 20
 EOF
 
 env_from_block=""
@@ -118,7 +147,7 @@ EOF
 
 kubectl apply -f "$service_file"
 
-if [[ -n "$HOSTNAME" ]]; then
+if [[ ${#hosts[@]} -gt 0 ]]; then
   cat <<EOF > "$ingress_file"
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -130,7 +159,11 @@ metadata:
 spec:
   ingressClassName: ${INGRESS_CLASS}
   rules:
-    - host: ${HOSTNAME}
+EOF
+
+  for host in "${hosts[@]}"; do
+    cat <<EOF >> "$ingress_file"
+    - host: ${host}
       http:
         paths:
           - path: /
@@ -141,12 +174,21 @@ spec:
                 port:
                   number: 80
 EOF
+  done
 
   if [[ -n "$TLS_SECRET" ]]; then
     cat <<EOF >> "$ingress_file"
   tls:
     - hosts:
-        - ${HOSTNAME}
+EOF
+
+    for host in "${hosts[@]}"; do
+      cat <<EOF >> "$ingress_file"
+        - ${host}
+EOF
+    done
+
+    cat <<EOF >> "$ingress_file"
       secretName: ${TLS_SECRET}
 EOF
   fi

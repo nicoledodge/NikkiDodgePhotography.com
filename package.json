@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
+    "build": "npm run typecheck && vite build",
     "deploy": "gh-pages -d dist",
     "build:common": "tsc",
     "copy": "ts-node copyHorizontalImages.ts",
@@ -11,8 +12,8 @@
     "lint": "eslint nikkidodgephotography",
     "preview": "vite preview",
     "server:dev": "nodemon src/server.ts",
-    "server:start": "node dist/server.js",
-    "static": "npm install -g serve && serve -s dist -l 80",
+    "server:start": "serve -s dist -l tcp://0.0.0.0:5000 --no-clipboard --no-request-logging",
+    "static": "serve -s dist -l tcp://0.0.0.0:80 --no-clipboard --no-request-logging",
     "static:bg": "pm2 start serve --name nikki-static -- -s dist -l 80"
   },
   "dependencies": {

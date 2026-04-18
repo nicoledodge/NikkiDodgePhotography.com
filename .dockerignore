@@ -1,1 +1,12 @@
-.gitignore
+.git
+.github
+.idea
+.DS_Store
+node_modules
+dist
+dist-ssr
+vite.config.js
+vite.config.d.ts
+*.log
+*.local
+*.mp4

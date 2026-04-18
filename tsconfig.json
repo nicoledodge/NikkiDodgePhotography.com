@@ -1,17 +1,7 @@
 {
   "files": [],
   "references": [
-    { "path": "./tsconfig.app.json"},
-    { "path": "./tsconfig.node.json"}
-  ],
-  "compilerOptions": {
-    "target": "ES2017",
-    "module": "nodenext",
-    "lib": ["ES2017", "DOM"],
-    "strict": true,
-    "outDir": "./dist",
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true
-  },
-  "include": ["./**/*.ts"]
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
 }

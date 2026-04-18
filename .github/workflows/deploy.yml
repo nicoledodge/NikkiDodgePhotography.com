@@ -23,7 +23,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  APP_NAME: express
+  APP_NAME: nikkidodgephotography
   SERVICE_TYPE: ClusterIP
 
 jobs:
@@ -164,6 +164,7 @@ KUBECONFIG
         shell: bash
         env:
           INPUT_NAMESPACE: ${{ github.event.inputs.namespace }}
+          PROD_NAMESPACE: ${{ vars.PROD_NAMESPACE }}
         run: |
           set -euo pipefail
           branch="${GITHUB_REF_NAME:-${GITHUB_HEAD_REF:-}}"
@@ -171,10 +172,11 @@ KUBECONFIG
             branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
           fi
           default_branch="${{ github.event.repository.default_branch }}"
+          prod_namespace="${PROD_NAMESPACE:-default}"
           if [[ -n "$INPUT_NAMESPACE" ]]; then
             namespace="$INPUT_NAMESPACE"
           elif [[ -n "$branch" && "$branch" == "$default_branch" ]]; then
-            namespace="production"
+            namespace="$prod_namespace"
           else
             namespace="development"
           fi
@@ -186,11 +188,13 @@ KUBECONFIG
         env:
           BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
           PROD_HOSTNAME: ${{ vars.PROD_HOSTNAME }}
+          DEFAULT_PROD_HOSTNAME: nikkidodgephotography.com,www.nikkidodgephotography.com
         run: |
           set -euo pipefail
           namespace="${{ steps.namespace.outputs.namespace }}"
-          if [[ -n "$PROD_HOSTNAME" && "$namespace" == "production" ]]; then
-            echo "hostname=${PROD_HOSTNAME}" >> "$GITHUB_OUTPUT"
+          if [[ "$namespace" == "default" ]]; then
+            hostname="${PROD_HOSTNAME:-$DEFAULT_PROD_HOSTNAME}"
+            echo "hostname=${hostname}" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           if [[ -z "$BASE_DOMAIN" ]]; then
