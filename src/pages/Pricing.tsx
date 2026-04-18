@@ -1,5 +1,5 @@
 import Heading from "../components/Details/Heading";
-import ContestWin from "../components/Details/ContestWin";
+import SessionOffers from "../components/Details/SessionOffers";
 import PricingSection from "../components/Details/Pricing";
 
 
@@ -9,7 +9,7 @@ function Pricing() {
     return <>
         <Heading />
         <PricingSection />
-        <ContestWin />
+        <SessionOffers />
     </>
 }
 

@@ -2,7 +2,7 @@ import {FC} from "react";
 import {Link} from "react-router-dom";
 import {CONTACT} from "../../pages/Contact";
 
-interface ContestHeadingProps {
+interface GalleryHeadingProps {
     title: string;
     category: string;
     summary: string;
@@ -10,7 +10,7 @@ interface ContestHeadingProps {
     relatedCount: number;
 }
 
-const GalleryHeading: FC<ContestHeadingProps> = ({title, category, summary, imageCount, relatedCount}) => {
+const GalleryHeading: FC<GalleryHeadingProps> = ({title, category, summary, imageCount, relatedCount}) => {
     return (
         <div className="page-heading">
             <div className="container">

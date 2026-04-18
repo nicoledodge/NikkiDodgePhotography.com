@@ -1,4 +1,4 @@
-import WeddingTitleAndTimer from "../components/Galery/ContestHeading";
+import GalleryHeading from "../components/Galery/GalleryHeading";
 import OtherPhotosInCategory from "../components/Galery/OtherPhotosInCategory";
 import Masonry, {getSession} from "../components/Galery/Masonry";
 import React from "react";
@@ -52,7 +52,7 @@ const Gallery: React.FC = () => {
         }));
 
     return <>
-        <WeddingTitleAndTimer
+        <GalleryHeading
             title={formattedSessionName}
             category={category.category}
             summary={getCategoryCopy(category.category).lead}

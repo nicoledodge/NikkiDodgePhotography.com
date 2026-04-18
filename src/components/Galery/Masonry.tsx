@@ -68,7 +68,7 @@ const Masonry: React.FC<{
     }, []);
 
     return (
-        <section className="featured-contests">
+        <section className="featured-gallery">
             <style>
                 {`
                 .masonry-gallery {

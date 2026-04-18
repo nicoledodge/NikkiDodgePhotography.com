@@ -55,7 +55,7 @@ const SessionExplorer = (
     const currentSessions = filteredSessions.slice(startIndex, startIndex + itemsPerPage);
 
     return (
-        <section className="contest-waiting">
+        <section className="gallery-list">
             <div className="container">
                 <div className="row">
                     <div className="col-lg-12">

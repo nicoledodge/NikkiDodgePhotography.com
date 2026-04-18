@@ -1413,20 +1413,20 @@ section.popular-categories .main-button {
 
 /*
 ---------------------------------------------
-closed contests
+client highlights
 ---------------------------------------------
 */
 
-section.closed-contests {
+section.client-highlights {
     background-color: var(--primary-color);
     padding: 120px 0px;
 }
 
-section.closed-contests h6, section.closed-contests h4 {
+section.client-highlights h6, section.client-highlights h4 {
     color: var(--fourth-color);
 }
 
-section.closed-contests em {
+section.client-highlights em {
     color: var(--third-color);
 }
 
@@ -1505,25 +1505,25 @@ section.closed-contests em {
     color: #afafaf;
 }
 
-.closed-contests .owl-nav {
+.client-highlights .owl-nav {
     position: absolute;
     width: 100%;
     top: 50%;
     transform: translateY(-35px);
 }
 
-.closed-contests .owl-nav .owl-prev {
+.client-highlights .owl-nav .owl-prev {
     position: absolute;
     left: -70px;
 }
 
-.closed-contests .owl-nav .owl-next {
+.client-highlights .owl-nav .owl-next {
     position: absolute;
     right: -70px;
 }
 
-.closed-contests .owl-nav .owl-prev span,
-.closed-contests .owl-nav .owl-next span {
+.client-highlights .owl-nav .owl-prev span,
+.client-highlights .owl-nav .owl-next span {
     width: 46px;
     height: 46px;
     line-height: 46px;
@@ -1535,13 +1535,13 @@ section.closed-contests em {
     transition: all .3s;
 }
 
-.closed-contests .owl-nav .owl-prev span:hover,
-.closed-contests .owl-nav .owl-next span:hover {
+.client-highlights .owl-nav .owl-prev span:hover,
+.client-highlights .owl-nav .owl-next span:hover {
     background-color: var(--primary-color);
     color: #fff;
 }
 
-.closed-contests .border-button {
+.client-highlights .border-button {
     margin-top: 20px;
 }
 
@@ -1885,22 +1885,22 @@ Portfolio Page
     margin-right: 30px;
 }
 
-.contest-win {
+.session-offers {
     padding: 0px 65px;
 }
 
-.contest-win .contest-item {
+.session-offers .session-offer-card {
     background-color: rgba(0, 0, 0, 0.2);
     border: 1px solid #e0e0e0;
     border-radius: 15px;
     padding: 30px;
 }
 
-.contest-win .contest-item .top-content {
+.session-offers .session-offer-card .top-content {
     margin-bottom: 30px;
 }
 
-.contest-win .contest-item .top-content span.award {
+.session-offers .session-offer-card .top-content span.award {
     font-size: 15px;
     color: #fff;
     background-color: var(--primary-color);
@@ -1908,43 +1908,43 @@ Portfolio Page
     padding: 8px 12px;;
 }
 
-.contest-win .contest-item .top-content span.price {
+.session-offers .session-offer-card .top-content span.price {
     float: right;
     font-size: 20px;
     font-weight: 700;
     color: var(--primary-color);
 }
 
-.contest-win .contest-item h4 {
+.session-offers .session-offer-card h4 {
     font-size: 20px;
     font-weight: 700;
     margin-top: 25px;
     margin-bottom: 20px;
 }
 
-.contest-win .contest-item img {
+.session-offers .session-offer-card img {
     border-radius: 15px;
 }
 
-.contest-win .contest-item .info {
+.session-offers .session-offer-card .info {
     display: flex;
     width: 100%;
 }
 
-.contest-win .contest-item span.participants {
+.session-offers .session-offer-card span.participants {
     font-size: 15px;
     font-weight: 500;
     color: #afafaf;
     flex-basis: 50%;
 }
 
-.contest-win .contest-item span.participants img {
+.session-offers .session-offer-card span.participants img {
     border-radius: 0px;
     max-width: 24px;
     margin-bottom: 8px;
 }
 
-.contest-win .contest-item span.submittions {
+.session-offers .session-offer-card span.submittions {
     font-size: 15px;
     font-weight: 500;
     color: #afafaf;
@@ -1953,39 +1953,39 @@ Portfolio Page
     text-align: right;
 }
 
-.contest-win .contest-item span.submittions img {
+.session-offers .session-offer-card span.submittions img {
     border-radius: 0px;
     max-width: 24px;
     margin-bottom: 8px;
 }
 
-.contest-win .contest-item .border-button {
+.session-offers .session-offer-card .border-button {
     margin-top: 25px;
     margin-bottom: 20px;
 }
 
-.contest-win .contest-item .border-button a {
+.session-offers .session-offer-card .border-button a {
     width: 100%;
     text-align: center;
 }
 
-.contest-win .contest-item span.info {
+.session-offers .session-offer-card span.info {
     font-size: 15px;
     display: inline-block;
     text-align: center;
     color: #afafaf;
 }
 
-.contest-win ul.pagination {
+.session-offers ul.pagination {
     justify-content: center;
     margin-top: 60px;
 }
 
-.contest-win ul.pagination li {
+.session-offers ul.pagination li {
     margin: 0px 7px;
 }
 
-.contest-win ul.pagination li a {
+.session-offers ul.pagination li a {
     width: 46px;
     height: 46px;
     display: inline-block;
@@ -1998,24 +1998,24 @@ Portfolio Page
     font-weight: 600;
 }
 
-.contest-win ul.pagination li.active a {
+.session-offers ul.pagination li.active a {
     background-color: var(--primary-color);
     color: #fff;
 }
 
-.contest-win ul.pagination li:last-child a,
-.contest-win ul.pagination li:first-child a {
+.session-offers ul.pagination li:last-child a,
+.session-offers ul.pagination li:first-child a {
     border-color: transparent;
 }
 
 
 /* 
 ---------------------------------------------
-Contest Details Page
+Session Details Page
 --------------------------------------------- 
 */
 
-.contest-details .top-content {
+.session-details .top-content {
     background-color: var(--seventh-color);
     border-top-right-radius: 10px;
     border-top-left-radius: 10px;
@@ -2023,31 +2023,31 @@ Contest Details Page
     margin-top: -45px;
 }
 
-.contest-details .top-content ul {
+.session-details .top-content ul {
     text-align: right;
 }
 
-.contest-details .top-content ul li {
+.session-details .top-content ul li {
     display: inline-block;
 }
 
-.contest-details .top-content ul li {
+.session-details .top-content ul li {
     font-size: 18px;
     font-weight: 500;
     color: var(--primary-color);
     margin-left: 15px;
 }
 
-.contest-details .top-content ul li:first-child {
+.session-details .top-content ul li:first-child {
     margin-left: 0px;
 }
 
-.contest-details .top-content ul li span {
+.session-details .top-content ul li span {
     font-size: 15px;
     color: #afafaf;
 }
 
-.contest-details .top-content span.open {
+.session-details .top-content span.open {
     font-size: 15px;
     background-color: var(--primary-color);
     color: #fff;
@@ -2056,48 +2056,48 @@ Contest Details Page
     margin-right: 20px;
 }
 
-.contest-details .top-content span.wish-list {
+.session-details .top-content span.wish-list {
     font-size: 15px;
     font-weight: 500;
     color: var(--primary-color);
 }
 
-.contest-details .top-content span.wish-list i {
+.session-details .top-content span.wish-list i {
     margin-right: 5px;
 }
 
-.contest-details .main-content {
+.session-details .main-content {
     border-bottom-right-radius: 10px;
     border-bottom-left-radius: 10px;
     padding: 80px 60px;
     box-shadow: 0px 10px 10px rgba(0, 0, 0, 0.06);
 }
 
-.contest-details .main-content h4 {
+.session-details .main-content h4 {
     font-size: 30px;
     font-weight: 700;
     margin-bottom: 25px;
     color: var(--eighth-color);
 }
 
-.contest-details .main-content h6 {
+.session-details .main-content h6 {
     font-size: 15px;
     font-weight: 600;
     color: var(--eighth-color);
 }
 
-.contest-details .main-content h6.second-title {
+.session-details .main-content h6.second-title {
     margin-top: 30px;
 }
 
-.contest-details .main-content p {
+.session-details .main-content p {
     margin-top: 20px;
     margin-bottom: 20px;
     position: relative;
     padding-left: 22px;
 }
 
-.contest-details .main-content p:before {
+.session-details .main-content p:before {
     width: 7px;
     height: 7px;
     background-color: #afafaf;
@@ -2108,13 +2108,13 @@ Contest Details Page
     border-radius: 50%;
 }
 
-.contest-details .main-content h4.second-title {
+.session-details .main-content h4.second-title {
     margin-top: 60px;
     padding-top: 60px;
     border-top: 1px solid #d4d4d4;
 }
 
-.contest-details .main-content .item span {
+.session-details .main-content .item span {
     background-color: #f0f0f0;
     border-radius: 10px;
     font-size: 14px;
@@ -2128,87 +2128,87 @@ Contest Details Page
     float: left;
 }
 
-.contest-details .main-content .item h5 {
+.session-details .main-content .item h5 {
     font-size: 15px;
     font-weight: 700;
     margin-bottom: 10px;
     color: var(--eighth-color);
 }
 
-.contest-details .main-content .item h6 {
+.session-details .main-content .item h6 {
     font-size: 15px;
     font-weight: 400;
     color: #afafaf;
 }
 
-.contest-details .main-content .main-button {
+.session-details .main-content .main-button {
     margin-top: 60px;
 }
 
-.contest-details .main-content .main-button a {
+.session-details .main-content .main-button a {
     width: 100%;
     font-size: 20px;
     padding: 15px;
     text-align: center;
 }
 
-.contest-waiting h5 {
+.gallery-list h5 {
     font-size: 20px;
     font-weight: 700;
     margin-bottom: 35px;
 }
 
-.contest-waiting .waiting-item img {
+.gallery-list .waiting-item img {
     border-top-left-radius: 15px;
     border-top-right-radius: 15px;
 }
 
-.contest-waiting .waiting-item .down-content {
+.gallery-list .waiting-item .down-content {
     background-color: #f7f7f7;
     border-bottom-left-radius: 15px;
     border-bottom-right-radius: 15px;
     padding: 25px;
 }
 
-.contest-waiting .waiting-item .down-content h4 {
+.gallery-list .waiting-item .down-content h4 {
     font-size: 15px;
     color: var(--primary-color);
     font-weight: 700;
     margin-bottom: 22px;
 }
 
-.contest-waiting .waiting-item .down-content p {
+.gallery-list .waiting-item .down-content p {
     line-height: 20px;
     margin-bottom: 20px;
 }
 
-.contest-waiting .waiting-item .down-content span.price,
-.contest-waiting .waiting-item .down-content span.deadline {
+.gallery-list .waiting-item .down-content span.price,
+.gallery-list .waiting-item .down-content span.deadline {
     font-size: 15px;
     font-weight: 500;
     color: #afafaf;
 }
 
-.contest-waiting .waiting-item .down-content span.deadline {
+.gallery-list .waiting-item .down-content span.deadline {
     float: right;
 }
 
-.contest-waiting .waiting-item .down-content span.price em,
-.contest-waiting .waiting-item .down-content span.deadline em {
+.gallery-list .waiting-item .down-content span.price em,
+.gallery-list .waiting-item .down-content span.deadline em {
     font-style: normal;
     color: var(--primary-color);
 }
 
-.contest-waiting ul.pagination {
+.gallery-list ul.pagination {
     justify-content: center;
     margin-top: 60px;
 }
 
-.contest-waiting ul.pagination li {
+.gallery-list ul.pagination li {
     margin: 0px 7px;
 }
 
-.contest-waiting ul.pagination li a {
+.gallery-list ul.pagination li a {
     width: 46px;
     height: 46px;
     display: inline-block;
@@ -2221,13 +2221,13 @@ Contest Details Page
     font-weight: 600;
 }
 
-.contest-waiting ul.pagination li.active a {
+.gallery-list ul.pagination li.active a {
     background-color: var(--primary-color);
     color: #fff;
 }
 
-.contest-waiting ul.pagination li:last-child a,
-.contest-waiting ul.pagination li:first-child a {
+.gallery-list ul.pagination li:last-child a,
+.gallery-list ul.pagination li:first-child a {
     border-color: transparent;
 }
 
@@ -2293,42 +2293,42 @@ Categories Page
     margin-right: 10px;
 }
 
-.featured-contests .item {
+.featured-gallery .item {
     margin-bottom: 30px;
 }
 
-.featured-contests .item .thumb {
+.featured-gallery .item .thumb {
     position: relative;
     overflow: hidden;
 }
 
-.featured-contests .item .thumb img {
+.featured-gallery .item .thumb img {
     border-radius: 15px;
 }
 
-.featured-contests .item .hover-effect {
+.featured-gallery .item .hover-effect {
     position: absolute;
     right: -100%;
     bottom: 15px;
     transition: all .5s;
 }
 
-.featured-contests .item .thumb:hover .hover-effect {
+.featured-gallery .item .thumb:hover .hover-effect {
     right: 15px;
     bottom: 15px;
 }
 
-.featured-contests .item .hover-effect .content {
+.featured-gallery .item .hover-effect .content {
     background-color: #fff;
     border-radius: 15px;
     padding: 25px 20px;
 }
 
-.featured-contests .item .hover-effect .content .top-content {
+.featured-gallery .item .hover-effect .content .top-content {
     margin-bottom: 20px;
 }
 
-.featured-contests .item .hover-effect .content .top-content span.award {
+.featured-gallery .item .hover-effect .content .top-content span.award {
     font-size: 15px;
     color: #fff;
     background-color: var(--primary-color);
@@ -2336,43 +2336,43 @@ Categories Page
     padding: 8px 12px;;
 }
 
-.featured-contests .item .hover-effect .content .top-content span.price {
+.featured-gallery .item .hover-effect .content .top-content span.price {
     float: right;
     font-size: 20px;
     font-weight: 700;
     color: var(--primary-color);
 }
 
-.featured-contests .item .hover-effect .content h4 {
+.featured-gallery .item .hover-effect .content h4 {
     font-size: 18px;
     font-weight: 700;
     margin-top: 25px;
     margin-bottom: 20px;
 }
 
-.featured-contests .item .hover-effect .content img {
+.featured-gallery .item .hover-effect .content img {
     border-radius: 15px;
 }
 
-.featured-contests .item .hover-effect .content .info {
+.featured-gallery .item .hover-effect .content .info {
     display: flex;
     width: 100%;
 }
 
-.featured-contests .item .hover-effect .content span.participants {
+.featured-gallery .item .hover-effect .content span.participants {
     font-size: 13px;
     font-weight: 500;
     color: #afafaf;
     flex-basis: 50%;
 }
 
-.featured-contests .item .hover-effect .content span.participants img {
+.featured-gallery .item .hover-effect .content span.participants img {
     border-radius: 0px;
     max-width: 24px;
     margin-bottom: 8px;
 }
 
-.featured-contests .item .hover-effect .content span.submittions {
+.featured-gallery .item .hover-effect .content span.submittions {
     font-size: 15px;
     font-weight: 500;
     color: #afafaf;
@@ -2381,24 +2381,24 @@ Categories Page
     text-align: right;
 }
 
-.featured-contests .item .hover-effect .content span.submittions img {
+.featured-gallery .item .hover-effect .content span.submittions img {
     border-radius: 0px;
     max-width: 24px;
     margin-bottom: 8px;
 }
 
-.featured-contests .item .hover-effect .content .border-button {
+.featured-gallery .item .hover-effect .content .border-button {
     margin-top: 15px;
     margin-bottom: 0px;
 }
 
-.featured-contests .item .hover-effect .content .border-button a {
+.featured-gallery .item .hover-effect .content .border-button a {
     width: 100%;
     text-align: center;
     padding: 10px 20px;
 }
 
-.featured-contests .item .hover-effect .content span.info {
+.featured-gallery .item .hover-effect .content span.info {
     font-size: 15px;
     display: inline-block;
     text-align: center;
@@ -2753,12 +2753,12 @@ body {
     }
 
     .featured-items .owl-nav .owl-next,
-    .closed-contests .owl-nav .owl-next {
+    .client-highlights .owl-nav .owl-next {
         right: -10px !important;
     }
 
     .featured-items .owl-nav .owl-prev,
-    .closed-contests .owl-nav .owl-prev {
+    .client-highlights .owl-nav .owl-prev {
         left: -10px !important;
     }
 }
@@ -2802,32 +2802,32 @@ body {
         margin-top: 30px;
     }
 
-    .contest-win .contest-item {
+    .session-offers .session-offer-card {
         margin-bottom: 30px;
     }
 
-    .contest-details .top-content {
+    .session-details .top-content {
         text-align: center;
     }
 
-    .contest-details .top-content ul {
+    .session-details .top-content ul {
         text-align: center;
         margin-top: 30px;
     }
 
-    .contest-details .top-content ul li:first-child {
+    .session-details .top-content ul li:first-child {
         margin-left: 10px;
     }
 
-    .contest-details .top-content ul li {
+    .session-details .top-content ul li {
         margin: 0px 10px;
     }
 
-    .contest-details .item {
+    .session-details .item {
         margin-bottom: 20px;
     }
 
-    .contest-waiting .waiting-item {
+    .gallery-list .waiting-item {
         margin-bottom: 30px;
     }
 
@@ -2837,7 +2837,7 @@ body {
     }
 
     section.popular-categories,
-    .contest-win {
+    .session-offers {
         padding: 0px;
     }
 
@@ -2845,23 +2845,23 @@ body {
         margin-bottom: 15px;
     }
 
-    .featured-contests .item .hover-effect .content .info {
+    .featured-gallery .item .hover-effect .content .info {
         display: flex !important;
     }
 }
 
 @media (max-width: 1200px) {
     .featured-items .owl-nav .owl-next,
-    .closed-contests .owl-nav .owl-next {
+    .client-highlights .owl-nav .owl-next {
         right: -25px;
     }
 
     .featured-items .owl-nav .owl-prev,
-    .closed-contests .owl-nav .owl-prev {
+    .client-highlights .owl-nav .owl-prev {
         left: -25px;
     }
 
-    .featured-contests .item .hover-effect .content .info {
+    .featured-gallery .item .hover-effect .content .info {
         display: none;
     }
 }

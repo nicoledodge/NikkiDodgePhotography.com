@@ -35,9 +35,9 @@ const featuredSessions = [
     }
 ];
 
-const Contests = () => {
+const ClientHighlights = () => {
     return (
-        <section className="closed-contests">
+        <section className="client-highlights">
             <div className="container">
                 <div className="row">
                     <div className="col-lg-12">
@@ -113,4 +113,4 @@ const Contests = () => {
     );
 };
 
-export default Contests;
+export default ClientHighlights;

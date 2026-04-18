@@ -52,9 +52,9 @@ const offers: SessionOffer[] = [
     },
 ];
 
-const ContestWin: React.FC = () => {
+const SessionOffers: React.FC = () => {
     return (
-        <section className="contest-win mb-5">
+        <section className="session-offers mb-5">
             <div className="container-fluid">
                 <div className="row">
                     <div className="col-lg-12">
@@ -66,7 +66,7 @@ const ContestWin: React.FC = () => {
 
                     {offers.map((offer) => (
                         <div key={offer.id} className="col-lg-3">
-                            <div className="contest-item">
+                            <div className="session-offer-card">
                                 <div className="top-content">
                                     <span className="award">{offer.label}</span>
                                     <span className="price">{offer.delivery}</span>
@@ -96,4 +96,4 @@ const ContestWin: React.FC = () => {
     );
 };
 
-export default ContestWin;
+export default SessionOffers;

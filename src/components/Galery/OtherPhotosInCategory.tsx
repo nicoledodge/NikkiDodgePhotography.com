@@ -23,7 +23,7 @@ const OtherPhotosInCategory: React.FC<{
     }
 
     return (
-        <section className="contest-waiting mb-5">
+        <section className="gallery-list mb-5">
             <div className="container">
                 <div className="row">
                     <div className="col-lg-12">
