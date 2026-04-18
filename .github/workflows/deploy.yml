@@ -160,6 +160,10 @@ jobs:
           ${{ secrets.HARVESTER_KUBECONFIG }}
           KUBECONFIG
           chmod 600 ~/.kube/config
+          if ! kubectl config current-context >/dev/null 2>&1; then
+            echo "HARVESTER_KUBECONFIG is empty or invalid" >&2
+            exit 1
+          fi
           kubectl config view
 
       - name: Pick namespace
@@ -214,7 +218,7 @@ jobs:
           APP_NAME: ${{ env.APP_NAME }}
           IMAGE_PULL_SECRET: ${{ vars.IMAGE_PULL_SECRET_NAME }}
           HOSTNAME: ${{ steps.hostname.outputs.hostname }}
-          TLS_SECRET: ${{ vars.TLS_SECRET_NAME }}
+          TLS_SECRET: ${{ vars.TLS_SECRET_NAME || 'nikkidodgephotography-tls' }}
           SERVICE_TYPE: ${{ env.SERVICE_TYPE }}
         run: |
           set -euo pipefail
