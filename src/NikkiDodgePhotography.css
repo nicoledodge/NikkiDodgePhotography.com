@@ -2816,6 +2816,13 @@ admin
     box-shadow: 0 14px 30px rgba(19, 16, 8, 0.08);
 }
 
+.admin-subsection {
+    padding: 20px;
+    border: 1px solid rgba(42, 38, 30, 0.1);
+    border-radius: 8px;
+    background: rgba(247, 247, 247, 0.85);
+}
+
 .admin-login-card {
     max-width: 440px;
     display: grid;

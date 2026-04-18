@@ -7,6 +7,7 @@ import type { CalendarEvent, CalendarEventStatus, Lead, LeadStatus } from "./sha
 import { mergeSiteSettings } from "./shared/siteSettings.js";
 import { clearSessionCookie, createSessionToken, isAdminCredentialMatch, readSessionFromRequest, requireAdmin, setSessionCookie } from "./server/auth.js";
 import { config, isS3Enabled } from "./server/config.js";
+import { getNotificationStatus, sendDiscordTestNotification, sendLeadCreatedNotification } from "./server/notifications.js";
 import { storage } from "./server/storage.js";
 
 const app = express();
@@ -134,6 +135,9 @@ app.post("/api/public/inquiries", asyncHandler(async (req, res) => {
     const leads = await storage.getLeads();
     leads.unshift(nextLead);
     await storage.saveLeads(leads);
+    void sendLeadCreatedNotification(nextLead).catch((error: unknown) => {
+        console.error("Discord lead notification failed:", error);
+    });
 
     res.status(201).json({
         ok: true,
@@ -283,6 +287,20 @@ app.delete("/api/admin/calendar/:id", requireAdmin, asyncHandler(async (req, res
 app.get("/api/admin/settings", requireAdmin, asyncHandler(async (_req, res) => {
     const settings = await storage.getSettings();
     res.json(settings);
+}));
+
+app.get("/api/admin/notifications/status", requireAdmin, (_req, res) => {
+    res.json(getNotificationStatus());
+});
+
+app.post("/api/admin/notifications/test", requireAdmin, asyncHandler(async (_req, res) => {
+    const sent = await sendDiscordTestNotification();
+    if (!sent) {
+        res.status(400).json({ error: "Discord webhook is not configured." });
+        return;
+    }
+
+    res.json({ ok: true });
 }));
 
 app.put("/api/admin/settings", requireAdmin, asyncHandler(async (req, res) => {

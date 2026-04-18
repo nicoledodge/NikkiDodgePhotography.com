@@ -20,6 +20,11 @@ interface CalendarDraft {
     notes: string;
 }
 
+interface NotificationStatus {
+    discordEnabled: boolean;
+    publicAppUrl: string;
+}
+
 const tabLabels: Record<AdminTab, string> = {
     leads: "Leads",
     calendar: "Calendar",
@@ -170,11 +175,13 @@ export default function Admin() {
     const [leads, setLeads] = useState<Lead[]>([]);
     const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
     const [settingsDraft, setSettingsDraft] = useState<SiteSettings>(defaultSiteSettings);
+    const [notificationStatus, setNotificationStatus] = useState<NotificationStatus | null>(null);
     const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
     const [mediaPrefix, setMediaPrefix] = useState("");
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [savingLeadId, setSavingLeadId] = useState<string | null>(null);
     const [savingSettings, setSavingSettings] = useState(false);
+    const [sendingDiscordTest, setSendingDiscordTest] = useState(false);
     const [savingEvent, setSavingEvent] = useState(false);
     const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
     const [editingEventId, setEditingEventId] = useState<string | null>(null);
@@ -198,15 +205,17 @@ export default function Admin() {
         setDashboardError(null);
 
         try {
-            const [nextLeads, nextCalendar, nextSettings] = await Promise.all([
+            const [nextLeads, nextCalendar, nextSettings, nextNotificationStatus] = await Promise.all([
                 request<Lead[]>("/api/admin/leads"),
                 request<CalendarEvent[]>("/api/admin/calendar"),
                 request<SiteSettings>("/api/admin/settings"),
+                request<NotificationStatus>("/api/admin/notifications/status"),
             ]);
 
             setLeads(nextLeads);
             setCalendarEvents(nextCalendar);
             setSettingsDraft(nextSettings);
+            setNotificationStatus(nextNotificationStatus);
             await loadMedia("");
         } catch (error) {
             const message = error instanceof Error ? error.message : "Failed to load the CRM.";
@@ -426,6 +435,22 @@ export default function Admin() {
             setDashboardError(error instanceof Error ? error.message : "Unable to save settings.");
         } finally {
             setSavingSettings(false);
+        }
+    };
+
+    const sendDiscordTest = async () => {
+        setSendingDiscordTest(true);
+        setDashboardError(null);
+
+        try {
+            await request<{ ok: true }>("/api/admin/notifications/test", {
+                method: "POST",
+            });
+            setNotice("Discord test notification sent.");
+        } catch (error) {
+            setDashboardError(error instanceof Error ? error.message : "Unable to send Discord test notification.");
+        } finally {
+            setSendingDiscordTest(false);
         }
     };
 
@@ -913,6 +938,30 @@ export default function Admin() {
                                         <h2>Site Settings</h2>
                                         <p className="admin-muted">These fields feed the public site at runtime. Upload images in the media tab, then paste the URL here.</p>
                                     </div>
+                                </div>
+
+                                <div className="admin-subsection">
+                                    <div className="admin-section-heading">
+                                        <div>
+                                            <h2>Discord Alerts</h2>
+                                            <p className="admin-muted">
+                                                {notificationStatus?.discordEnabled
+                                                    ? "New inquiries will post to your Discord channel."
+                                                    : "Discord is not connected yet. Add DISCORD_WEBHOOK_URL to the Kubernetes secret and redeploy."}
+                                            </p>
+                                        </div>
+                                        <button
+                                            className="admin-secondary-button"
+                                            type="button"
+                                            onClick={() => void sendDiscordTest()}
+                                            disabled={!notificationStatus?.discordEnabled || sendingDiscordTest}
+                                        >
+                                            {sendingDiscordTest ? "Sending..." : "Send Test"}
+                                        </button>
+                                    </div>
+                                    <p className="admin-field-help">
+                                        Admin link target: {notificationStatus?.publicAppUrl ? `${notificationStatus.publicAppUrl}/admin` : "Unavailable"}
+                                    </p>
                                 </div>
 
                                 <div className="admin-form-grid">

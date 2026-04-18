@@ -16,6 +16,8 @@ const isProduction = process.env.NODE_ENV === "production";
 const adminUsername = process.env.ADMIN_USERNAME?.trim() || "admin";
 const adminPassword = process.env.ADMIN_PASSWORD?.trim() || (!isProduction ? "local-dev-password" : "");
 const adminSessionSecret = process.env.ADMIN_SESSION_SECRET?.trim() || (!isProduction ? "local-dev-session-secret" : "");
+const port = Number(process.env.PORT || "5000");
+const configuredPublicAppUrl = process.env.PUBLIC_APP_URL?.trim().replace(/\/+$/, "");
 
 if (isProduction && adminPassword.length === 0) {
     throw new Error("ADMIN_PASSWORD must be set in production.");
@@ -32,7 +34,7 @@ export const config = {
     localMediaDir: resolve(rootDir, "data", "media"),
     localUploadPath: "/uploads",
     isProduction,
-    port: Number(process.env.PORT || "5000"),
+    port,
     sessionCookieName: "ndp_admin_session",
     adminUsername,
     adminPassword,
@@ -44,6 +46,9 @@ export const config = {
     s3DataPrefix: normalizePrefix(process.env.CRM_S3_DATA_PREFIX, "app-data"),
     s3MediaPrefix: normalizePrefix(process.env.CRM_S3_MEDIA_PREFIX, "site-assets"),
     publicAssetBaseUrl: (process.env.CRM_PUBLIC_ASSET_BASE_URL?.trim() || "").replace(/\/+$/, ""),
+    publicAppUrl: configuredPublicAppUrl || (isProduction ? "https://nikkidodgephotography.com" : `http://localhost:${port}`),
+    discordWebhookUrl: process.env.DISCORD_WEBHOOK_URL?.trim() || "",
+    discordWebhookUsername: process.env.DISCORD_WEBHOOK_USERNAME?.trim() || "Nikki Dodge CRM",
 };
 
 export const isS3Enabled = config.s3Bucket.length > 0;
