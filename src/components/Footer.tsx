@@ -1,4 +1,7 @@
+import { useSiteSettings } from "../site/SiteSettingsContext";
+
 const Footer = () => {
+    const { siteSettings } = useSiteSettings();
     const currentYear = new Date().getFullYear();
     return (
         <footer>
@@ -6,12 +9,11 @@ const Footer = () => {
                 <div className="row">
                     <div className="col-lg-12">
                         <p>
-                            Copyright © {currentYear} Nikki Dodge Photography. Serving Highlands Ranch, Denver, and
-                            Colorado destination clients.
+                            Copyright © {currentYear} {siteSettings.businessName}. Serving {siteSettings.serviceArea}.
                             <br />
-                            <a href="mailto:nicole@nikkidodgephotography.com">nicole@nikkidodgephotography.com</a>
+                            <a href={`mailto:${siteSettings.contactEmail}`}>{siteSettings.contactEmail}</a>
                             {" · "}
-                            <a href="tel:972-523-3420">972-523-3420</a>
+                            <a href={`tel:${siteSettings.contactPhone}`}>{siteSettings.contactPhone}</a>
                         </p>
                     </div>
                 </div>

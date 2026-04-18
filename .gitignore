@@ -25,3 +25,7 @@ vite.config.d.ts
 *.sln
 *.sw?
 *.mp4
+
+dist-server
+data/
+.playwright-cli/

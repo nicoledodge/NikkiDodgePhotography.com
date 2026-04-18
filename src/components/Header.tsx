@@ -4,9 +4,12 @@ import {HOWDY} from "../pages/Howdy";
 import {CONTACT} from "../pages/Contact";
 import {PRICING} from "../pages/Pricing";
 import {BLOG} from "../pages/Blog";
+import { useSiteSettings } from "../site/SiteSettingsContext";
 
 
 const Header = () => {
+    const { siteSettings } = useSiteSettings();
+
     return <header className="header-area header-sticky">
         <nav className="main-nav">
             {/* ***** Menu Start ***** */}
@@ -17,8 +20,8 @@ const Header = () => {
             </ul>
             {/* ***** Logo Start ***** */}
             <Link to={'/'} className="logo">
-                <img src='/assets/images/logo-black.png'
-                     alt="Nikki Dodge Photography"/>
+                <img src={siteSettings.logoUrl}
+                     alt={siteSettings.businessName}/>
             </Link>
             {/* ***** Logo End ***** */}
             <ul className="nav">

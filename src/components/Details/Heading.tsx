@@ -1,22 +1,23 @@
 import React from "react";
 import {Link} from "react-router-dom";
 import {CONTACT} from "../../pages/Contact";
+import { useSiteSettings } from "../../site/SiteSettingsContext";
+import { renderInlineEmphasis } from "../../site/renderInlineEmphasis";
 
 const Heading: React.FC = () => {
+    const { siteSettings } = useSiteSettings();
+
     return (
         <div className="page-heading">
             <div className="container">
                 <div className="row">
                     <div id="heading-box" className="col-lg-8 offset-lg-2 header-text mt-5">
-                        <h2>Invest in <em>Timeless Memories</em></h2>
+                        <h2>{renderInlineEmphasis(siteSettings.pricingPageTitle)}</h2>
                         <p>
-                            These collections are built to make the booking decision easier, not more confusing.
-                            Wedding coverage starts with clear essentials and scales up for clients who want more time,
-                            more portraits, or both. Families, graduates, headshots, and brand sessions can be quoted
-                            separately based on scope.
+                            {siteSettings.pricingPageBody}
                         </p>
                         <div className="main-button mt-5">
-                            <Link to={CONTACT}>Let’s Chat About Your Day</Link>
+                            <Link to={CONTACT}>{siteSettings.pricingPageCtaLabel}</Link>
                         </div>
                     </div>
                 </div>

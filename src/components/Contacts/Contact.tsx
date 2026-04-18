@@ -1,6 +1,8 @@
 import React, { useState } from "react";
+import { useSiteSettings } from "../../site/SiteSettingsContext";
 
 const Contact: React.FC = () => {
+    const { siteSettings } = useSiteSettings();
     const [formData, setFormData] = useState({
         name: "",
         telephone: "",
@@ -8,8 +10,9 @@ const Contact: React.FC = () => {
         subject: "",
         message: "",
     });
+    const [submitState, setSubmitState] = useState<"idle" | "submitting" | "success" | "error">("idle");
+    const [submitMessage, setSubmitMessage] = useState("");
 
-    // Handle input change
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData({
             ...formData,
@@ -17,12 +20,45 @@ const Contact: React.FC = () => {
         });
     };
 
-    // Generate mailto link dynamically
     const generateMailtoLink = () => {
         const { name, telephone, email, subject, message } = formData;
-        return `mailto:nicole@nikkidodgephotography.com?subject=${encodeURIComponent(subject || "Photography Inquiry")}&body=${encodeURIComponent(
+        return `mailto:${siteSettings.contactEmail}?subject=${encodeURIComponent(subject || "Photography Inquiry")}&body=${encodeURIComponent(
             `Hi Nikki,\n\nMy name is ${name}. ${message}\n\nBest contact details:\nPhone: ${telephone}\nEmail: ${email}`
         )}`;
+    };
+
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setSubmitState("submitting");
+        setSubmitMessage("");
+
+        try {
+            const response = await fetch("/api/public/inquiries", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(formData),
+            });
+
+            const payload = await response.json() as { error?: string };
+            if (!response.ok) {
+                throw new Error(payload.error || "Unable to send your inquiry right now.");
+            }
+
+            setFormData({
+                name: "",
+                telephone: "",
+                email: "",
+                subject: "",
+                message: "",
+            });
+            setSubmitState("success");
+            setSubmitMessage("Thanks. Nikki has your inquiry and will follow up soon.");
+        } catch (error) {
+            setSubmitState("error");
+            setSubmitMessage(error instanceof Error ? error.message : "Unable to send your inquiry right now.");
+        }
     };
 
     return (
@@ -31,9 +67,9 @@ const Contact: React.FC = () => {
                 <div className="row">
                     <div className="col-lg-12">
                         <div className="section-heading text-center">
-                            <h6>Start Your Inquiry</h6>
+                            <h6>{siteSettings.inquirySectionEyebrow}</h6>
                             <h4>
-                                Tell Nikki what you are planning and get the conversation moving
+                                {siteSettings.inquirySectionTitle}
                             </h4>
                         </div>
                     </div>
@@ -43,7 +79,7 @@ const Contact: React.FC = () => {
                             <i className="fa fa-phone"></i>
                             <h4>Phone Number</h4>
                             <span>
-                                <a href="tel:972-523-3420">972-523-3420</a>
+                                <a href={`tel:${siteSettings.contactPhone}`}>{siteSettings.contactPhone}</a>
                             </span>
                         </div>
                     </div>
@@ -53,8 +89,8 @@ const Contact: React.FC = () => {
                             <i className="fa fa-envelope"></i>
                             <h4>Email Address</h4>
                             <span>
-                                <a href="mailto:nicole@nikkidodgephotography.com">
-                                    nicole@nikkidodgephotography.com
+                                <a href={`mailto:${siteSettings.contactEmail}`}>
+                                    {siteSettings.contactEmail}
                                 </a>
                             </span>
                         </div>
@@ -65,14 +101,13 @@ const Contact: React.FC = () => {
                             <i className="fa fa-map-marked"></i>
                             <h4>Service Area</h4>
                             <span>
-                                Highlands Ranch, Denver, and destinations across Colorado
+                                {siteSettings.serviceArea}
                             </span>
                         </div>
                     </div>
 
-                    {/* Contact Form */}
                     <div className="col-lg-12">
-                        <form id="contact">
+                        <form id="contact" onSubmit={handleSubmit}>
                             <div className="row">
                                 <div className="col-lg-6">
                                     <fieldset>
@@ -132,9 +167,22 @@ const Contact: React.FC = () => {
                                     </fieldset>
                                 </div>
 
+                                {submitMessage && (
+                                    <div className="col-lg-12">
+                                        <p className={submitState === "error" ? "contact-form-message is-error" : "contact-form-message is-success"}>
+                                            {submitMessage}
+                                        </p>
+                                    </div>
+                                )}
+
                                 <div className="main-button col-lg-12 text-center mt-4">
-                                    <a href={generateMailtoLink()} className="orange-button">
-                                        Open Your Email Draft
+                                    <button className="orange-button" type="submit" disabled={submitState === "submitting"}>
+                                        {submitState === "submitting" ? "Sending..." : "Send Inquiry"}
+                                    </button>
+                                </div>
+                                <div className="col-lg-12 text-center mt-3">
+                                    <a className="contact-form-fallback" href={generateMailtoLink()}>
+                                        Prefer email? Open a draft instead.
                                     </a>
                                 </div>
                             </div>

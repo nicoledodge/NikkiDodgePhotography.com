@@ -19,7 +19,7 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-# Runtime stage: ship the built static site and serve it on the app port
+# Runtime stage: ship the built site and API runtime on the app port
 FROM node:24-bullseye-slim AS runner
 WORKDIR /app
 
@@ -30,7 +30,8 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/dist-server ./dist-server
 
 EXPOSE 5000
 
-CMD ["sh", "-c", "./node_modules/.bin/serve -s dist -l tcp://0.0.0.0:${PORT} --no-clipboard --no-request-logging"]
+CMD ["node", "dist-server/server.js"]

@@ -6,7 +6,7 @@ import "animate.css/animate.min.css";
 import "owl.carousel/dist/assets/owl.carousel.css";
 import './NikkiDodgePhotography.css'
 
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -17,11 +17,16 @@ import Contact, {CONTACT} from "./pages/Contact";
 import Howdy, {HOWDY} from "./pages/Howdy";
 import Blog, {BLOG} from "./pages/Blog";
 import Gallery, {GALLERY} from "./pages/Gallery";
+import Admin from "./pages/Admin";
+import { SiteSettingsProvider } from "./site/SiteSettingsContext";
 
-const NikkiDodgePhotography = () => {
+const AppLayout = () => {
+    const location = useLocation();
+    const isAdminRoute = location.pathname.startsWith("/admin");
+
     return (
-        <Router>
-            <Header />
+        <>
+            {!isAdminRoute && <Header />}
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path={PRICING} element={<Pricing />} />
@@ -32,9 +37,19 @@ const NikkiDodgePhotography = () => {
                 <Route path={HOWDY} element={<Howdy />} />
                 <Route path={BLOG} element={<Blog />} />
                 <Route path={GALLERY + "/:categoryName/:sessionName"} element={<Gallery />} />
-
+                <Route path="/admin" element={<Admin />} />
             </Routes>
-            <Footer />
+            {!isAdminRoute && <Footer />}
+        </>
+    );
+};
+
+const NikkiDodgePhotography = () => {
+    return (
+        <Router>
+            <SiteSettingsProvider>
+                <AppLayout />
+            </SiteSettingsProvider>
         </Router>
     );
 };

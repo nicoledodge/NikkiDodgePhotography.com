@@ -219,6 +219,7 @@ jobs:
           IMAGE_PULL_SECRET: ${{ vars.IMAGE_PULL_SECRET_NAME }}
           HOSTNAME: ${{ steps.hostname.outputs.hostname }}
           TLS_SECRET: ${{ vars.TLS_SECRET_NAME || 'nikkidodgephotography-tls' }}
+          SECRET_NAME: ${{ vars.APP_SECRET_NAME }}
           SERVICE_TYPE: ${{ env.SERVICE_TYPE }}
         run: |
           set -euo pipefail
