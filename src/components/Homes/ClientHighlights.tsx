@@ -75,7 +75,7 @@ const ClientHighlights = () => {
                                                 <em>Session:</em> {session.label}
                                             </span>
                                             <span className="price">
-                                                <em>Outcome:</em> {session.detail}
+                                                <em>Experience:</em> {session.detail}
                                             </span>
                                         </div>
                                         <div className="down-content">
