@@ -10,3 +10,4 @@ vite.config.d.ts
 *.log
 *.local
 *.mp4
+public/assets/images/Portfolio

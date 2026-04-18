@@ -12,7 +12,13 @@ export type Categories =
     | "Videos"
     | "Weddings";
 
-export const PortfolioPath = "/assets/images/Portfolio";
+const defaultPortfolioPath = "/assets/images/Portfolio";
+const configuredPortfolioPath = import.meta.env.VITE_PORTFOLIO_IMAGE_BASE_URL?.trim();
+
+export const PortfolioPath = (configuredPortfolioPath && configuredPortfolioPath.length > 0
+    ? configuredPortfolioPath
+    : defaultPortfolioPath
+).replace(/\/+$/, "");
 
 export const Paths: Record<Categories, string> = {
     Engagements: PortfolioPath + "/Engagements",

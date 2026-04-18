@@ -103,6 +103,8 @@ jobs:
         with:
           context: .
           push: true
+          build-args: |
+            VITE_PORTFOLIO_IMAGE_BASE_URL=${{ vars.PORTFOLIO_IMAGE_BASE_URL }}
           tags: |
             ${{ steps.build_meta.outputs.image }}
             ${{ steps.build_meta.outputs.image_repo }}:${{ steps.build_meta.outputs.latest_tag }}

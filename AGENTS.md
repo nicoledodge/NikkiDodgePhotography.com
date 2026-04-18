@@ -31,6 +31,8 @@ This repository powers the Nikki Dodge Photography website. Treat it as a lead-g
 - Kubernetes manifests are applied by [`scripts/deploy-k8s.sh`](/Users/rtm/Developer/NikkiDodgePhotography.com/scripts/deploy-k8s.sh).
 - For local cluster checks, use `KUBECONFIG=~/.kube/local.yaml kubectl ...`.
 - If `kubectl` is missing from PATH on macOS, try `/usr/local/bin/kubectl`.
+- Prefer moving portfolio binaries to object storage and serving them via `VITE_PORTFOLIO_IMAGE_BASE_URL` rather than baking 4GB+ of images into the app image forever.
+- The helper for pushing portfolio assets lives at [`scripts/sync-portfolio-images.sh`](/Users/rtm/Developer/NikkiDodgePhotography.com/scripts/sync-portfolio-images.sh).
 
 ## Editing preference
 

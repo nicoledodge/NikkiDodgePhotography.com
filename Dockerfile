@@ -5,6 +5,8 @@ FROM node:24-bullseye AS builder
 WORKDIR /app
 
 ENV NODE_ENV=development
+ARG VITE_PORTFOLIO_IMAGE_BASE_URL=""
+ENV VITE_PORTFOLIO_IMAGE_BASE_URL=${VITE_PORTFOLIO_IMAGE_BASE_URL}
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
