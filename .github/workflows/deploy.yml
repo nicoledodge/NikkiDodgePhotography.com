@@ -34,9 +34,9 @@ jobs:
       contents: read
       packages: write
     outputs:
-      image: ${{ steps.meta.outputs.image }}
-      latest_tag: ${{ steps.meta.outputs.latest_tag }}
-      branch_slug: ${{ steps.meta.outputs.branch_slug }}
+      image: ${{ steps.build_meta.outputs.image || steps.reused_meta.outputs.image }}
+      latest_tag: ${{ steps.build_meta.outputs.latest_tag || steps.reused_meta.outputs.latest_tag }}
+      branch_slug: ${{ steps.build_meta.outputs.branch_slug || steps.reused_meta.outputs.branch_slug }}
       use_last_image: ${{ steps.decision.outputs.use_last_image }}
     steps:
       - name: Checkout
@@ -64,7 +64,7 @@ jobs:
 
       - name: Compute image metadata
         if: steps.decision.outputs.use_last_image != 'true'
-        id: meta
+        id: build_meta
         shell: bash
         run: |
           set -euo pipefail
@@ -104,12 +104,12 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ steps.meta.outputs.image }}
-            ${{ steps.meta.outputs.image_repo }}:${{ steps.meta.outputs.latest_tag }}
+            ${{ steps.build_meta.outputs.image }}
+            ${{ steps.build_meta.outputs.image_repo }}:${{ steps.build_meta.outputs.latest_tag }}
 
       - name: Export reused metadata
         if: steps.decision.outputs.use_last_image == 'true'
-        id: meta
+        id: reused_meta
         shell: bash
         run: |
           set -euo pipefail
