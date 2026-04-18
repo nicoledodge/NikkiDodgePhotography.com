@@ -1,6 +1,7 @@
 import {Link} from "react-router-dom";
 import {PORTFOLIO} from "../../pages/Portfolio";
 import mediaLibrary from "../MediaLibrary/MediaLibrary";
+import {getCategoryCopy} from "../../data/categoryCopy";
 
 const Categories = () => {
     const featuredCategories: Array<{
@@ -17,9 +18,9 @@ const Categories = () => {
         },
         {
             id: 2,
-            title: "Music",
+            title: "Engagements",
             icon: "icon-02.png",
-            libraryKey: "Music",
+            libraryKey: "Engagements",
         },
         {
             id: 3,
@@ -29,9 +30,9 @@ const Categories = () => {
         },
         {
             id: 4,
-            title: "Sports",
+            title: "Families",
             icon: "icon-04.png",
-            libraryKey: "Sports",
+            libraryKey: "Family",
         },
     ];
 
@@ -41,13 +42,13 @@ const Categories = () => {
                 <div className="row">
                     <div className="col-lg-6">
                         <div className="section-heading">
-                            <h6>Our Categories</h6>
-                            <h4>Check Out <em>Popular</em> Contest <em>Categories</em></h4>
+                            <h6>Signature Sessions</h6>
+                            <h4>Explore the work clients book most <em>often</em></h4>
                         </div>
                     </div>
                     <div className="col-lg-6">
                         <div className="main-button">
-                            <a href="categories.html">Discover All Categories</a>
+                            <Link to={PORTFOLIO}>Browse The Full Portfolio</Link>
                         </div>
                     </div>
                     {featuredCategories.map(({id, title, icon, libraryKey}) => {
@@ -55,6 +56,7 @@ const Categories = () => {
                         const imageSrc = `${category.path}/${category.featuredVertical}`;
                         const sessionCount = category.sessions.length;
                         const destination = `${PORTFOLIO}/${category.category}`;
+                        const copy = getCategoryCopy(category.category);
 
                         return (
                             <div className="col-lg-3 col-sm-6" key={id}>
@@ -69,12 +71,13 @@ const Categories = () => {
                                         </div>
                                     </div>
                                     <div className="thumb">
-                                        <img src={imageSrc} alt=""/>
-                                        <span className="category">Top Contest</span>
-                                        <span className="likes"><i className="fa fa-heart"></i> 256</span>
+                                        <img src={imageSrc} alt={title}/>
+                                        <span className="category">Featured Gallery</span>
+                                        <span className="likes"><i className="fa fa-camera"></i> {sessionCount} Sessions</span>
                                     </div>
+                                    <p>{copy.description}</p>
                                     <div className="main-button border-button">
-                                        <Link to={destination}>Browse {category.name}</Link>
+                                        <Link to={destination}>See {category.name}</Link>
                                     </div>
                                 </div>
                             </div>

@@ -7,15 +7,14 @@ const Heading: React.FC = () => {
                 <div className="row">
                     <div id="heading-box" className="col-lg-8 offset-lg-2 header-text mt-5">
                         <h2>
-                            Hey, I'm <em>Nikki Dodge</em> – Your Wedding & Lifestyle <em style={{
+                            Meet <em>Nikki Dodge</em>, your Colorado wedding and portrait <em style={{
                             color: "var(--seventh-color)",
                         }}>Photographer</em>
                         </h2>
                         <p>
-                            I’m a <b>natural light photographer</b> specializing in <b>weddings, couples, and
-                            portraits</b>.
-                            My passion is capturing authentic, timeless moments that tell a beautiful love story.
-                            Based in Denver, Colorado, but always ready to travel wherever your adventure takes us.
+                            Nikki works with couples, families, graduates, and creative businesses who want images
+                            that look polished without feeling stiff. The approach is equal parts preparation and
+                            intuition: good light, steady communication, and enough direction to help people relax.
                         </p>
                     </div>
                 </div>

@@ -10,12 +10,10 @@ const Heading: React.FC = () => {
                     <div id="heading-box" className="col-lg-8 offset-lg-2 header-text mt-5">
                         <h2>Invest in <em>Timeless Memories</em></h2>
                         <p>
-                            Your wedding day is more than just a moment—it's a story waiting to be told.
-                            From the intimate details to the grand celebrations, I’m here to capture it all
-                            with artistry and heart. Choosing the right photographer isn’t just about price; it’s about
-                            finding someone
-                            who sees your love the way you do.
-                            Let’s create something unforgettable together.
+                            These collections are built to make the booking decision easier, not more confusing.
+                            Wedding coverage starts with clear essentials and scales up for clients who want more time,
+                            more portraits, or both. Families, graduates, headshots, and brand sessions can be quoted
+                            separately based on scope.
                         </p>
                         <div className="main-button mt-5">
                             <Link to={CONTACT}>Let’s Chat About Your Day</Link>

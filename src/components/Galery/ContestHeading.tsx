@@ -1,72 +1,36 @@
-import { useState, useEffect, FC } from "react";
+import {FC} from "react";
+import {Link} from "react-router-dom";
+import {CONTACT} from "../../pages/Contact";
 
 interface ContestHeadingProps {
     title: string;
-    deadline: string; // Format: "YYYY-MM-DD HH:MM:SS"
+    category: string;
+    summary: string;
+    imageCount: number;
+    relatedCount: number;
 }
 
-const WeddingTitleAndTimer: FC<ContestHeadingProps> = ({ title, deadline }) => {
-    const calculateTimeLeft = () => {
-        const now = new Date().getTime();
-        const targetTime = new Date(deadline).getTime();
-        const difference = targetTime - now;
-
-        if (difference > 0) {
-            // Counting down
-            return {
-                isPast: false, // Flag for counting down
-                days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-                hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-                minutes: Math.floor((difference / (1000 * 60)) % 60),
-                seconds: Math.floor((difference / 1000) % 60),
-            };
-        } else {
-            // Counting up (time elapsed since deadline)
-            const elapsed = Math.abs(difference);
-            return {
-                isPast: true, // Flag for counting up
-                days: Math.floor(elapsed / (1000 * 60 * 60 * 24)),
-                hours: Math.floor((elapsed / (1000 * 60 * 60)) % 24),
-                minutes: Math.floor((elapsed / (1000 * 60)) % 60),
-                seconds: Math.floor((elapsed / 1000) % 60),
-            };
-        }
-    };
-
-    const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
-
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setTimeLeft(calculateTimeLeft());
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, []);
-
+const GalleryHeading: FC<ContestHeadingProps> = ({title, category, summary, imageCount, relatedCount}) => {
     return (
         <div className="page-heading">
             <div className="container">
                 <div className="row">
                     <div id="heading-box" className="col-lg-8 offset-lg-2 header-text mt-5">
                         <h2 className="space-need"><em>{title}</em></h2>
-                        {/*<h6>Our Wedding Day</h6>*/}
+                        <h6>{category} Gallery</h6>
+                        <p>{summary}</p>
                         <div className="main-content">
-                            <div className="counter">
-                                <div className="days">
-                                    <div className="value">{timeLeft.days.toString().padStart(2, "0")}</div>
-                                    <span>Days</span>
+                            <div className="counter" style={{justifyContent: "center", gap: "20px"}}>
+                                <div>
+                                    <div className="value">{imageCount.toString().padStart(2, "0")}</div>
+                                    <span>Images</span>
                                 </div>
-                                <div className="hours">
-                                    <div className="value">{timeLeft.hours.toString().padStart(2, "0")}</div>
-                                    <span>Hours</span>
+                                <div>
+                                    <div className="value">{relatedCount.toString().padStart(2, "0")}</div>
+                                    <span>More Galleries</span>
                                 </div>
-                                <div className="minutes">
-                                    <div className="value">{timeLeft.minutes.toString().padStart(2, "0")}</div>
-                                    <span>Minutes</span>
-                                </div>
-                                <div className="seconds">
-                                    <div className="value">{timeLeft.seconds.toString().padStart(2, "0")}</div>
-                                    <span>Seconds</span>
+                                <div className="main-button" style={{marginTop: "12px"}}>
+                                    <Link to={CONTACT}>Ask About A Session Like This</Link>
                                 </div>
                             </div>
                         </div>
@@ -77,5 +41,4 @@ const WeddingTitleAndTimer: FC<ContestHeadingProps> = ({ title, deadline }) => {
     );
 };
 
-// Example Usage
-export default WeddingTitleAndTimer
+export default GalleryHeading;

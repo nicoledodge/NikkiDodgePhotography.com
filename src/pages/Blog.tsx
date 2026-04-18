@@ -14,7 +14,7 @@ export default function Blog() {
             <div className="container">
                 <div className="row justify-content-center">
                     <div className="col-lg-10">
-                        <p className="blog-section__intro">Stories from the celebrations, families, and creative brands I photograph around the Pacific Northwest and beyond. Browse for venue inspiration, timeline ideas, and practical tips to make your own session feel effortless.</p>
+                        <p className="blog-section__intro">Use these posts like planning notes. They are here to answer the questions real clients ask before they inquire, book, and show up in front of the camera around Denver, Highlands Ranch, and the rest of Colorado.</p>
                     </div>
                 </div>
 

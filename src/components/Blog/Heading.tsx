@@ -7,13 +7,11 @@ const Heading: React.FC = () => {
                 <div className="row">
                     <div id="heading-box" className="col-lg-8 offset-lg-2 header-text mt-5">
                         <h2>
-                            <em>Welcome</em> to the Nikki Dodge Photography <em>Blog</em>
+                            Planning notes, recent work, and useful answers for <em>future clients</em>
                         </h2>
                         <p>
-                            Capturing <em>timeless love stories</em>, unforgettable moments, and the beauty of human
-                            connection. Here, you'll find wedding inspiration, behind-the-scenes stories, and
-                            photography tips straight from my lens. Whether you're a bride-to-be, a photography
-                            enthusiast, or just love beautiful images, I invite you to explore and get inspired!
+                            The blog should pull its weight. Every post here is meant to help couples, families,
+                            graduates, and small businesses feel more prepared before they ever send the first email.
                         </p>
                     </div>
                 </div>

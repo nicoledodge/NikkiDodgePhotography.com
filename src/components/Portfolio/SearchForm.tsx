@@ -5,26 +5,18 @@ import {Link, useParams} from "react-router-dom";
 import {PORTFOLIO} from "../../pages/Portfolio";
 import MediaLibrary from "../MediaLibrary/MediaLibrary";
 import {normalize} from "../../functions/normalize";
+import {getCategoryCopy} from "../../data/categoryCopy";
 
 
 const SearchForm = () => {
 
-    const {categoryName, sessionName} = useParams();
-    const [sessionSearch, setSessionSearch] = useState(sessionName || '');
+    const {categoryName, search} = useParams();
+    const [sessionSearch, setSessionSearch] = useState(search || '');
     const [categorySearch, setCategorySearch] = useState(categoryName || '');
-
-    console.log(
-        'sessionSearch', sessionSearch,
-        'categorySearch', categorySearch
-    );
 
     const handleSubmit = (event: React.FormEvent) => {
         event.preventDefault();
-        console.log("Searching for:", {contest: sessionSearch, category: categorySearch});
     };
-
-    console.log('sessionSearch', sessionSearch)
-    console.log('categorySearch', categorySearch === '', categorySearch === undefined)
 
     const categories = Object.values(MediaLibrary)
         .filter((category) => categorySearch === '' || categorySearch === category.category)
@@ -32,8 +24,8 @@ const SearchForm = () => {
             category.featuredVertical
             && (
                 sessionSearch === '' ||
-                normalize(sessionSearch)
-                    .includes(normalize(category.category))
+                normalize(category.category)
+                    .includes(normalize(sessionSearch))
             ));
 
     const categoriesMarkup = <section className="photos-videos">
@@ -44,8 +36,8 @@ const SearchForm = () => {
                         <h6>Moments & Memories</h6>
                         <h4>
                             {categories.length === 1
-                                ? <>Searching Through {categorySearch}</>
-                                : <>Featured <em>Categories</em></>
+                                ? <>Browse the best of {categorySearch}</>
+                                : <>Browse by <em>session type</em></>
                             }
                         </h4>
                     </div>
@@ -66,7 +58,7 @@ const SearchForm = () => {
 
                     return <div key={key} className={`col-lg-${columnSize}`}
                                 onClick={() => setCategorySearch(category.category)}>
-                        <Link to={PORTFOLIO + '/' + category.category + '/'}>
+                        <Link to={PORTFOLIO + '/' + category.category}>
                             <div className="item">
                                 <div className="thumb">
                                     <img
@@ -91,12 +83,13 @@ const SearchForm = () => {
                                         <div className="col-7">
                                             <h2 style={{
                                                 color: "white",
-                                            }}>Description: </h2>
+                                            }}>Why Clients Book It</h2>
                                         </div>
                                         <div className="col-5">
-                                            <h6>Category: {category.category}</h6>
+                                            <h6>{category.sessions.length} Galleries</h6>
                                         </div>
                                     </div>
+                                    <p>{getCategoryCopy(category.category).description}</p>
                                 </div>
                             </div>
                         </Link>
@@ -116,16 +109,16 @@ const SearchForm = () => {
                             <div className="row">
                                 <div className="col-lg-6">
                                     <fieldset>
-                                        <label htmlFor="contest" className="form-label">
-                                            Search Any Contest
+                                        <label htmlFor="session-search" className="form-label">
+                                            Search Sessions
                                         </label>
                                         <input
                                             type="text"
-                                            name="contest"
+                                            id="session-search"
+                                            name="search"
                                             className="searchText"
-                                            placeholder="Contest Name..."
+                                            placeholder="Weddings, seniors, family, music..."
                                             autoComplete="on"
-                                            required
                                             value={sessionSearch}
                                             onChange={(e) => setSessionSearch(e.target.value)}
                                         />
@@ -134,7 +127,7 @@ const SearchForm = () => {
                                 <div className="col-lg-6">
                                     <fieldset>
                                         <label htmlFor="category" className="form-label">
-                                            Pick Category
+                                            Pick A Category
                                         </label>
                                         <select
                                             name="category"
@@ -145,7 +138,7 @@ const SearchForm = () => {
                                         >
                                             <option value="">Choose a category</option>
                                             {Object.values(MediaLibrary).map((category) =>
-                                                <option value={category.category}>
+                                                <option key={category.category} value={category.category}>
                                                     {category.category} Photography
                                                     ({category.sessions.length} Sessions)
                                                 </option>)}

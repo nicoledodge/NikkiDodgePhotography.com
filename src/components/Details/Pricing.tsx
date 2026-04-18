@@ -1,4 +1,6 @@
 import MediaLibrary from "../MediaLibrary/MediaLibrary";
+import {Link} from "react-router-dom";
+import {CONTACT} from "../../pages/Contact";
 
 interface pricingPlan {
     title: string,
@@ -8,33 +10,33 @@ interface pricingPlan {
 }
 
 const basic: pricingPlan = {
-    title: "The Basic",
+    title: "Essentials",
     image: MediaLibrary.Weddings.path + '/' + MediaLibrary.Weddings.sessions[2].name + '/' + MediaLibrary.Weddings.sessions[2].featuredHorizontal,
     price: 1500,
     features: [
-        "Access to online gallery including all your photos",
         "Up to eight hours of wedding day coverage",
-        "Professionally edited photos",
-        "Turnaround aprox 10 weeks"
+        "Professionally edited final gallery",
+        "Online delivery with high-resolution downloads",
+        "Planning support before the wedding day"
     ]
 }
 
 const deluxe: pricingPlan = {
-    title: "The Deluxe",
+    title: "Signature",
     image: MediaLibrary.Weddings.path + '/' + MediaLibrary.Weddings.sessions[0].name + '/' + MediaLibrary.Weddings.sessions[0].featuredHorizontal,
     price: 1750,
     features: [
         ...basic.features,
-        "1 Hour Bridal Session"
+        "One-hour bridal or couples portrait session"
     ]
 }
 const premium: pricingPlan = {
-    title: "The Premium",
+    title: "Full Story",
     image: MediaLibrary.Weddings.path + '/' + MediaLibrary.Weddings.sessions[5].name + '/' + MediaLibrary.Weddings.sessions[5].featuredHorizontal,
     price: 2000,
     features: [
         ...deluxe.features,
-        "2 Hour Engagement Session"
+        "Two-hour engagement session"
     ]
 }
 
@@ -52,7 +54,7 @@ const Pricing = () => {
                         <div className="section-heading text-center">
                             <h6>Our Pricing</h6>
                             <h4>
-                                <em>Wedding</em> Packages
+                                Wedding collections that keep the decision <em>simple</em>
                             </h4>
                         </div>
                     </div>
@@ -70,7 +72,7 @@ const Pricing = () => {
                                 </ul>
                                 <span className="price">${plan.price} USD</span>
                                 <div className="border-button">
-                                    <a href="#">Choose This Plan</a>
+                                    <Link to={CONTACT}>Ask About {plan.title}</Link>
                                 </div>
                             </div>
                         </div>

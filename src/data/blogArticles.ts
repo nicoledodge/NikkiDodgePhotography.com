@@ -13,68 +13,68 @@ export interface BlogArticle {
 
 export const blogArticles: BlogArticle[] = [
     {
-        slug: "winter-light-mountain-elopement",
-        title: "Sunrise Vows in the Cascades",
+        slug: "roxborough-engagement-session-guide",
+        title: "How To Plan A Golden Hour Engagement Session In Colorado",
         publishedAt: "January 12, 2025",
-        location: "Mount Rainier National Park",
+        location: "Roxborough State Park, Colorado",
         readTime: "4 min read",
         heroImage: "/assets/images/featured-image-01.jpg",
         excerpt:
-            "Brittany and Logan hiked in before dawn for a private first look in the snow. See how we kept them warm, comfortable, and absolutely glowing for every frame.",
-        tags: ["Elopement", "PNW", "Planning Tips"],
+            "The best engagement sessions feel more like a date than a production. Start with timing, terrain, outfits, and the pacing that keeps you comfortable in front of the camera.",
+        tags: ["Engagements", "Colorado", "Planning Tips"],
         highlights: [
-            "Packing list essentials for sub-freezing ceremonies",
-            "Lighting set-up for blue hour portraits without losing natural ambience",
-            "A vendor team who specializes in leave-no-trace celebrations"
+            "Where the light drops first and how that affects your start time",
+            "What to wear when the forecast shifts twenty degrees in a day",
+            "How to pick a location that matches your relationship instead of a trend"
         ],
         featured: true
     },
     {
-        slug: "urban-loft-wedding-with-film-soul",
-        title: "A Modern Loft Wedding with Film-Forward Flair",
+        slug: "fall-senior-photo-outfits-colorado",
+        title: "What To Wear For Colorado Senior Photos In The Fall",
         publishedAt: "November 8, 2024",
-        location: "Block 41, Seattle",
+        location: "Highlands Ranch and Denver South",
         readTime: "6 min read",
         heroImage: "/assets/images/featured-image-02.jpg",
         excerpt:
-            "Rachel and Dev blended South Asian tradition with a sleek downtown celebration. Here’s how we layered digital and 35mm film to tell their story.",
-        tags: ["Weddings", "Film Photography", "Seattle"],
+            "Layering, color, and movement matter more than chasing a single Pinterest outfit. Here’s how Nikki helps graduates plan a set of looks that still feel like them.",
+        tags: ["Graduations", "Style", "Colorado"],
         highlights: [
-            "Timeline tweaks that protected natural window light",
-            "Favorite film stocks for indoor ceremonies",
-            "Gallery wall inspiration for your reception lounge"
+            "How to mix textures without making the photos feel busy",
+            "Shoes that work on trails, streets, and grassy fields",
+            "The easiest way to build variety without packing your whole closet"
         ]
     },
     {
-        slug: "whidbey-island-family-session",
-        title: "Playful Tides: The Harper Family at Whidbey",
+        slug: "chatfield-family-session-prep",
+        title: "How To Prep For A Relaxed Family Session",
         publishedAt: "August 19, 2024",
-        location: "Deception Pass, Washington",
+        location: "Chatfield State Park, Colorado",
         readTime: "3 min read",
         heroImage: "/assets/images/featured-image-03.jpg",
         excerpt:
-            "Bare feet, salty hair, and one very enthusiastic golden retriever. Come behind the scenes of this connection-first family session on the shore.",
-        tags: ["Family", "Lifestyle", "Outdoors"],
+            "Family photos go better when everyone knows what to expect. This guide covers timing, snacks, pacing, and how Nikki keeps kids engaged without turning the session into a chore.",
+        tags: ["Family", "Lifestyle", "Preparation"],
         highlights: [
-            "Prompt-based posing that keeps kids engaged",
-            "How to prep pets (and sand-loving toddlers) for beach shoots",
-            "Editing approach for preserving pastel sunset tones"
+            "Why shorter prompts beat forced smiles every time",
+            "What parents can do before the session to keep energy steady",
+            "How to choose a location with enough room for kids to move"
         ]
     },
     {
-        slug: "seattle-brand-shoot-with-heart",
-        title: "Brand Storytelling for a Floral Designer",
+        slug: "brand-photos-that-still-feel-human",
+        title: "Brand Photos That Still Feel Human",
         publishedAt: "May 2, 2024",
-        location: "Pioneer Square, Seattle",
+        location: "Denver, Colorado",
         readTime: "5 min read",
         heroImage: "/assets/images/featured-image-04.jpg",
         excerpt:
-            "Ever Bloom Studio needed images that felt like open arms—warm, artful, and unmistakably welcoming. Here’s the creative brief and the final gallery.",
-        tags: ["Branding", "Small Business", "Seattle"],
+            "If you need brand photos for a small business, the goal is not to look overly polished or generic. It is to look credible, welcoming, and recognizable the first time someone lands on your site.",
+        tags: ["Branding", "Small Business", "Marketing"],
         highlights: [
-            "Pre-shoot questionnaire prompts that uncover brand tone",
-            "Studio vs. on-location setups for lifestyle brands",
-            "Deliverable checklist to support a launch-week marketing plan"
+            "Shot lists that support websites, social, and launch assets",
+            "How to choose a location that reinforces the brand without overpowering it",
+            "Why expression and body language matter more than props"
         ]
     }
 ];

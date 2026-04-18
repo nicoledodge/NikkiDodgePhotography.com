@@ -1,11 +1,25 @@
 import React from "react";
+import {Link} from "react-router-dom";
+import {GALLERY} from "../../pages/Gallery";
+
+interface RelatedSession {
+    category: string;
+    image: string;
+    lead: string;
+    name: string;
+    photoCount: number;
+}
+
+const formatSessionName = (value: string) => value
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/&/g, " & ");
 
 const OtherPhotosInCategory: React.FC<{
-    mediaFiles: string[];
-}> = ({mediaFiles}) => {
-
-    if (!mediaFiles.length) {
-        return <p>No photo session found.</p>;
+    categoryName: string;
+    sessions: RelatedSession[];
+}> = ({categoryName, sessions}) => {
+    if (!sessions.length) {
+        return null;
     }
 
     return (
@@ -13,33 +27,24 @@ const OtherPhotosInCategory: React.FC<{
             <div className="container">
                 <div className="row">
                     <div className="col-lg-12">
-                        <h5>Other Contests Waiting For You:</h5>
+                        <h5>More {categoryName} Galleries</h5>
                     </div>
 
-                    {mediaFiles.map((shoot, index) => (
-                        <div key={index} className="col-lg-3 col-sm-6">
-                            <div className="waiting-item">
-                                <img src={shoot} alt={"shoot.title"} />
-                                <div className="down-content">
-                                    <h4> shoot.title</h4>
-                                    <p> shoot.description</p>
-                                    <span className="price">Price: <em>shoot.price</em></span>
-                                    <span className="deadline">Deadline: <em>shoot.deadline</em></span>
+                    {sessions.map((session) => (
+                        <div key={session.name} className="col-lg-3 col-sm-6">
+                            <Link to={`${GALLERY}/${session.category}/${session.name}`}>
+                                <div className="waiting-item">
+                                    <img src={session.image} alt={formatSessionName(session.name)}/>
+                                    <div className="down-content">
+                                        <h4>{formatSessionName(session.name)}</h4>
+                                        <p>{session.lead}</p>
+                                        <span className="price">Category: <em>{session.category}</em></span>
+                                        <span className="deadline">Images: <em>{session.photoCount}</em></span>
+                                    </div>
                                 </div>
-                            </div>
+                            </Link>
                         </div>
                     ))}
-
-                    {/* Pagination */}
-                    <div className="col-lg-12">
-                        <ul className="pagination">
-                            <li><a href="#"><i className="fa fa-arrow-left"></i></a></li>
-                            <li><a href="#">1</a></li>
-                            <li className="active"><a href="#">2</a></li>
-                            <li><a href="#">3</a></li>
-                            <li><a href="#"><i className="fa fa-arrow-right"></i></a></li>
-                        </ul>
-                    </div>
                 </div>
             </div>
         </section>

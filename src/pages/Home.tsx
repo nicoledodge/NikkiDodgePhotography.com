@@ -4,6 +4,7 @@ import Categories from "../components/Homes/Categories";
 import Contests from "../components/Homes/Contests";
 import About from "../components/Homes/About";
 import Masonry from "../components/Galery/Masonry";
+import Testimonials from "../components/Howdy/Testimonials";
 
 
 function Home() {
@@ -13,6 +14,7 @@ function Home() {
         <About />
         <Categories  />
         <Contests />
+        <Testimonials />
         <Masonry />
     </>
 }

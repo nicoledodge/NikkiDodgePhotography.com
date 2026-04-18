@@ -1,9 +1,5 @@
 /*
-
-TemplateMo 576 SnapX Photography
-
-https://templatemo.com/tm-576-snapx-photography
-
+Site styles for Nikki Dodge Photography.
 */
 
 /* ---------------------------------------------
@@ -3043,3 +3039,42 @@ body {
     }
 }
 
+@media (max-width: 767px) {
+    .main-banner {
+        min-height: auto;
+        align-items: flex-start;
+        padding: 180px 0 96px;
+    }
+
+    .main-banner h2 {
+        font-size: 42px;
+        line-height: 1.1;
+    }
+
+    .main-banner p {
+        margin: 24px 0 0;
+        padding: 24px 0;
+    }
+
+    .main-banner .buttons {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .main-banner .big-border-button a,
+    .main-banner .icon-button a {
+        margin: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-banner h2 {
+        font-size: 32px;
+        line-height: 1.1;
+    }
+
+    .page-heading h2 {
+        font-size: 34px;
+        line-height: 1.15;
+    }
+}

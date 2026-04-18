@@ -6,12 +6,12 @@ const Info: React.FC = () => {
             <div className="container">
                 <div className="row">
                     {[
-                        { title: <>Client<br/>Ratings</>, value: "4.9", subtitle: "of 5.00 Stars" },
-                        { title: <>Portfolio<br/>Views</>, value: "12,500", subtitle: "Monthly" },
-                        { title: <>Weddings<br/>Captured</>, value: "250+", subtitle: "Since 2015" },
-                        { title: <>Graduation<br/>Sessions</>, value: "85", subtitle: "Booked Last Year" },
-                        { title: <>Professional<br/>Headshots</>, value: "120", subtitle: "Clients Served" },
-                        { title: <>Family<br/>Photoshoots</>, value: "150", subtitle: "Memories Captured" },
+                        { title: <>Planning<br/>Support</>, value: "01", subtitle: "Location ideas, timelines, and prep guidance" },
+                        { title: <>Natural<br/>Direction</>, value: "02", subtitle: "Prompts that keep portraits from feeling forced" },
+                        { title: <>Fast<br/>Communication</>, value: "03", subtitle: "Clear answers before and after the session" },
+                        { title: <>True-To-Life<br/>Editing</>, value: "04", subtitle: "Warm skin tones and clean, timeless color" },
+                        { title: <>Online<br/>Delivery</>, value: "05", subtitle: "Simple galleries built for sharing and printing" },
+                        { title: <>Colorado<br/>Coverage</>, value: "06", subtitle: "Local sessions and destination travel across the state" },
                     ].map((item, index) => (
                         <div className="col-lg-2 col-sm-6" key={index}>
                             <div className="info" style={{

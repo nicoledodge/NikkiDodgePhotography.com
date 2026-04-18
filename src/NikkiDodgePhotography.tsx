@@ -11,7 +11,6 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
-import Users from "./pages/Users";
 import Pricing, {PRICING} from "./pages/Pricing";
 import Portfolio, {PORTFOLIO} from "./pages/Portfolio";
 import Contact, {CONTACT} from "./pages/Contact";
@@ -29,7 +28,6 @@ const NikkiDodgePhotography = () => {
                 <Route path={PORTFOLIO} element={<Portfolio />} />
                 <Route path={PORTFOLIO + "/:categoryName"} element={<Portfolio />} />
                 <Route path={PORTFOLIO + "/:categoryName/:search"} element={<Portfolio />} />
-                <Route path="/Users" element={<Users />} />
                 <Route path={CONTACT} element={<Contact />} />
                 <Route path={HOWDY} element={<Howdy />} />
                 <Route path={BLOG} element={<Blog />} />

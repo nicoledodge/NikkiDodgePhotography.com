@@ -7,14 +7,12 @@ const Heading: React.FC = () => {
                 <div className="row">
                     <div id="heading-box" className="col-lg-8 offset-lg-2 header-text mt-5">
                         <h2>
-                            Timeless <em>Love Stories</em>, <em>Captured Beautifully</em>
+                            Browse real <em>galleries</em>, not filler content
                         </h2>
                         <p className="seventh-color">
-                            Every love story is unique, and every moment deserves to be remembered.
-                            Through my lens, I capture the raw emotion, intimate details, and joyful
-                            celebrations that make your day unforgettable. Whether it's a dreamy mountaintop elopement,
-                            a lively wedding celebration, or a heartfelt portrait session, my goal is to create images
-                            that transport you back to the moment every time you see them.
+                            This portfolio should help a potential client answer two questions fast: does Nikki's work
+                            feel like the way I want my story photographed, and can I picture myself in these images?
+                            Search by session type, open a gallery, and move straight from inspiration to inquiry.
                         </p>
                     </div>
                 </div>

@@ -20,10 +20,8 @@ const Contact: React.FC = () => {
     // Generate mailto link dynamically
     const generateMailtoLink = () => {
         const { name, telephone, email, subject, message } = formData;
-        return `mailto:nicole@nikkidodgephotography.com
-            ?subject=${encodeURIComponent(subject || "Photography Inquiry")}
-            &body=${encodeURIComponent(
-            `Hi, my name is ${name}.\n\n${message}\n\nYou can contact me at:\nPhone: ${telephone}\nEmail: ${email}`
+        return `mailto:nicole@nikkidodgephotography.com?subject=${encodeURIComponent(subject || "Photography Inquiry")}&body=${encodeURIComponent(
+            `Hi Nikki,\n\nMy name is ${name}. ${message}\n\nBest contact details:\nPhone: ${telephone}\nEmail: ${email}`
         )}`;
     };
 
@@ -33,9 +31,9 @@ const Contact: React.FC = () => {
                 <div className="row">
                     <div className="col-lg-12">
                         <div className="section-heading text-center">
-                            <h6>Contact This User</h6>
+                            <h6>Start Your Inquiry</h6>
                             <h4>
-                                Don't Be Shy to Contact the <em>Photographer Now</em>
+                                Tell Nikki what you are planning and get the conversation moving
                             </h4>
                         </div>
                     </div>
@@ -65,9 +63,9 @@ const Contact: React.FC = () => {
                     <div className="col-lg-4">
                         <div className="info-item">
                             <i className="fa fa-map-marked"></i>
-                            <h4>Home Office</h4>
+                            <h4>Service Area</h4>
                             <span>
-                                <a href="#">9609 Moss Rose Cir, Highlands Ranch, CO 80129, United States</a>
+                                Highlands Ranch, Denver, and destinations across Colorado
                             </span>
                         </div>
                     </div>
@@ -81,7 +79,7 @@ const Contact: React.FC = () => {
                                         <input
                                             type="text"
                                             name="name"
-                                            placeholder="Your Name..."
+                                            placeholder="Your name"
                                             value={formData.name}
                                             onChange={handleChange}
                                             required
@@ -93,7 +91,7 @@ const Contact: React.FC = () => {
                                         <input
                                             type="text"
                                             name="telephone"
-                                            placeholder="Your Telephone..."
+                                            placeholder="Phone number"
                                             value={formData.telephone}
                                             onChange={handleChange}
                                             required
@@ -105,7 +103,7 @@ const Contact: React.FC = () => {
                                         <input
                                             type="email"
                                             name="email"
-                                            placeholder="Your E-mail..."
+                                            placeholder="Email address"
                                             value={formData.email}
                                             onChange={handleChange}
                                             required
@@ -117,7 +115,7 @@ const Contact: React.FC = () => {
                                         <input
                                             type="text"
                                             name="subject"
-                                            placeholder="Subject..."
+                                            placeholder="Wedding, senior session, family photos..."
                                             value={formData.subject}
                                             onChange={handleChange}
                                         />
@@ -127,7 +125,7 @@ const Contact: React.FC = () => {
                                     <fieldset>
                                         <textarea
                                             name="message"
-                                            placeholder="Your Message"
+                                            placeholder="Share your date, location, session type, and what you want the photos to feel like."
                                             value={formData.message}
                                             onChange={handleChange}
                                         ></textarea>
@@ -136,7 +134,7 @@ const Contact: React.FC = () => {
 
                                 <div className="main-button col-lg-12 text-center mt-4">
                                     <a href={generateMailtoLink()} className="orange-button">
-                                        Send Email Now
+                                        Open Your Email Draft
                                     </a>
                                 </div>
                             </div>

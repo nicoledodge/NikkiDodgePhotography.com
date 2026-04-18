@@ -5,6 +5,7 @@ import React from "react";
 import mediaLibrary from "../components/MediaLibrary/MediaLibrary";
 import {useParams} from "react-router-dom";
 import {Categories} from "../components/MediaLibrary/MediaTypes";
+import {getCategoryCopy} from "../data/categoryCopy";
 
 
 export const GALLERY = '/gallery'
@@ -29,16 +30,37 @@ const Gallery: React.FC = () => {
     }
 
     const session = category.sessions.find(s => s.name === sessionName);
+    if (!session) {
+        return <p>No photo session found.</p>;
+    }
+    const formattedSessionName = sessionName.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/&/g, " & ");
 
     const mediaFiles = getSession({
         categoryName: categoryName as Categories,
         sessionName: sessionName
-    })
+    });
+
+    const relatedSessions = category.sessions
+        .filter((item) => item.name !== sessionName && item.featuredHorizontal && item.featuredVertical)
+        .slice(0, 4)
+        .map((item) => ({
+            category: category.category,
+            image: `${category.path}/${item.name}/${item.featuredHorizontal}`,
+            lead: getCategoryCopy(category.category).lead,
+            name: item.name,
+            photoCount: item.mediaFiles.length
+        }));
 
     return <>
-        <WeddingTitleAndTimer title={session?.name!} deadline={"2025-03-20 23:59:59"} />
-        <Masonry sessions={[mediaFiles]}/>
-        <OtherPhotosInCategory mediaFiles={category.sessions.flatMap(s => s.mediaFiles)}/>
+        <WeddingTitleAndTimer
+            title={formattedSessionName}
+            category={category.category}
+            summary={getCategoryCopy(category.category).lead}
+            imageCount={session.mediaFiles.length}
+            relatedCount={relatedSessions.length}
+        />
+        <Masonry sessions={[mediaFiles]} title={formattedSessionName}/>
+        <OtherPhotosInCategory categoryName={category.category} sessions={relatedSessions}/>
     </>
 };
 

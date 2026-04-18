@@ -40,7 +40,7 @@ const defaultMedia: SpecificSession[] = mediaLibrary.Weddings.sessions.flatMap(s
 const Masonry: React.FC<{
     sessions?: SpecificSession[];
     title?: string;
-}> = ({sessions = defaultMedia, title = "Featured"}) => {
+}> = ({sessions = defaultMedia, title = "Featured Galleries"}) => {
 
     const imagesRef = useRef<NodeListOf<HTMLImageElement> | null>(null);
 
@@ -96,9 +96,9 @@ const Masonry: React.FC<{
             </style>
             <div className="container">
                 <div className="section-heading text-center">
-                    <h6>{title} Photos</h6>
+                    <h6>{title}</h6>
                     <h4>
-                        Quick look at some of my <em>Wedding Shoots</em>
+                        Images that show the pace, people, and in-between moments that make a gallery feel <em>alive</em>
                     </h4>
                 </div>
                 {/* Masonry Grid Container */}
@@ -110,7 +110,7 @@ const Masonry: React.FC<{
                                     <img
                                         data-src={image}
                                         src={image}
-                                        alt="Gallery Image"
+                                        alt={`${session.name} gallery image`}
                                         className="img-fluid lazyload"
                                         onLoad={(e) => e.currentTarget.classList.add("loaded")} // Add fade-in effect
                                     />

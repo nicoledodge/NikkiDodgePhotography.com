@@ -1,39 +1,63 @@
 import {Swiper, SwiperSlide} from "swiper/react";
 import {Autoplay, Navigation, Pagination} from "swiper/modules";
 import MediaLibrary from "../MediaLibrary/MediaLibrary";
-import {shuffleArray} from "../../functions/shuffleArray";
 
-const featuredItems = shuffleArray(MediaLibrary.Featured.sessions
-    .filter(s => s.name === "Horizontal")
-    .flatMap((session) =>
-        session.mediaFiles.map((image) => ({
-            category: MediaLibrary.Featured.category,
-            path: MediaLibrary.Featured.path,
-            name: session.name,
-            mediaFiles: session.mediaFiles,
-            image: image
-        }))))
-    .map((imageObject, index) => (
-        <SwiperSlide key={index}>
-            <div className="item">
-                <div className="thumb">
-                    <img src={MediaLibrary.Featured.path + '/' + imageObject.name + '/' + imageObject.image} alt=""/>
-                    <div className="hover-effect">
-                        <div className="content">
-                            <h4>
-                                {imageObject.name} <i className="fa fa-star"></i><i className="fa fa-star"></i><i
-                                className="fa fa-star"></i><i className="fa fa-star"></i> <span>(4.5)</span>
-                            </h4>
-                            <ul>
-                                <li><span>Contest Winner:</span> {imageObject.image}</li>
-                                <li><span>Contest Author:</span> Vincent Adam</li>
-                                <li><span>Awards:</span> $1,200 + Canon EOS R10</li>
-                            </ul>
-                        </div>
+const featuredStories = [
+    {
+        title: "Wedding coverage with room to breathe",
+        image: `${MediaLibrary.Weddings.path}/${MediaLibrary.Weddings.sessions[0].name}/${MediaLibrary.Weddings.sessions[0].featuredHorizontal}`,
+        details: [
+            "Timeline guidance that protects the best light",
+            "Prompting that keeps portraits natural",
+            "Candid coverage that still catches the details"
+        ]
+    },
+    {
+        title: "Engagement sessions that feel like a date",
+        image: `${MediaLibrary.Engagements.path}/${MediaLibrary.Engagements.sessions[0].name}/${MediaLibrary.Engagements.sessions[0].featuredHorizontal}`,
+        details: [
+            "Location ideas around Denver and the Front Range",
+            "Movement-first posing so you never wonder what to do",
+            "Images made for save-the-dates and guest books"
+        ]
+    },
+    {
+        title: "Senior portraits with actual personality",
+        image: `${MediaLibrary.Graduations.path}/${MediaLibrary.Graduations.sessions[0].name}/${MediaLibrary.Graduations.sessions[0].featuredHorizontal}`,
+        details: [
+            "Outfit changes without rushing the session",
+            "A mix of editorial and approachable frames",
+            "Portraits parents love and graduates still feel like themselves in"
+        ]
+    },
+    {
+        title: "Family galleries that do not feel stiff",
+        image: `${MediaLibrary.Family.path}/${MediaLibrary.Family.sessions[0].name}/${MediaLibrary.Family.sessions[0].featuredHorizontal}`,
+        details: [
+            "Gentle direction for kids and adults",
+            "Natural interaction over forced smiles",
+            "Wall-worthy images and the small in-between moments"
+        ]
+    }
+].map((story) => (
+    <SwiperSlide key={story.title}>
+        <div className="item">
+            <div className="thumb">
+                <img src={story.image} alt={story.title}/>
+                <div className="hover-effect">
+                    <div className="content">
+                        <h4>{story.title}</h4>
+                        <ul>
+                            {story.details.map((detail) => (
+                                <li key={detail}>{detail}</li>
+                            ))}
+                        </ul>
                     </div>
                 </div>
             </div>
-        </SwiperSlide>));
+        </div>
+    </SwiperSlide>
+));
 
 const Features = () => {
     return (
@@ -52,14 +76,14 @@ const Features = () => {
                                 disableOnInteraction: false, // ✅ Keeps autoplay even after user interaction
                                 pauseOnMouseEnter: true, // ✅ Keeps autoplay even after user interaction
                             }}
-                            loop
+                            loop={featuredStories.length > 4}
                             breakpoints={{
                                 320: {slidesPerView: 1},
                                 768: {slidesPerView: 2},
                                 1024: {slidesPerView: 3},
                             }}
                         >
-                            {featuredItems}
+                            {featuredStories}
                         </Swiper>
                     </div>
                 </div>

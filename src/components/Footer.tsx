@@ -6,10 +6,12 @@ const Footer = () => {
                 <div className="row">
                     <div className="col-lg-12">
                         <p>
-                            Copyright © {currentYear} <a href="#">Nicole Dodge</a>, DBA. All rights reserved.
+                            Copyright © {currentYear} Nikki Dodge Photography. Serving Highlands Ranch, Denver, and
+                            Colorado destination clients.
                             <br />
-                            Design: <a title="CSS Templates" rel="sponsored" href="https://templatemo.com/page/1" target="_blank">TemplateMo</a>
-                            Distribution: <a title="CSS Templates" rel="sponsored" href="https://themewagon.com" target="_blank">ThemeWagon</a>
+                            <a href="mailto:nicole@nikkidodgephotography.com">nicole@nikkidodgephotography.com</a>
+                            {" · "}
+                            <a href="tel:972-523-3420">972-523-3420</a>
                         </p>
                     </div>
                 </div>

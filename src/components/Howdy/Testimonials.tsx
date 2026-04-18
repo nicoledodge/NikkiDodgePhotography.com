@@ -10,13 +10,13 @@ const testimonialsData = [
     {
         text: "I had always adored Nikki’s beautiful style of photographing weddings, so when we got engaged we basically picked our wedding date around Nikki’s availability! She perfectly captured our day and our loved ones, and her photos serve as constant reminders of our happy day. We especially loved how she captured the simple, subtle moments and details like flowers and fabrics to create a story of the day. Nikki is fantastic, warm, and highly professional!",
         name: "Sally & Dan",
-        userId: "User #007704",
+        context: "Wedding clients",
         image: "assets/images/author.jpg",
     },
     {
         text: "Nikki is a gifted photographer, artist, and human being. Her depth of experience, creative vision, artistic insight, and eye for compositions are unrivaled. Nikki has a wonderful love affair with light and nature. It is the way she sees the world and how she captures photographs that sets her apart. She doesn’t just capture a shot, she captures an experience. We entrusted Nikki with our special day, and we are so thankful to her for beautifully capturing the heart and soul of our wedding.",
         name: "Ria & Andrew",
-        userId: "User #007772",
+        context: "Wedding clients",
         image: "assets/images/author.jpg",
     }
 ];
@@ -49,8 +49,8 @@ const Testimonials: React.FC = () => {
                 <div className="row">
                     <div className="col-lg-12">
                         <div className="section-heading text-center">
-                            <h6>Testimonials</h6>
-                            <h4>What <em>My Clients</em> Are <em>Saying</em></h4>
+                            <h6>Kind Words</h6>
+                            <h4>What clients remember after the gallery is delivered</h4>
                         </div>
                     </div>
 
@@ -63,7 +63,7 @@ const Testimonials: React.FC = () => {
                             navigation
                             pagination={{ clickable: true }}
                             autoplay={{ delay: 5000, disableOnInteraction: false }}
-                            loop
+                            loop={testimonialsData.length > 2}
                         >
                             {testimonialsData.map((testimonial, index) => (
                                 <SwiperSlide key={index}>
@@ -72,7 +72,7 @@ const Testimonials: React.FC = () => {
                                             <div className="left-content">
                                                 <p>{testimonial.text}</p>
                                                 <h4>{testimonial.name}</h4>
-                                                <span>{testimonial.userId}</span>
+                                                <span>{testimonial.context}</span>
                                             </div>
                                             <div className="image">
                                                 <img src={testimonial.image} alt={testimonial.name} />

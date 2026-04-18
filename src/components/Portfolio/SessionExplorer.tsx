@@ -1,9 +1,10 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import mediaLibrary from "../MediaLibrary/MediaLibrary";
 import {Link} from "react-router-dom";
 import {GALLERY} from "../../pages/Gallery";
 import type {Search} from "./SearchForm.types";
 import {normalize} from "../../functions/normalize";
+import {getCategoryCopy} from "../../data/categoryCopy";
 
 const itemsPerPage = 4; // Change this to control sessions per page
 
@@ -23,8 +24,7 @@ export const Sessions = Object.values(mediaLibrary)
                     (mediaFile) => category.path + "/" + session.name + "/" + mediaFile
                 ),
             }));
-    })
-    .sort(() => Math.random() - 0.5);
+    });
 
 const SessionExplorer = (
     {
@@ -35,16 +35,18 @@ const SessionExplorer = (
 
     const [currentPage, setCurrentPage] = useState(1);
 
-    const filteredSessions = Sessions.filter(
-        (session) => (categorySearch === ''
-            && sessionSearch === '')
-            || normalize(sessionSearch)
-                .includes(normalize(session.name))
-            || categorySearch === session.category
-    );
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [categorySearch, sessionSearch]);
 
+    const filteredSessions = Sessions.filter((session) => {
+        const matchesCategory = categorySearch === '' || categorySearch === session.category;
+        const matchesSearch = sessionSearch === ''
+            || normalize(session.name).includes(normalize(sessionSearch))
+            || normalize(session.category).includes(normalize(sessionSearch));
 
-
+        return matchesCategory && matchesSearch;
+    });
 
     const totalPages = Math.ceil(filteredSessions.length / itemsPerPage);
 
@@ -57,8 +59,14 @@ const SessionExplorer = (
             <div className="container">
                 <div className="row">
                     <div className="col-lg-12">
-                        <h5>My Sessions:</h5>
+                        <h5>Recent Sessions</h5>
                     </div>
+
+                    {currentSessions.length === 0 && (
+                        <div className="col-lg-12">
+                            <p>No matching galleries yet. Try a broader category or search term.</p>
+                        </div>
+                    )}
 
                     {currentSessions
                         .map((session, key) => {
@@ -90,9 +98,9 @@ const SessionExplorer = (
                                             }}/>
                                             <div className="down-content">
                                                 <h4>{sessionNameFormatted}</h4>
-                                                <p>contest.description</p>
-                                                <span className="price">Price: <em>contest.price</em></span>
-                                                <span className="deadline">Deadline: <em>contest.deadline</em></span>
+                                                <p>{getCategoryCopy(session.category).description}</p>
+                                                <span className="price">Category: <em>{session.category}</em></span>
+                                                <span className="deadline">Images: <em>{session.mediaFiles.length}</em></span>
                                             </div>
                                         </div>
                                     </Link>
@@ -101,34 +109,36 @@ const SessionExplorer = (
                         )}
 
                     {/* Pagination */}
-                    <div className="col-lg-12">
-                        <ul className="pagination">
-                            <li className={currentPage === 1 ? "disabled" : ""}>
-                                <a href="#" onClick={(e) => {
-                                    e.preventDefault();
-                                    setCurrentPage(prev => Math.max(prev - 1, 1));
-                                }}>
-                                    <i className="fa fa-arrow-left"></i>
-                                </a>
-                            </li>
-                            {Array.from({length: totalPages}, (_, i) => (
-                                <li key={i} className={currentPage === i + 1 ? "active" : ""}>
+                    {totalPages > 1 && (
+                        <div className="col-lg-12">
+                            <ul className="pagination">
+                                <li className={currentPage === 1 ? "disabled" : ""}>
                                     <a href="#" onClick={(e) => {
                                         e.preventDefault();
-                                        setCurrentPage(i + 1);
-                                    }}>{i + 1}</a>
+                                        setCurrentPage(prev => Math.max(prev - 1, 1));
+                                    }}>
+                                        <i className="fa fa-arrow-left"></i>
+                                    </a>
                                 </li>
-                            ))}
-                            <li className={currentPage === totalPages ? "disabled" : ""}>
-                                <a href="#" onClick={(e) => {
-                                    e.preventDefault();
-                                    setCurrentPage(prev => Math.min(prev + 1, totalPages));
-                                }}>
-                                    <i className="fa fa-arrow-right"></i>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+                                {Array.from({length: totalPages}, (_, i) => (
+                                    <li key={i} className={currentPage === i + 1 ? "active" : ""}>
+                                        <a href="#" onClick={(e) => {
+                                            e.preventDefault();
+                                            setCurrentPage(i + 1);
+                                        }}>{i + 1}</a>
+                                    </li>
+                                ))}
+                                <li className={currentPage === totalPages ? "disabled" : ""}>
+                                    <a href="#" onClick={(e) => {
+                                        e.preventDefault();
+                                        setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                                    }}>
+                                        <i className="fa fa-arrow-right"></i>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    )}
                 </div>
             </div>
         </section>
