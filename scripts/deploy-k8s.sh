@@ -99,19 +99,24 @@ cat <<EOF >> "$deployment_file"
             periodSeconds: 20
 EOF
 
-env_from_block=""
-if [[ -n "$SECRET_NAME" ]]; then
-  env_from_block+="            - secretRef:\n                name: ${SECRET_NAME}\n"
-fi
-if [[ -n "$CONFIGMAP_NAME" ]]; then
-  env_from_block+="            - configMapRef:\n                name: ${CONFIGMAP_NAME}\n"
-fi
-
-if [[ -n "$env_from_block" ]]; then
+if [[ -n "$SECRET_NAME" || -n "$CONFIGMAP_NAME" ]]; then
   cat <<EOF >> "$deployment_file"
           envFrom:
-${env_from_block}
 EOF
+
+  if [[ -n "$SECRET_NAME" ]]; then
+    cat <<EOF >> "$deployment_file"
+            - secretRef:
+                name: ${SECRET_NAME}
+EOF
+  fi
+
+  if [[ -n "$CONFIGMAP_NAME" ]]; then
+    cat <<EOF >> "$deployment_file"
+            - configMapRef:
+                name: ${CONFIGMAP_NAME}
+EOF
+  fi
 fi
 
 cat <<EOF >> "$deployment_file"
