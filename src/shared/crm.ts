@@ -39,6 +39,17 @@ export interface MediaItem {
     publicUrl: string;
 }
 
+export interface MediaUploadTarget {
+    method: "s3" | "server";
+    uploadUrl: string;
+    key: string;
+    relativeKey: string;
+    publicUrl: string;
+    headers: Record<string, string>;
+    maxBytes: number;
+    expiresAt: string | null;
+}
+
 export interface CrmSnapshot {
     leads: Lead[];
     calendar: CalendarEvent[];

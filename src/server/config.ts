@@ -10,6 +10,11 @@ function normalizePrefix(input: string | undefined, fallback: string): string {
     return normalized.length > 0 ? normalized : fallback;
 }
 
+function readPositiveInteger(input: string | undefined, fallback: number): number {
+    const parsedValue = Number(input);
+    return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : fallback;
+}
+
 const rootDir = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -18,6 +23,8 @@ const adminPassword = process.env.ADMIN_PASSWORD?.trim() || (!isProduction ? "lo
 const adminSessionSecret = process.env.ADMIN_SESSION_SECRET?.trim() || (!isProduction ? "local-dev-session-secret" : "");
 const port = Number(process.env.PORT || "5000");
 const configuredPublicAppUrl = process.env.PUBLIC_APP_URL?.trim().replace(/\/+$/, "");
+const maxServerUploadBytes = readPositiveInteger(process.env.CRM_MAX_SERVER_UPLOAD_BYTES, 25 * 1024 * 1024);
+const maxDirectUploadBytes = readPositiveInteger(process.env.CRM_MAX_DIRECT_UPLOAD_BYTES, 200 * 1024 * 1024);
 
 if (isProduction && adminPassword.length === 0) {
     throw new Error("ADMIN_PASSWORD must be set in production.");
@@ -40,7 +47,9 @@ export const config = {
     adminPassword,
     adminSessionSecret,
     sessionDurationMs: 1000 * 60 * 60 * 24 * 14,
-    maxUploadBytes: 25 * 1024 * 1024,
+    maxUploadBytes: maxServerUploadBytes,
+    maxServerUploadBytes,
+    maxDirectUploadBytes,
     s3Bucket: process.env.CRM_S3_BUCKET?.trim() || process.env.APP_S3_BUCKET?.trim() || "",
     s3Region: process.env.CRM_S3_REGION?.trim() || process.env.AWS_REGION?.trim() || "us-east-1",
     s3DataPrefix: normalizePrefix(process.env.CRM_S3_DATA_PREFIX, "app-data"),

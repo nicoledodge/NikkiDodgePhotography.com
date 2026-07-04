@@ -1,8 +1,9 @@
 import type { S3Client } from "@aws-sdk/client-s3";
+import { randomUUID } from "node:crypto";
 import { dirname, join, relative, resolve } from "node:path";
 import { promises as fs } from "node:fs";
 import { Readable } from "node:stream";
-import type { CalendarEvent, Lead, MediaItem } from "../shared/crm.js";
+import type { CalendarEvent, Lead, MediaItem, MediaUploadTarget } from "../shared/crm.js";
 import { defaultSiteSettings, mergeSiteSettings, type SiteSettings } from "../shared/siteSettings.js";
 import { config, isS3Enabled } from "./config.js";
 
@@ -16,6 +17,9 @@ const dataFileNames: Record<DataDocumentName, string> = {
 
 let s3SdkPromise: Promise<typeof import("@aws-sdk/client-s3")> | null = null;
 let s3ClientPromise: Promise<S3Client> | null = null;
+let s3PresignerPromise: Promise<typeof import("@aws-sdk/s3-request-presigner")> | null = null;
+
+const presignedUploadExpiresSeconds = 15 * 60;
 
 async function getS3Sdk(): Promise<typeof import("@aws-sdk/client-s3")> {
     if (!s3SdkPromise) {
@@ -42,6 +46,14 @@ async function getS3Client(): Promise<S3Client> {
     return s3ClientPromise;
 }
 
+async function getS3Presigner(): Promise<typeof import("@aws-sdk/s3-request-presigner")> {
+    if (!s3PresignerPromise) {
+        s3PresignerPromise = import("@aws-sdk/s3-request-presigner");
+    }
+
+    return s3PresignerPromise;
+}
+
 function joinKey(...segments: string[]): string {
     return segments
         .map((segment) => segment.trim().replace(/^\/+/, "").replace(/\/+$/, ""))
@@ -60,6 +72,29 @@ function sanitizePathFragment(input: string): string {
 function sanitizeFileName(fileName: string): string {
     const strippedName = fileName.trim().replace(/\s+/g, "-").replace(/[^a-zA-Z0-9._-]/g, "");
     return strippedName.length > 0 ? strippedName.toLowerCase() : "upload.bin";
+}
+
+function buildMediaKey(fileName: string, prefix = ""): string {
+    const safePrefix = sanitizePathFragment(prefix);
+    const safeName = sanitizeFileName(fileName);
+    const stampedName = `${Date.now()}-${randomUUID().slice(0, 8)}-${safeName}`;
+    return joinKey(config.s3MediaPrefix, safePrefix, stampedName);
+}
+
+function assertMediaKey(rawKey: string): string {
+    const sanitizedKey = sanitizePathFragment(rawKey);
+    const mediaPrefix = config.s3MediaPrefix;
+    const mediaPrefixWithSlash = `${mediaPrefix}/`;
+
+    if (sanitizedKey !== mediaPrefix && !sanitizedKey.startsWith(mediaPrefixWithSlash)) {
+        throw new Error("Media key must live under the configured media prefix.");
+    }
+
+    if (sanitizedKey === config.s3DataPrefix || sanitizedKey.startsWith(`${config.s3DataPrefix}/`)) {
+        throw new Error("Refusing to modify data storage objects.");
+    }
+
+    return sanitizedKey;
 }
 
 function encodePathSegments(input: string): string {
@@ -126,6 +161,37 @@ function getPublicUrlForMediaKey(key: string): string {
     }
 
     return `${config.localUploadPath}/${encodePathSegments(key)}`;
+}
+
+async function getMediaItemForKey(key: string, fallbackSize = 0): Promise<MediaItem> {
+    const sanitizedKey = assertMediaKey(key);
+
+    if (isS3Enabled) {
+        const [{ HeadObjectCommand }, s3Client] = await Promise.all([getS3Sdk(), getS3Client()]);
+        const response = await s3Client.send(new HeadObjectCommand({
+            Bucket: config.s3Bucket,
+            Key: sanitizedKey,
+        }));
+
+        return {
+            key: sanitizedKey,
+            relativeKey: sanitizedKey.replace(new RegExp(`^${config.s3MediaPrefix}/?`), ""),
+            size: response.ContentLength ?? fallbackSize,
+            lastModified: response.LastModified?.toISOString() ?? null,
+            publicUrl: getPublicUrlForMediaKey(sanitizedKey),
+        };
+    }
+
+    const absolutePath = resolve(config.localMediaDir, sanitizedKey);
+    const stats = await fs.stat(absolutePath);
+
+    return {
+        key: sanitizedKey,
+        relativeKey: sanitizedKey.replace(new RegExp(`^${config.s3MediaPrefix}/?`), ""),
+        size: stats.size,
+        lastModified: stats.mtime.toISOString(),
+        publicUrl: getPublicUrlForMediaKey(sanitizedKey),
+    };
 }
 
 async function ensureLocalStorage(): Promise<void> {
@@ -323,6 +389,57 @@ export const storage = {
         return walkLocalMedia(sanitizedPrefix);
     },
 
+    async createMediaUploadTarget(params: {
+        fileName: string;
+        contentType: string;
+        size: number;
+        prefix?: string;
+    }): Promise<MediaUploadTarget> {
+        const contentType = params.contentType.trim() || "application/octet-stream";
+        const key = buildMediaKey(params.fileName, params.prefix);
+        const expiresAt = new Date(Date.now() + presignedUploadExpiresSeconds * 1000).toISOString();
+
+        if (!isS3Enabled) {
+            return {
+                method: "server",
+                uploadUrl: "/api/admin/media/upload",
+                key,
+                relativeKey: key.replace(new RegExp(`^${config.s3MediaPrefix}/?`), ""),
+                publicUrl: getPublicUrlForMediaKey(key),
+                headers: {},
+                maxBytes: config.maxServerUploadBytes,
+                expiresAt: null,
+            };
+        }
+
+        const [{ PutObjectCommand }, { getSignedUrl }, s3Client] = await Promise.all([
+            getS3Sdk(),
+            getS3Presigner(),
+            getS3Client(),
+        ]);
+        const command = new PutObjectCommand({
+            Bucket: config.s3Bucket,
+            Key: key,
+            ContentType: contentType,
+        });
+        const uploadUrl = await getSignedUrl(s3Client, command, {
+            expiresIn: presignedUploadExpiresSeconds,
+        });
+
+        return {
+            method: "s3",
+            uploadUrl,
+            key,
+            relativeKey: key.replace(new RegExp(`^${config.s3MediaPrefix}/?`), ""),
+            publicUrl: getPublicUrlForMediaKey(key),
+            headers: {
+                "Content-Type": contentType,
+            },
+            maxBytes: config.maxDirectUploadBytes,
+            expiresAt,
+        };
+    },
+
     async uploadMedia(params: {
         fileName: string;
         contentType: string;
@@ -330,9 +447,7 @@ export const storage = {
         prefix?: string;
     }): Promise<MediaItem> {
         const safePrefix = sanitizePathFragment(params.prefix ?? "");
-        const safeName = sanitizeFileName(params.fileName);
-        const stampedName = `${Date.now()}-${safeName}`;
-        const key = joinKey(config.s3MediaPrefix, safePrefix, stampedName);
+        const key = buildMediaKey(params.fileName, safePrefix);
 
         if (isS3Enabled) {
             const [{ PutObjectCommand }, s3Client] = await Promise.all([getS3Sdk(), getS3Client()]);
@@ -343,7 +458,7 @@ export const storage = {
                 ContentType: params.contentType || "application/octet-stream",
             }));
         } else {
-            const destinationPath = getLocalMediaPath(join(safePrefix, stampedName));
+            const destinationPath = resolve(config.localMediaDir, key);
             await fs.mkdir(dirname(destinationPath), { recursive: true });
             await fs.writeFile(destinationPath, params.buffer);
         }
@@ -357,15 +472,46 @@ export const storage = {
         };
     },
 
-    async deleteMedia(key: string): Promise<void> {
-        const sanitizedKey = sanitizePathFragment(key);
-        if (!sanitizedKey.startsWith(config.s3MediaPrefix)) {
-            throw new Error("Media key must live under the configured media prefix.");
+    async moveMedia(params: {
+        key: string;
+        prefix: string;
+    }): Promise<MediaItem> {
+        const sourceKey = assertMediaKey(params.key);
+        const safePrefix = sanitizePathFragment(params.prefix);
+        const sourceSegments = sourceKey.split("/").filter(Boolean);
+        const fileName = sourceSegments[sourceSegments.length - 1] ?? "upload.bin";
+        const destinationKey = joinKey(config.s3MediaPrefix, safePrefix, fileName);
+
+        if (destinationKey === sourceKey) {
+            return getMediaItemForKey(sourceKey);
         }
 
-        if (sanitizedKey.startsWith(config.s3DataPrefix)) {
-            throw new Error("Refusing to delete data storage objects.");
+        if (isS3Enabled) {
+            const [{ CopyObjectCommand, DeleteObjectCommand }, s3Client] = await Promise.all([getS3Sdk(), getS3Client()]);
+            await s3Client.send(new CopyObjectCommand({
+                Bucket: config.s3Bucket,
+                CopySource: `${config.s3Bucket}/${encodePathSegments(sourceKey)}`,
+                Key: destinationKey,
+            }));
+            await s3Client.send(new DeleteObjectCommand({
+                Bucket: config.s3Bucket,
+                Key: sourceKey,
+            }));
+
+            return getMediaItemForKey(destinationKey);
         }
+
+        const sourcePath = resolve(config.localMediaDir, sourceKey);
+        const destinationPath = resolve(config.localMediaDir, destinationKey);
+        await fs.mkdir(dirname(destinationPath), { recursive: true });
+        await fs.rename(sourcePath, destinationPath);
+        await removeEmptyDirectories(sourcePath);
+
+        return getMediaItemForKey(destinationKey);
+    },
+
+    async deleteMedia(key: string): Promise<void> {
+        const sanitizedKey = assertMediaKey(key);
 
         if (isS3Enabled) {
             const [{ DeleteObjectCommand }, s3Client] = await Promise.all([getS3Sdk(), getS3Client()]);

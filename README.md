@@ -31,3 +31,27 @@ Marketing site for Nikki Dodge Photography, built with React, TypeScript, and Vi
   - `aws sso login --profile miles-production`
   - `export PORTFOLIO_BUCKET=<bucket-name>`
   - `scripts/sync-portfolio-images.sh`
+
+## Admin media uploads
+
+- The `/admin` media tab requests short-lived signed upload URLs from the Node API, then uploads files directly to S3 from the browser.
+- Configure `CRM_S3_BUCKET` or `APP_S3_BUCKET`, plus `CRM_S3_REGION` or `AWS_REGION`, in the Kubernetes secret used by the app.
+- Uploaded files are scoped under `CRM_S3_MEDIA_PREFIX`, which defaults to `site-assets`.
+- Set `CRM_PUBLIC_ASSET_BASE_URL` when the bucket is served through a CDN or custom public image domain.
+- `CRM_MAX_DIRECT_UPLOAD_BYTES` controls the signed browser upload limit and defaults to 200 MB.
+- The bucket CORS policy must allow authenticated admin browsers to `PUT` objects, for example:
+
+```json
+[
+  {
+    "AllowedOrigins": [
+      "https://nikkidodgephotography.com",
+      "https://www.nikkidodgephotography.com"
+    ],
+    "AllowedMethods": ["GET", "HEAD", "PUT"],
+    "AllowedHeaders": ["content-type"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3000
+  }
+]
+```

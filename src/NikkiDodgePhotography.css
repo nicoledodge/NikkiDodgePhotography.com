@@ -2923,6 +2923,16 @@ admin
     background: rgba(143, 42, 42, 0.08);
 }
 
+.admin-link-button {
+    border: none;
+    padding: 0;
+    background: transparent;
+    color: var(--primary-color);
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
 .admin-primary-button:disabled,
 .admin-secondary-button:disabled,
 .admin-danger-button:disabled {
@@ -3007,6 +3017,11 @@ admin
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.admin-media-workspace {
+    display: grid;
+    gap: 20px;
+}
+
 .admin-settings-form {
     display: grid;
     gap: 20px;
@@ -3039,6 +3054,95 @@ admin
 .admin-card textarea {
     min-height: 140px;
     resize: vertical;
+}
+
+.admin-input-button-row {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.admin-media-breadcrumbs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: rgba(42, 38, 30, 0.06);
+}
+
+.admin-upload-panel {
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+    border: 1px solid rgba(42, 38, 30, 0.1);
+    border-radius: 8px;
+    background: #fff;
+}
+
+.admin-upload-summary,
+.admin-upload-progress-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.admin-upload-summary {
+    color: var(--fifth-color);
+    font-weight: 600;
+}
+
+.admin-upload-progress-list,
+.admin-folder-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.admin-upload-progress-item {
+    border: 1px solid rgba(42, 38, 30, 0.1);
+    border-radius: 8px;
+    padding: 12px 14px;
+    background: rgba(247, 247, 247, 0.85);
+}
+
+.admin-upload-progress-item.is-complete {
+    border-color: rgba(62, 118, 82, 0.24);
+    background: rgba(62, 118, 82, 0.08);
+}
+
+.admin-upload-progress-item.is-error {
+    border-color: rgba(143, 42, 42, 0.24);
+    background: rgba(143, 42, 42, 0.08);
+}
+
+.admin-folder-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    margin-bottom: 18px;
+}
+
+.admin-folder-button {
+    display: grid;
+    gap: 4px;
+    text-align: left;
+    border: 1px solid rgba(42, 38, 30, 0.12);
+    border-radius: 8px;
+    padding: 14px;
+    background: rgba(168, 154, 120, 0.12);
+    color: var(--primary-color);
+}
+
+.admin-folder-button span {
+    font-weight: 700;
+}
+
+.admin-folder-button small {
+    color: var(--fifth-color);
+}
+
+.admin-move-field {
+    max-width: 420px;
 }
 
 .admin-span-2 {
@@ -3119,6 +3223,16 @@ admin
     .admin-form-grid,
     .admin-color-grid {
         grid-template-columns: 1fr;
+    }
+
+    .admin-input-button-row {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-upload-summary,
+    .admin-upload-progress-item {
+        flex-direction: column;
+        align-items: stretch;
     }
 
     .admin-span-2 {

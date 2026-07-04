@@ -315,6 +315,38 @@ app.get("/api/admin/media", requireAdmin, asyncHandler(async (req, res) => {
     res.json(items);
 }));
 
+app.post("/api/admin/media/upload-target", requireAdmin, asyncHandler(async (req, res) => {
+    const fileName = trimText(req.body.fileName);
+    const contentType = trimText(req.body.contentType, "application/octet-stream") || "application/octet-stream";
+    const prefix = trimText(req.body.prefix);
+    const size = Number(req.body.size);
+    const maxBytes = isS3Enabled ? config.maxDirectUploadBytes : config.maxServerUploadBytes;
+
+    if (!fileName) {
+        res.status(400).json({ error: "A file name is required." });
+        return;
+    }
+
+    if (!Number.isFinite(size) || size <= 0) {
+        res.status(400).json({ error: "A valid file size is required." });
+        return;
+    }
+
+    if (size > maxBytes) {
+        res.status(400).json({ error: `Files must be ${Math.floor(maxBytes / 1024 / 1024)} MB or smaller.` });
+        return;
+    }
+
+    const uploadTarget = await storage.createMediaUploadTarget({
+        fileName,
+        contentType,
+        size,
+        prefix,
+    });
+
+    res.status(201).json(uploadTarget);
+}));
+
 app.post("/api/admin/media/upload", requireAdmin, upload.single("file"), asyncHandler(async (req, res) => {
     if (!req.file) {
         res.status(400).json({ error: "A file upload is required." });
@@ -330,6 +362,23 @@ app.post("/api/admin/media/upload", requireAdmin, upload.single("file"), asyncHa
     });
 
     res.status(201).json(uploadedItem);
+}));
+
+app.post("/api/admin/media/move", requireAdmin, asyncHandler(async (req, res) => {
+    const key = trimText(req.body.key);
+    const prefix = trimText(req.body.prefix);
+
+    if (!key) {
+        res.status(400).json({ error: "A media key is required." });
+        return;
+    }
+
+    const movedItem = await storage.moveMedia({
+        key,
+        prefix,
+    });
+
+    res.json(movedItem);
 }));
 
 app.delete("/api/admin/media", requireAdmin, asyncHandler(async (req, res) => {

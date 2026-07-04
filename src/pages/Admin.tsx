@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import type { CalendarEvent, Lead, MediaItem } from "../shared/crm.js";
+import type { CalendarEvent, Lead, MediaItem, MediaUploadTarget } from "../shared/crm.js";
 import { defaultSiteSettings, type SiteSettings } from "../shared/siteSettings.js";
 import { useSiteSettings } from "../site/SiteSettingsContext";
 
@@ -23,6 +23,18 @@ interface CalendarDraft {
 interface NotificationStatus {
     discordEnabled: boolean;
     publicAppUrl: string;
+}
+
+interface MediaFolder {
+    name: string;
+    prefix: string;
+    count: number;
+}
+
+interface UploadProgressEntry {
+    fileName: string;
+    status: "waiting" | "signing" | "uploading" | "complete" | "error";
+    message?: string;
 }
 
 const tabLabels: Record<AdminTab, string> = {
@@ -127,6 +139,100 @@ function parseApiError(body: unknown, status: number): string {
     return `Request failed with status ${status}.`;
 }
 
+function normalizeMediaPrefix(input: string): string {
+    return input
+        .trim()
+        .replace(/\\/g, "/")
+        .replace(/^\/+/, "")
+        .replace(/\/+$/, "")
+        .split("/")
+        .filter((segment) => segment.length > 0 && segment !== "." && segment !== "..")
+        .join("/");
+}
+
+function joinMediaPrefix(parentPrefix: string, childPrefix: string): string {
+    return [normalizeMediaPrefix(parentPrefix), normalizeMediaPrefix(childPrefix)]
+        .filter(Boolean)
+        .join("/");
+}
+
+function getParentMediaPrefix(relativeKey: string): string {
+    const segments = normalizeMediaPrefix(relativeKey).split("/").filter(Boolean);
+    segments.pop();
+    return segments.join("/");
+}
+
+function getMediaBreadcrumbs(prefix: string): MediaFolder[] {
+    const segments = normalizeMediaPrefix(prefix).split("/").filter(Boolean);
+    const folders: MediaFolder[] = [{ name: "site-assets", prefix: "", count: 0 }];
+    let currentPrefix = "";
+
+    for (const segment of segments) {
+        currentPrefix = joinMediaPrefix(currentPrefix, segment);
+        folders.push({
+            name: segment,
+            prefix: currentPrefix,
+            count: 0,
+        });
+    }
+
+    return folders;
+}
+
+function getImmediateMediaListing(items: MediaItem[], prefix: string): { folders: MediaFolder[]; files: MediaItem[] } {
+    const normalizedPrefix = normalizeMediaPrefix(prefix);
+    const prefixWithSlash = normalizedPrefix ? `${normalizedPrefix}/` : "";
+    const folderMap = new Map<string, MediaFolder>();
+    const files: MediaItem[] = [];
+
+    for (const item of items) {
+        let relativeKey = normalizeMediaPrefix(item.relativeKey);
+
+        if (normalizedPrefix) {
+            if (!relativeKey.startsWith(prefixWithSlash)) {
+                continue;
+            }
+
+            relativeKey = relativeKey.slice(prefixWithSlash.length);
+        }
+
+        const [firstSegment, ...remainingSegments] = relativeKey.split("/").filter(Boolean);
+        if (!firstSegment) {
+            continue;
+        }
+
+        if (remainingSegments.length > 0) {
+            const folderPrefix = joinMediaPrefix(normalizedPrefix, firstSegment);
+            const existingFolder = folderMap.get(folderPrefix);
+            folderMap.set(folderPrefix, {
+                name: firstSegment,
+                prefix: folderPrefix,
+                count: (existingFolder?.count ?? 0) + 1,
+            });
+            continue;
+        }
+
+        files.push(item);
+    }
+
+    return {
+        folders: [...folderMap.values()].sort((left, right) => left.name.localeCompare(right.name)),
+        files: files.sort((left, right) => right.relativeKey.localeCompare(left.relativeKey)),
+    };
+}
+
+function formatBytes(size: number): string {
+    if (size < 1024) {
+        return `${size} B`;
+    }
+
+    if (size < 1024 * 1024) {
+        return `${(size / 1024).toFixed(1)} KB`;
+    }
+
+    return `${(size / 1024 / 1024).toFixed(2)} MB`;
+}
+
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
     const headers = new Headers(init?.headers);
     const isFormData = init?.body instanceof FormData;
@@ -178,7 +284,11 @@ export default function Admin() {
     const [notificationStatus, setNotificationStatus] = useState<NotificationStatus | null>(null);
     const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
     const [mediaPrefix, setMediaPrefix] = useState("");
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [fileInputKey, setFileInputKey] = useState(0);
+    const [newFolderName, setNewFolderName] = useState("");
+    const [moveDrafts, setMoveDrafts] = useState<Record<string, string>>({});
+    const [movingMediaKey, setMovingMediaKey] = useState<string | null>(null);
     const [savingLeadId, setSavingLeadId] = useState<string | null>(null);
     const [savingSettings, setSavingSettings] = useState(false);
     const [sendingDiscordTest, setSendingDiscordTest] = useState(false);
@@ -187,17 +297,20 @@ export default function Admin() {
     const [editingEventId, setEditingEventId] = useState<string | null>(null);
     const [calendarDraft, setCalendarDraft] = useState<CalendarDraft>(initialCalendarDraft);
     const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState<UploadProgressEntry[]>([]);
     const [visibleMonth, setVisibleMonth] = useState(() => {
         const today = new Date();
         return new Date(today.getFullYear(), today.getMonth(), 1);
     });
 
     const loadMedia = useCallback(async (prefix: string) => {
-        const params = prefix.trim().length > 0
-            ? `?prefix=${encodeURIComponent(prefix.trim())}`
+        const normalizedPrefix = normalizeMediaPrefix(prefix);
+        const params = normalizedPrefix.length > 0
+            ? `?prefix=${encodeURIComponent(normalizedPrefix)}`
             : "";
         const nextMediaItems = await request<MediaItem[]>(`/api/admin/media${params}`);
         setMediaItems(nextMediaItems);
+        setMediaPrefix(normalizedPrefix);
     }, []);
 
     const loadDashboard = useCallback(async () => {
@@ -266,6 +379,15 @@ export default function Admin() {
         booked: leads.filter((lead) => lead.status === "booked").length,
         archived: leads.filter((lead) => lead.status === "archived").length,
     }), [leads]);
+    const mediaListing = useMemo(() => getImmediateMediaListing(mediaItems, mediaPrefix), [mediaItems, mediaPrefix]);
+    const mediaBreadcrumbs = useMemo(() => getMediaBreadcrumbs(mediaPrefix), [mediaPrefix]);
+    const selectedFileSummary = useMemo(() => {
+        const totalBytes = selectedFiles.reduce((sum, file) => sum + file.size, 0);
+        return {
+            count: selectedFiles.length,
+            totalBytes,
+        };
+    }, [selectedFiles]);
 
     const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -297,6 +419,9 @@ export default function Admin() {
         setLeads([]);
         setCalendarEvents([]);
         setMediaItems([]);
+        setSelectedFiles([]);
+        setUploadProgress([]);
+        setMoveDrafts({});
         setNotice("Signed out.");
     };
 
@@ -454,33 +579,143 @@ export default function Admin() {
         }
     };
 
-    const handleUpload = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        if (!selectedFile) {
-            setDashboardError("Choose a file before uploading.");
+    const openMediaFolder = async (prefix: string) => {
+        setDashboardError(null);
+        setMoveDrafts({});
+
+        try {
+            await loadMedia(prefix);
+        } catch (error) {
+            setDashboardError(error instanceof Error ? error.message : "Unable to load media.");
+        }
+    };
+
+    const openNewMediaFolder = async () => {
+        const nextFolderPrefix = joinMediaPrefix(mediaPrefix, newFolderName);
+        if (!nextFolderPrefix) {
+            setDashboardError("Enter a folder name first.");
             return;
         }
 
-        setUploading(true);
-        setDashboardError(null);
+        setNewFolderName("");
+        await openMediaFolder(nextFolderPrefix);
+    };
 
+    const setUploadEntry = (index: number, update: Partial<UploadProgressEntry>) => {
+        setUploadProgress((currentProgress) => currentProgress.map((entry, entryIndex) => (
+            entryIndex === index
+                ? {
+                    ...entry,
+                    ...update,
+                }
+                : entry
+        )));
+    };
+
+    const uploadFile = async (file: File, prefix: string, index: number) => {
         try {
-            const formData = new FormData();
-            formData.append("file", selectedFile);
-            formData.append("prefix", mediaPrefix);
+            setUploadEntry(index, { status: "signing", message: "Preparing secure upload" });
+            const contentType = file.type || "application/octet-stream";
+            const uploadTarget = await request<MediaUploadTarget>("/api/admin/media/upload-target", {
+                method: "POST",
+                body: JSON.stringify({
+                    fileName: file.name,
+                    contentType,
+                    size: file.size,
+                    prefix,
+                }),
+            });
 
-            await request<MediaItem>("/api/admin/media/upload", {
+            if (uploadTarget.method === "s3") {
+                setUploadEntry(index, { status: "uploading", message: "Uploading to S3" });
+                const response = await fetch(uploadTarget.uploadUrl, {
+                    method: "PUT",
+                    headers: uploadTarget.headers,
+                    body: file,
+                });
+
+                if (!response.ok) {
+                    throw new Error(`S3 rejected ${file.name} with status ${response.status}.`);
+                }
+
+                setUploadEntry(index, { status: "complete", message: uploadTarget.relativeKey });
+                return;
+            }
+
+            setUploadEntry(index, { status: "uploading", message: "Uploading through the local server" });
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("prefix", prefix);
+            await request<MediaItem>(uploadTarget.uploadUrl, {
                 method: "POST",
                 body: formData,
             });
+            setUploadEntry(index, { status: "complete", message: file.name });
+        } catch (error) {
+            setUploadEntry(index, {
+                status: "error",
+                message: error instanceof Error ? error.message : "Upload failed.",
+            });
+            throw error;
+        }
+    };
 
-            setSelectedFile(null);
-            await loadMedia(mediaPrefix);
-            setNotice("Media uploaded.");
+    const handleUpload = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        if (selectedFiles.length === 0) {
+            setDashboardError("Choose at least one file before uploading.");
+            return;
+        }
+
+        const uploadPrefix = normalizeMediaPrefix(mediaPrefix);
+        setUploading(true);
+        setDashboardError(null);
+        setNotice(null);
+        setUploadProgress(selectedFiles.map((file) => ({
+            fileName: file.name,
+            status: "waiting",
+        })));
+
+        try {
+            for (const [index, file] of selectedFiles.entries()) {
+                await uploadFile(file, uploadPrefix, index);
+            }
+
+            setSelectedFiles([]);
+            setFileInputKey((currentKey) => currentKey + 1);
+            await loadMedia(uploadPrefix);
+            setNotice(`Uploaded ${selectedFiles.length} file${selectedFiles.length === 1 ? "" : "s"}.`);
         } catch (error) {
             setDashboardError(error instanceof Error ? error.message : "Unable to upload media.");
         } finally {
             setUploading(false);
+        }
+    };
+
+    const moveMedia = async (item: MediaItem) => {
+        const destinationPrefix = normalizeMediaPrefix(moveDrafts[item.key] ?? getParentMediaPrefix(item.relativeKey));
+        setMovingMediaKey(item.key);
+        setDashboardError(null);
+
+        try {
+            await request<MediaItem>("/api/admin/media/move", {
+                method: "POST",
+                body: JSON.stringify({
+                    key: item.key,
+                    prefix: destinationPrefix,
+                }),
+            });
+            setMoveDrafts((currentDrafts) => {
+                const nextDrafts = { ...currentDrafts };
+                delete nextDrafts[item.key];
+                return nextDrafts;
+            });
+            await loadMedia(mediaPrefix);
+            setNotice("Media moved.");
+        } catch (error) {
+            setDashboardError(error instanceof Error ? error.message : "Unable to move media.");
+        } finally {
+            setMovingMediaKey(null);
         }
     };
 
@@ -863,61 +1098,173 @@ export default function Admin() {
 
                         {activeTab === "media" && (
                             <section className="admin-stack">
-                                <form className="admin-card admin-form-grid" onSubmit={handleUpload}>
+                                <div className="admin-card admin-media-workspace">
                                     <div className="admin-section-heading">
-                                        <h2>Upload Media</h2>
-                                    </div>
-                                    <label>
-                                        Folder under site-assets
-                                        <input
-                                            type="text"
-                                            placeholder="branding or homepage"
-                                            value={mediaPrefix}
-                                            onChange={(event) => setMediaPrefix(event.target.value)}
-                                        />
-                                    </label>
-                                    <label>
-                                        File
-                                        <input
-                                            type="file"
-                                            onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
-                                            required
-                                        />
-                                    </label>
-                                    <div className="admin-inline-actions">
-                                        <button className="admin-primary-button" type="submit" disabled={uploading}>
-                                            {uploading ? "Uploading..." : "Upload"}
-                                        </button>
+                                        <div>
+                                            <h2>Secure Upload Space</h2>
+                                            <p className="admin-muted">Signed uploads write directly to the configured S3 media prefix after admin login.</p>
+                                        </div>
                                         <button
                                             className="admin-secondary-button"
                                             type="button"
-                                            onClick={() => void loadMedia(mediaPrefix)}
+                                            onClick={() => void openMediaFolder(mediaPrefix)}
                                         >
-                                            Refresh List
+                                            Refresh
                                         </button>
                                     </div>
-                                </form>
+
+                                    <div className="admin-media-breadcrumbs" aria-label="Current media folder">
+                                        {mediaBreadcrumbs.map((folder, index) => (
+                                            <React.Fragment key={folder.prefix || "root"}>
+                                                {index > 0 && <span>/</span>}
+                                                <button
+                                                    className="admin-link-button"
+                                                    type="button"
+                                                    onClick={() => void openMediaFolder(folder.prefix)}
+                                                >
+                                                    {folder.name}
+                                                </button>
+                                            </React.Fragment>
+                                        ))}
+                                    </div>
+
+                                    <div className="admin-form-grid">
+                                        <label>
+                                            Current folder
+                                            <input
+                                                type="text"
+                                                placeholder="branding or homepage"
+                                                value={mediaPrefix}
+                                                onChange={(event) => setMediaPrefix(event.target.value)}
+                                            />
+                                        </label>
+                                        <label>
+                                            Open or create folder
+                                            <div className="admin-input-button-row">
+                                                <input
+                                                    type="text"
+                                                    placeholder="new-gallery"
+                                                    value={newFolderName}
+                                                    onChange={(event) => setNewFolderName(event.target.value)}
+                                                />
+                                                <button
+                                                    className="admin-secondary-button"
+                                                    type="button"
+                                                    onClick={() => void openNewMediaFolder()}
+                                                >
+                                                    Open
+                                                </button>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    <form className="admin-upload-panel" onSubmit={handleUpload}>
+                                        <label>
+                                            Files
+                                            <input
+                                                key={fileInputKey}
+                                                type="file"
+                                                multiple
+                                                onChange={(event) => setSelectedFiles(Array.from(event.target.files ?? []))}
+                                                required
+                                            />
+                                        </label>
+                                        <div className="admin-upload-summary">
+                                            <span>
+                                                {selectedFileSummary.count === 0
+                                                    ? "No files selected"
+                                                    : `${selectedFileSummary.count} file${selectedFileSummary.count === 1 ? "" : "s"} selected`}
+                                            </span>
+                                            {selectedFileSummary.count > 0 && <span>{formatBytes(selectedFileSummary.totalBytes)}</span>}
+                                        </div>
+                                        <div className="admin-inline-actions">
+                                            <button className="admin-primary-button" type="submit" disabled={uploading}>
+                                                {uploading ? "Uploading..." : "Upload to S3"}
+                                            </button>
+                                            <button
+                                                className="admin-secondary-button"
+                                                type="button"
+                                                onClick={() => {
+                                                    setSelectedFiles([]);
+                                                    setUploadProgress([]);
+                                                    setFileInputKey((currentKey) => currentKey + 1);
+                                                }}
+                                                disabled={uploading || selectedFiles.length === 0}
+                                            >
+                                                Clear
+                                            </button>
+                                        </div>
+                                    </form>
+
+                                    {uploadProgress.length > 0 && (
+                                        <div className="admin-upload-progress-list" aria-live="polite">
+                                            {uploadProgress.map((entry, index) => (
+                                                <div className={`admin-upload-progress-item is-${entry.status}`} key={`${entry.fileName}-${index}`}>
+                                                    <strong>{entry.fileName}</strong>
+                                                    <span>{entry.message ?? entry.status}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
 
                                 <div className="admin-card">
                                     <div className="admin-section-heading">
                                         <h2>Media Library</h2>
+                                        <p className="admin-muted">{mediaPrefix ? `Folder: ${mediaPrefix}` : "Folder: site-assets"}</p>
                                     </div>
-                                    {mediaItems.length === 0 ? (
+
+                                    {mediaListing.folders.length > 0 && (
+                                        <div className="admin-folder-grid">
+                                            {mediaListing.folders.map((folder) => (
+                                                <button
+                                                    className="admin-folder-button"
+                                                    type="button"
+                                                    key={folder.prefix}
+                                                    onClick={() => void openMediaFolder(folder.prefix)}
+                                                >
+                                                    <span>{folder.name}</span>
+                                                    <small>{folder.count} item{folder.count === 1 ? "" : "s"}</small>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {mediaListing.files.length === 0 && mediaListing.folders.length === 0 ? (
                                         <p className="admin-muted">No media found for this folder.</p>
                                     ) : (
                                         <div className="admin-media-list">
-                                            {mediaItems.map((item) => (
+                                            {mediaListing.files.map((item) => (
                                                 <article className="admin-media-item" key={item.key}>
                                                     <div>
                                                         <h3>{item.relativeKey}</h3>
                                                         <p className="admin-muted">
-                                                            {item.lastModified ? new Date(item.lastModified).toLocaleString() : "Uploaded"} · {(item.size / 1024 / 1024).toFixed(2)} MB
+                                                            {item.lastModified ? new Date(item.lastModified).toLocaleString() : "Uploaded"} · {formatBytes(item.size)}
                                                         </p>
                                                         <a href={item.publicUrl} target="_blank" rel="noreferrer">{item.publicUrl}</a>
                                                     </div>
+                                                    <label className="admin-move-field">
+                                                        Move to folder
+                                                        <input
+                                                            type="text"
+                                                            value={moveDrafts[item.key] ?? getParentMediaPrefix(item.relativeKey)}
+                                                            onChange={(event) => setMoveDrafts((currentDrafts) => ({
+                                                                ...currentDrafts,
+                                                                [item.key]: event.target.value,
+                                                            }))}
+                                                        />
+                                                    </label>
                                                     <div className="admin-inline-actions">
                                                         <button className="admin-secondary-button" type="button" onClick={() => void copyToClipboard(item.publicUrl)}>
                                                             Copy URL
+                                                        </button>
+                                                        <button
+                                                            className="admin-secondary-button"
+                                                            type="button"
+                                                            onClick={() => void moveMedia(item)}
+                                                            disabled={movingMediaKey === item.key}
+                                                        >
+                                                            {movingMediaKey === item.key ? "Moving..." : "Move"}
                                                         </button>
                                                         <button className="admin-danger-button" type="button" onClick={() => void deleteMedia(item.key)}>
                                                             Delete
