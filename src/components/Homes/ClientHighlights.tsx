@@ -42,14 +42,14 @@ const ClientHighlights = () => {
                 <div className="row">
                     <div className="col-lg-12">
                         <div className="section-heading text-center">
-                            <h6 style={{
+                            <p className="section-eyebrow" style={{
                                 color: "var(--fourth-color)"
-                            }}>Why clients keep reaching out</h6>
-                            <h4 style={{
+                            }}>Why clients keep reaching out</p>
+                            <h2 style={{
                                 color: "var(--fourth-color)"
                             }}>
                                 Clear communication, beautiful light, and galleries that still feel like <em>you</em>
-                            </h4>
+                            </h2>
                         </div>
                     </div>
                     <div className="col-lg-12">
@@ -71,26 +71,26 @@ const ClientHighlights = () => {
                                     <div className="closed-item">
                                         <div className="thumb">
                                             <img src={session.image} alt={session.focus}/>
-                                            <span className="winner">
+                                            <span className="session-label">
                                                 <em>Session:</em> {session.label}
                                             </span>
-                                            <span className="price">
+                                            <span className="session-detail">
                                                 <em>Experience:</em> {session.detail}
                                             </span>
                                         </div>
                                         <div className="down-content">
                                             <div className="row">
                                                 <div className="col-7">
-                                                    <h4>
+                                                    <h3>
                                                         {session.focus} <br/>
                                                         <span>{session.support}</span>
-                                                    </h4>
+                                                    </h3>
                                                 </div>
                                                 <div className="col-5">
-                                                    <h4 className="pics">
+                                                    <h3 className="pics">
                                                         Client Delivery <br/>
                                                         <span>{session.delivery}</span>
-                                                    </h4>
+                                                    </h3>
                                                 </div>
                                             </div>
                                         </div>

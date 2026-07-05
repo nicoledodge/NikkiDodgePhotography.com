@@ -9,26 +9,31 @@ const Banner = () => {
     const { siteSettings } = useSiteSettings();
 
     return (
-        <section className="main-banner">
+        <section className="main-banner" aria-labelledby="home-hero-title">
             <div className="container main-banner__content">
-                <div className="row justify-content-center">
-                    <div className="col-lg-10">
-                        <h2>
+                <div className="row">
+                    <div className="col-lg-8 col-xl-7">
+                        <p className="main-banner__eyebrow">{siteSettings.serviceArea}</p>
+                        <h1 id="home-hero-title">
                             {renderInlineEmphasis(siteSettings.heroTitle)}
-                        </h2>
-                        <p>
+                        </h1>
+                        <p className="main-banner__summary">
                             {siteSettings.heroBody}
                         </p>
+                        <div className="main-banner__services" aria-label="Photography services">
+                            <span>Weddings</span>
+                            <span>Engagements</span>
+                            <span>Families</span>
+                            <span>Graduates</span>
+                        </div>
                         <div className="buttons">
-                            <div className="big-border-button">
-                                <Link to={PORTFOLIO}>{siteSettings.heroPrimaryCtaLabel}</Link>
-                            </div>
-                            <div className="icon-button">
-                                <Link to={CONTACT}>
-                                    <i className="fa fa-envelope"></i>
-                                    {siteSettings.heroSecondaryCtaLabel}
-                                </Link>
-                            </div>
+                            <Link className="hero-button hero-button--primary" to={PORTFOLIO}>
+                                {siteSettings.heroPrimaryCtaLabel}
+                            </Link>
+                            <Link className="hero-button hero-button--secondary" to={CONTACT}>
+                                <i className="fa fa-envelope" aria-hidden="true"></i>
+                                {siteSettings.heroSecondaryCtaLabel}
+                            </Link>
                         </div>
                     </div>
                 </div>

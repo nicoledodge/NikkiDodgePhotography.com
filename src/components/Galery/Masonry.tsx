@@ -92,14 +92,23 @@ const Masonry: React.FC<{
                 .masonry-item img.loaded {
                     opacity: 1; /* Fade in when loaded */
                 }
+                @media (max-width: 767px) {
+                    .masonry-gallery {
+                        column-count: 2;
+                        column-gap: 12px;
+                    }
+                    .masonry-item {
+                        margin-bottom: 12px;
+                    }
+                }
                 `}
             </style>
             <div className="container">
                 <div className="section-heading text-center">
-                    <h6>{title}</h6>
-                    <h4>
+                    <p className="section-eyebrow">{title}</p>
+                    <h2>
                         Images that show the pace, people, and in-between moments that make a gallery feel <em>alive</em>
-                    </h4>
+                    </h2>
                 </div>
                 {/* Masonry Grid Container */}
                 <div className="masonry-gallery">

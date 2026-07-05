@@ -42,8 +42,8 @@ const Categories = () => {
                 <div className="row">
                     <div className="col-lg-6">
                         <div className="section-heading">
-                            <h6>Signature Sessions</h6>
-                            <h4>Explore the work clients book most <em>often</em></h4>
+                            <p className="section-eyebrow">Signature Sessions</p>
+                            <h2>Explore the work clients book most <em>often</em></h2>
                         </div>
                     </div>
                     <div className="col-lg-6">
@@ -66,7 +66,7 @@ const Categories = () => {
                                             <img src={`/assets/images/${icon}`} alt=""/>
                                         </div>
                                         <div className="right">
-                                            <h4>{title}</h4>
+                                            <h3>{title}</h3>
                                             <span><em>{sessionCount}</em> Photo Sessions</span>
                                         </div>
                                     </div>

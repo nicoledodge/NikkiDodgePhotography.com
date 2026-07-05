@@ -26,19 +26,22 @@ const AppLayout = () => {
 
     return (
         <>
+            {!isAdminRoute && <a className="skip-link" href="#main-content">Skip to main content</a>}
             {!isAdminRoute && <Header />}
-            <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path={PRICING} element={<Pricing />} />
-                <Route path={PORTFOLIO} element={<Portfolio />} />
-                <Route path={PORTFOLIO + "/:categoryName"} element={<Portfolio />} />
-                <Route path={PORTFOLIO + "/:categoryName/:search"} element={<Portfolio />} />
-                <Route path={CONTACT} element={<Contact />} />
-                <Route path={HOWDY} element={<Howdy />} />
-                <Route path={BLOG} element={<Blog />} />
-                <Route path={GALLERY + "/:categoryName/:sessionName"} element={<Gallery />} />
-                <Route path="/admin" element={<Admin />} />
-            </Routes>
+            <main id="main-content" tabIndex={-1}>
+                <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path={PRICING} element={<Pricing />} />
+                    <Route path={PORTFOLIO} element={<Portfolio />} />
+                    <Route path={PORTFOLIO + "/:categoryName"} element={<Portfolio />} />
+                    <Route path={PORTFOLIO + "/:categoryName/:search"} element={<Portfolio />} />
+                    <Route path={CONTACT} element={<Contact />} />
+                    <Route path={HOWDY} element={<Howdy />} />
+                    <Route path={BLOG} element={<Blog />} />
+                    <Route path={GALLERY + "/:categoryName/:sessionName"} element={<Gallery />} />
+                    <Route path="/admin" element={<Admin />} />
+                </Routes>
+            </main>
             {!isAdminRoute && <Footer />}
         </>
     );

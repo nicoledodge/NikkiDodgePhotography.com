@@ -35,7 +35,7 @@ export const defaultSiteSettings: SiteSettings = {
     businessName: "Nikki Dodge Photography",
     logoUrl: "/assets/images/logo-black.png",
     profilePhotoUrl: "/assets/images/profilePhoto.jpg",
-    contactEmail: "nicole@nikkidodgephotography.com",
+    contactEmail: "nicoledodge5@gmail.com",
     contactPhone: "972-523-3420",
     serviceArea: "Highlands Ranch, Denver, and destinations across Colorado",
     heroTitle: "Colorado photography that feels *personal*, calm, and worth remembering.",
@@ -101,6 +101,7 @@ const colorSettingKeys = [
 ] as const satisfies ReadonlyArray<keyof SiteSettings>;
 
 const hexColorPattern = /^#(?:[0-9a-fA-F]{3}){1,2}$/;
+const legacyContactEmails = new Set(["nicole@nikkidodgephotography.com"]);
 
 export type SiteSettingsUpdate = Partial<Record<keyof SiteSettings, unknown>>;
 
@@ -116,7 +117,9 @@ export function mergeSiteSettings(input?: SiteSettingsUpdate): SiteSettings {
         if (typeof candidate === "string") {
             const trimmed = candidate.trim();
             if (trimmed.length > 0) {
-                merged[key] = trimmed;
+                merged[key] = key === "contactEmail" && legacyContactEmails.has(trimmed.toLowerCase())
+                    ? defaultSiteSettings.contactEmail
+                    : trimmed;
             }
         }
     }

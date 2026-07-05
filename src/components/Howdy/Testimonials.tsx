@@ -1,6 +1,6 @@
 import React from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination, Autoplay } from "swiper/modules";
+import { Navigation, Pagination } from "swiper/modules";
 import mediaLibrary from "../MediaLibrary/MediaLibrary";
 import {Link} from "react-router-dom";
 import {GALLERY} from "../../pages/Gallery";
@@ -21,48 +21,65 @@ const testimonialsData = [
     }
 ];
 
-const clientLogos = [
-    <Link to={GALLERY + '/' + mediaLibrary.Family.category + '/' + mediaLibrary.Family.featuredVertical.split('/')[0]}>
-        <img src={mediaLibrary.Family.path + '/' + mediaLibrary.Family.featuredVertical} alt="Client Logo"/>
-    </Link>,
-    <Link to={GALLERY + '/' + mediaLibrary.Sports.category + '/' + mediaLibrary.Sports.featuredVertical.split('/')[0]}>
-        <img src={mediaLibrary.Sports.path + '/' + mediaLibrary.Sports.featuredVertical} alt="Client Logo"/>
-    </Link>,
-    <Link to={GALLERY + '/' + mediaLibrary.Graduations.category + '/' + mediaLibrary.Graduations.featuredVertical.split('/')[0]}>
-        <img src={mediaLibrary.Graduations.path + '/' + mediaLibrary.Graduations.featuredVertical} alt="Client Logo"/>
-    </Link>,
-    <Link to={GALLERY + '/' + mediaLibrary.Music.category + '/' + mediaLibrary.Music.featuredVertical.split('/')[0]}>
-        <img src={mediaLibrary.Music.path + '/' + mediaLibrary.Music.featuredVertical} alt="Client Logo"/>
-    </Link>,
-    <Link to={GALLERY + '/' + mediaLibrary.Engagements.category + '/' + mediaLibrary.Engagements.featuredVertical.split('/')[0]}>
-        <img src={mediaLibrary.Engagements.path + '/' + mediaLibrary.Engagements.featuredVertical} alt="Client Logo"/>
-    </Link>,
-    <Link to={GALLERY + '/' + mediaLibrary.Lifestyles.category + '/' + mediaLibrary.Lifestyles.featuredVertical.split('/')[0]}>
-        <img src={mediaLibrary.Lifestyles.path + '/' + mediaLibrary.Lifestyles.featuredVertical} alt="Client Logo"/>
-    </Link>
+const clientGalleryLinks = [
+    {
+        label: "Family session gallery",
+        path: mediaLibrary.Family.path,
+        category: mediaLibrary.Family.category,
+        image: mediaLibrary.Family.featuredVertical,
+    },
+    {
+        label: "Sports gallery",
+        path: mediaLibrary.Sports.path,
+        category: mediaLibrary.Sports.category,
+        image: mediaLibrary.Sports.featuredVertical,
+    },
+    {
+        label: "Graduation portrait gallery",
+        path: mediaLibrary.Graduations.path,
+        category: mediaLibrary.Graduations.category,
+        image: mediaLibrary.Graduations.featuredVertical,
+    },
+    {
+        label: "Music photography gallery",
+        path: mediaLibrary.Music.path,
+        category: mediaLibrary.Music.category,
+        image: mediaLibrary.Music.featuredVertical,
+    },
+    {
+        label: "Engagement session gallery",
+        path: mediaLibrary.Engagements.path,
+        category: mediaLibrary.Engagements.category,
+        image: mediaLibrary.Engagements.featuredVertical,
+    },
+    {
+        label: "Lifestyle photography gallery",
+        path: mediaLibrary.Lifestyles.path,
+        category: mediaLibrary.Lifestyles.category,
+        image: mediaLibrary.Lifestyles.featuredVertical,
+    },
 ];
 
 const Testimonials: React.FC = () => {
     return (
-        <section className="testimonials">
+        <section className="testimonials" aria-labelledby="testimonials-title">
             <div className="container">
                 <div className="row">
                     <div className="col-lg-12">
                         <div className="section-heading text-center">
-                            <h6>Kind Words</h6>
-                            <h4>What clients remember after the gallery is delivered</h4>
+                            <p className="section-eyebrow">Kind Words</p>
+                            <h2 id="testimonials-title">What clients remember after the gallery is delivered</h2>
                         </div>
                     </div>
 
                     {/* Swiper Carousel */}
                     <div className="col-lg-8 offset-lg-2">
                         <Swiper
-                            modules={[Navigation, Pagination, Autoplay]}
+                            modules={[Navigation, Pagination]}
                             spaceBetween={20}
                             slidesPerView={1}
                             navigation
                             pagination={{ clickable: true }}
-                            autoplay={{ delay: 5000, disableOnInteraction: false }}
                             loop={testimonialsData.length > 2}
                         >
                             {testimonialsData.map((testimonial, index) => (
@@ -71,7 +88,7 @@ const Testimonials: React.FC = () => {
                                         <div className="content">
                                             <div className="left-content">
                                                 <p>{testimonial.text}</p>
-                                                <h4>{testimonial.name}</h4>
+                                                <h3>{testimonial.name}</h3>
                                                 <span>{testimonial.context}</span>
                                             </div>
                                             <div className="image">
@@ -84,13 +101,21 @@ const Testimonials: React.FC = () => {
                         </Swiper>
                     </div>
 
-                    {/* Client Logos Section */}
+                    {/* Gallery preview links */}
                     <div className="col-lg-12 mt-5">
                         <div className="clients">
                             <div className="row">
-                                {clientLogos.map((logo, index) => (
-                                    <div className="col-lg-2 col-4" key={index}>
-                                        {logo}
+                                {clientGalleryLinks.map((gallery) => (
+                                    <div className="col-lg-2 col-4" key={gallery.label}>
+                                        <Link
+                                            to={`${GALLERY}/${gallery.category}/${gallery.image.split('/')[0]}`}
+                                            aria-label={`Open ${gallery.label}`}
+                                        >
+                                            <img
+                                                src={`${gallery.path}/${gallery.image}`}
+                                                alt={`${gallery.label} preview`}
+                                            />
+                                        </Link>
                                     </div>
                                 ))}
                             </div>
