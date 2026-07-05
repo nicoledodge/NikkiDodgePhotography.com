@@ -59,6 +59,24 @@ interface MediaTreeNode {
     totalFiles: number;
 }
 
+interface FolderMediaPreview {
+    kind: "folder";
+    name: string;
+    path: string;
+    files: MediaItem[];
+    totalFiles: number;
+}
+
+interface FileMediaPreview {
+    kind: "file";
+    item: MediaItem;
+}
+
+type MediaPreview = FolderMediaPreview | FileMediaPreview;
+
+const folderPreviewLimit = 36;
+const imagePreviewExtensions = new Set(["avif", "gif", "jpg", "jpeg", "png", "svg", "webp"]);
+
 const tabLabels: Record<AdminTab, string> = {
     leads: "Leads",
     calendar: "Calendar",
@@ -320,6 +338,27 @@ function collectMediaFolderPaths(node: MediaTreeNode): string[] {
     ]);
 }
 
+function collectMediaTreeFiles(node: MediaTreeNode): MediaItem[] {
+    return [
+        ...node.files,
+        ...node.folders.flatMap((folder) => collectMediaTreeFiles(folder)),
+    ];
+}
+
+function getMediaItemExtension(item: MediaItem): string {
+    const mediaName = getMediaItemName(item.relativeKey);
+    const extension = mediaName.includes(".") ? mediaName.split(".").pop() : "";
+    return (extension ?? "").toLowerCase();
+}
+
+function canPreviewMediaItem(item: MediaItem): boolean {
+    return imagePreviewExtensions.has(getMediaItemExtension(item));
+}
+
+function formatMediaTimestamp(item: MediaItem): string {
+    return item.lastModified ? new Date(item.lastModified).toLocaleString() : "Uploaded";
+}
+
 function formatBytes(size: number): string {
     if (size < 1024) {
         return `${size} B`;
@@ -391,6 +430,7 @@ export default function Admin() {
     const [moveDrafts, setMoveDrafts] = useState<Record<string, string>>({});
     const [movingMediaKey, setMovingMediaKey] = useState<string | null>(null);
     const [expandedMediaFolders, setExpandedMediaFolders] = useState<string[]>([]);
+    const [mediaPreview, setMediaPreview] = useState<MediaPreview | null>(null);
     const [savingLeadId, setSavingLeadId] = useState<string | null>(null);
     const [savingSettings, setSavingSettings] = useState(false);
     const [sendingDiscordTest, setSendingDiscordTest] = useState(false);
@@ -512,6 +552,21 @@ export default function Admin() {
     useEffect(() => {
         setExpandedMediaFolders(mediaFolderPaths);
     }, [mediaFolderPaths]);
+
+    useEffect(() => {
+        if (!mediaPreview) {
+            return undefined;
+        }
+
+        const handlePreviewKeyDown = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                setMediaPreview(null);
+            }
+        };
+
+        window.addEventListener("keydown", handlePreviewKeyDown);
+        return () => window.removeEventListener("keydown", handlePreviewKeyDown);
+    }, [mediaPreview]);
 
     const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -910,6 +965,20 @@ export default function Admin() {
         setNotice("Copied to clipboard.");
     };
 
+    const openFolderPreview = (folder: MediaTreeNode) => {
+        setMediaPreview({
+            kind: "folder",
+            name: folder.name,
+            path: folder.path,
+            files: collectMediaTreeFiles(folder),
+            totalFiles: folder.totalFiles,
+        });
+    };
+
+    const openFilePreview = (item: MediaItem) => {
+        setMediaPreview({ kind: "file", item });
+    };
+
     const toggleMediaFolder = (folderPath: string) => {
         setExpandedMediaFolders((currentFolders) => (
             currentFolders.includes(folderPath)
@@ -922,24 +991,134 @@ export default function Admin() {
         "--tree-depth": depth,
     }) as React.CSSProperties;
 
+    const renderFilePreviewMedia = (item: MediaItem) => (
+        canPreviewMediaItem(item) ? (
+            <img src={item.publicUrl} alt={getMediaItemName(item.relativeKey)} />
+        ) : (
+            <div className="admin-preview-file-fallback">
+                <span className="fa-regular fa-file" aria-hidden="true" />
+                <strong>{getMediaItemName(item.relativeKey)}</strong>
+            </div>
+        )
+    );
+
+    const renderMediaPreview = () => {
+        if (!mediaPreview) {
+            return null;
+        }
+
+        if (mediaPreview.kind === "file") {
+            const item = mediaPreview.item;
+
+            return (
+                <div className="admin-preview-backdrop" role="presentation" onClick={() => setMediaPreview(null)}>
+                    <section
+                        className="admin-preview-dialog"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="admin-file-preview-title"
+                        onClick={(event) => event.stopPropagation()}
+                    >
+                        <div className="admin-preview-header">
+                            <div>
+                                <h2 id="admin-file-preview-title">{getMediaItemName(item.relativeKey)}</h2>
+                                <p className="admin-muted">
+                                    {getParentMediaPrefix(item.relativeKey) || "Media root"} · {formatMediaTimestamp(item)} · {formatBytes(item.size)}
+                                </p>
+                            </div>
+                            <button className="admin-secondary-button" type="button" onClick={() => setMediaPreview(null)}>
+                                Close
+                            </button>
+                        </div>
+                        <div className="admin-file-preview-frame">
+                            {renderFilePreviewMedia(item)}
+                        </div>
+                        <div className="admin-inline-actions">
+                            <a className="admin-secondary-link" href={item.publicUrl} target="_blank" rel="noreferrer">
+                                Open Original
+                            </a>
+                            <button className="admin-secondary-button" type="button" onClick={() => void copyToClipboard(item.publicUrl)}>
+                                Copy URL
+                            </button>
+                        </div>
+                    </section>
+                </div>
+            );
+        }
+
+        const visibleFiles = mediaPreview.files.slice(0, folderPreviewLimit);
+
+        return (
+            <div className="admin-preview-backdrop" role="presentation" onClick={() => setMediaPreview(null)}>
+                <section
+                    className="admin-preview-dialog admin-folder-preview-dialog"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="admin-folder-preview-title"
+                    onClick={(event) => event.stopPropagation()}
+                >
+                    <div className="admin-preview-header">
+                        <div>
+                            <h2 id="admin-folder-preview-title">{mediaPreview.name}</h2>
+                            <p className="admin-muted">
+                                {mediaPreview.path || "Media root"} · {mediaPreview.totalFiles} file{mediaPreview.totalFiles === 1 ? "" : "s"}
+                            </p>
+                        </div>
+                        <button className="admin-secondary-button" type="button" onClick={() => setMediaPreview(null)}>
+                            Close
+                        </button>
+                    </div>
+                    <div className="admin-folder-preview-grid">
+                        {visibleFiles.map((item) => (
+                            <button
+                                className="admin-folder-preview-item"
+                                type="button"
+                                key={item.key}
+                                onClick={() => openFilePreview(item)}
+                            >
+                                <span className="admin-folder-preview-thumb">
+                                    {canPreviewMediaItem(item) ? (
+                                        <img src={item.publicUrl} alt="" loading="lazy" />
+                                    ) : (
+                                        <span className="fa-regular fa-file" aria-hidden="true" />
+                                    )}
+                                </span>
+                                <span>{getMediaItemName(item.relativeKey)}</span>
+                            </button>
+                        ))}
+                    </div>
+                    {mediaPreview.files.length > folderPreviewLimit && (
+                        <p className="admin-muted">
+                            Showing {folderPreviewLimit} of {mediaPreview.files.length} files.
+                        </p>
+                    )}
+                </section>
+            </div>
+        );
+    };
+
     const renderMediaTreeNode = (node: MediaTreeNode, depth = 0): React.ReactNode => (
         <>
             {node.folders.map((folder) => {
                 const isExpanded = expandedMediaFolderSet.has(folder.path);
                 return (
                     <div className="admin-tree-branch" key={folder.path}>
-                        <button
-                            className="admin-tree-folder-row"
-                            type="button"
-                            style={treeDepthStyle(depth)}
-                            onClick={() => toggleMediaFolder(folder.path)}
-                            aria-expanded={isExpanded}
-                        >
-                            <span className="admin-tree-toggle">{isExpanded ? "-" : "+"}</span>
-                            <span className="fa-solid fa-folder" aria-hidden="true" />
-                            <span className="admin-tree-name">{folder.name}</span>
-                            <span className="admin-tree-meta">{folder.totalFiles} file{folder.totalFiles === 1 ? "" : "s"}</span>
-                        </button>
+                        <div className="admin-tree-folder-row" style={treeDepthStyle(depth)}>
+                            <button
+                                className="admin-tree-folder-toggle-button"
+                                type="button"
+                                onClick={() => toggleMediaFolder(folder.path)}
+                                aria-expanded={isExpanded}
+                            >
+                                <span className="admin-tree-toggle">{isExpanded ? "-" : "+"}</span>
+                                <span className="fa-solid fa-folder" aria-hidden="true" />
+                                <span className="admin-tree-name">{folder.name}</span>
+                                <span className="admin-tree-meta">{folder.totalFiles} file{folder.totalFiles === 1 ? "" : "s"}</span>
+                            </button>
+                            <button className="admin-secondary-button" type="button" onClick={() => openFolderPreview(folder)}>
+                                Preview
+                            </button>
+                        </div>
                         {isExpanded && renderMediaTreeNode(folder, depth + 1)}
                     </div>
                 );
@@ -968,6 +1147,9 @@ export default function Admin() {
                         />
                     </label>
                     <div className="admin-inline-actions">
+                        <button className="admin-secondary-button" type="button" onClick={() => openFilePreview(item)}>
+                            Preview
+                        </button>
                         <button className="admin-secondary-button" type="button" onClick={() => void copyToClipboard(item.publicUrl)}>
                             Copy URL
                         </button>
@@ -1562,6 +1744,14 @@ export default function Admin() {
                                             <button
                                                 className="admin-secondary-button"
                                                 type="button"
+                                                onClick={() => openFolderPreview(mediaTree)}
+                                                disabled={mediaTree.totalFiles === 0}
+                                            >
+                                                Preview Folder
+                                            </button>
+                                            <button
+                                                className="admin-secondary-button"
+                                                type="button"
                                                 onClick={() => setExpandedMediaFolders(mediaFolderPaths)}
                                                 disabled={mediaFolderPaths.length === 0}
                                             >
@@ -1586,6 +1776,7 @@ export default function Admin() {
                                         </div>
                                     )}
                                 </div>
+                                {renderMediaPreview()}
                             </section>
                         )}
 
