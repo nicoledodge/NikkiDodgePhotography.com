@@ -164,7 +164,7 @@ function getParentMediaPrefix(relativeKey: string): string {
 
 function getMediaBreadcrumbs(prefix: string): MediaFolder[] {
     const segments = normalizeMediaPrefix(prefix).split("/").filter(Boolean);
-    const folders: MediaFolder[] = [{ name: "site-assets", prefix: "", count: 0 }];
+    const folders: MediaFolder[] = [{ name: "Media root", prefix: "", count: 0 }];
     let currentPrefix = "";
 
     for (const segment of segments) {
@@ -1211,7 +1211,7 @@ export default function Admin() {
                                 <div className="admin-card">
                                     <div className="admin-section-heading">
                                         <h2>Media Library</h2>
-                                        <p className="admin-muted">{mediaPrefix ? `Folder: ${mediaPrefix}` : "Folder: site-assets"}</p>
+                                        <p className="admin-muted">{mediaPrefix ? `Folder: ${mediaPrefix}` : "Folder: media root"}</p>
                                     </div>
 
                                     {mediaListing.folders.length > 0 && (

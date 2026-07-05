@@ -81,17 +81,36 @@ function buildMediaKey(fileName: string, prefix = ""): string {
     return joinKey(config.s3MediaPrefix, safePrefix, stampedName);
 }
 
-function assertMediaKey(rawKey: string): string {
-    const sanitizedKey = sanitizePathFragment(rawKey);
-    const mediaPrefix = config.s3MediaPrefix;
-    const mediaPrefixWithSlash = `${mediaPrefix}/`;
+function isDataKey(key: string): boolean {
+    return key === config.s3DataPrefix || key.startsWith(`${config.s3DataPrefix}/`);
+}
 
-    if (sanitizedKey !== mediaPrefix && !sanitizedKey.startsWith(mediaPrefixWithSlash)) {
-        throw new Error("Media key must live under the configured media prefix.");
+function getRelativeMediaKey(key: string): string {
+    if (!config.s3MediaPrefix) {
+        return key;
     }
 
-    if (sanitizedKey === config.s3DataPrefix || sanitizedKey.startsWith(`${config.s3DataPrefix}/`)) {
+    const prefixWithSlash = `${config.s3MediaPrefix}/`;
+    return key.startsWith(prefixWithSlash) ? key.slice(prefixWithSlash.length) : key;
+}
+
+function assertMediaKey(rawKey: string): string {
+    const sanitizedKey = sanitizePathFragment(rawKey);
+    if (!sanitizedKey) {
+        throw new Error("A media key is required.");
+    }
+
+    if (isDataKey(sanitizedKey)) {
         throw new Error("Refusing to modify data storage objects.");
+    }
+
+    if (!config.s3MediaPrefix) {
+        return sanitizedKey;
+    }
+
+    const mediaPrefixWithSlash = `${config.s3MediaPrefix}/`;
+    if (sanitizedKey !== config.s3MediaPrefix && !sanitizedKey.startsWith(mediaPrefixWithSlash)) {
+        throw new Error("Media key must live under the configured media prefix.");
     }
 
     return sanitizedKey;
@@ -175,7 +194,7 @@ async function getMediaItemForKey(key: string, fallbackSize = 0): Promise<MediaI
 
         return {
             key: sanitizedKey,
-            relativeKey: sanitizedKey.replace(new RegExp(`^${config.s3MediaPrefix}/?`), ""),
+            relativeKey: getRelativeMediaKey(sanitizedKey),
             size: response.ContentLength ?? fallbackSize,
             lastModified: response.LastModified?.toISOString() ?? null,
             publicUrl: getPublicUrlForMediaKey(sanitizedKey),
@@ -187,7 +206,7 @@ async function getMediaItemForKey(key: string, fallbackSize = 0): Promise<MediaI
 
     return {
         key: sanitizedKey,
-        relativeKey: sanitizedKey.replace(new RegExp(`^${config.s3MediaPrefix}/?`), ""),
+        relativeKey: getRelativeMediaKey(sanitizedKey),
         size: stats.size,
         lastModified: stats.mtime.toISOString(),
         publicUrl: getPublicUrlForMediaKey(sanitizedKey),
@@ -294,7 +313,7 @@ async function walkLocalMedia(relativePrefix = ""): Promise<MediaItem[]> {
 
             items.push({
                 key,
-                relativeKey: key.replace(new RegExp(`^${config.s3MediaPrefix}/?`), ""),
+                relativeKey: getRelativeMediaKey(key),
                 size: stats.size,
                 lastModified: stats.mtime.toISOString(),
                 publicUrl: getPublicUrlForMediaKey(key),
@@ -371,9 +390,13 @@ export const storage = {
                         continue;
                     }
 
+                    if (isDataKey(object.Key)) {
+                        continue;
+                    }
+
                     items.push({
                         key: object.Key,
-                        relativeKey: object.Key.replace(new RegExp(`^${config.s3MediaPrefix}/?`), ""),
+                        relativeKey: getRelativeMediaKey(object.Key),
                         size: object.Size ?? 0,
                         lastModified: object.LastModified?.toISOString() ?? null,
                         publicUrl: getPublicUrlForMediaKey(object.Key),
@@ -404,7 +427,7 @@ export const storage = {
                 method: "server",
                 uploadUrl: "/api/admin/media/upload",
                 key,
-                relativeKey: key.replace(new RegExp(`^${config.s3MediaPrefix}/?`), ""),
+                relativeKey: getRelativeMediaKey(key),
                 publicUrl: getPublicUrlForMediaKey(key),
                 headers: {},
                 maxBytes: config.maxServerUploadBytes,
@@ -430,7 +453,7 @@ export const storage = {
             method: "s3",
             uploadUrl,
             key,
-            relativeKey: key.replace(new RegExp(`^${config.s3MediaPrefix}/?`), ""),
+            relativeKey: getRelativeMediaKey(key),
             publicUrl: getPublicUrlForMediaKey(key),
             headers: {
                 "Content-Type": contentType,
@@ -465,7 +488,7 @@ export const storage = {
 
         return {
             key,
-            relativeKey: key.replace(new RegExp(`^${config.s3MediaPrefix}/?`), ""),
+            relativeKey: getRelativeMediaKey(key),
             size: params.buffer.length,
             lastModified: new Date().toISOString(),
             publicUrl: getPublicUrlForMediaKey(key),
@@ -481,6 +504,7 @@ export const storage = {
         const sourceSegments = sourceKey.split("/").filter(Boolean);
         const fileName = sourceSegments[sourceSegments.length - 1] ?? "upload.bin";
         const destinationKey = joinKey(config.s3MediaPrefix, safePrefix, fileName);
+        assertMediaKey(destinationKey);
 
         if (destinationKey === sourceKey) {
             return getMediaItemForKey(sourceKey);

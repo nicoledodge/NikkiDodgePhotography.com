@@ -10,6 +10,17 @@ function normalizePrefix(input: string | undefined, fallback: string): string {
     return normalized.length > 0 ? normalized : fallback;
 }
 
+function normalizeOptionalPrefix(input: string | undefined, fallback: string): string {
+    if (input === undefined) {
+        return normalizePrefix(undefined, fallback);
+    }
+
+    return input
+        .trim()
+        .replace(/^\/+/, "")
+        .replace(/\/+$/, "");
+}
+
 function readPositiveInteger(input: string | undefined, fallback: number): number {
     const parsedValue = Number(input);
     return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : fallback;
@@ -53,7 +64,7 @@ export const config = {
     s3Bucket: process.env.CRM_S3_BUCKET?.trim() || process.env.APP_S3_BUCKET?.trim() || "",
     s3Region: process.env.CRM_S3_REGION?.trim() || process.env.AWS_REGION?.trim() || "us-east-1",
     s3DataPrefix: normalizePrefix(process.env.CRM_S3_DATA_PREFIX, "app-data"),
-    s3MediaPrefix: normalizePrefix(process.env.CRM_S3_MEDIA_PREFIX, "site-assets"),
+    s3MediaPrefix: normalizeOptionalPrefix(process.env.CRM_S3_MEDIA_PREFIX, "site-assets"),
     publicAssetBaseUrl: (process.env.CRM_PUBLIC_ASSET_BASE_URL?.trim() || "").replace(/\/+$/, ""),
     publicAppUrl: configuredPublicAppUrl || (isProduction ? "https://nikkidodgephotography.com" : `http://localhost:${port}`),
     discordWebhookUrl: process.env.DISCORD_WEBHOOK_URL?.trim() || "",
