@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { dirname, join, relative, resolve } from "node:path";
 import { promises as fs } from "node:fs";
 import { Readable } from "node:stream";
-import type { CalendarEvent, CalendarFeed, Lead, MediaItem, MediaUploadTarget } from "../shared/crm.js";
+import type { CalendarEvent, CalendarFeed, Lead, MediaFolderCreateResult, MediaItem, MediaUploadTarget } from "../shared/crm.js";
 import { defaultSiteSettings, mergeSiteSettings, type SiteSettings } from "../shared/siteSettings.js";
 import { config, isS3Enabled } from "./config.js";
 
@@ -80,6 +80,17 @@ function buildMediaKey(fileName: string, prefix = ""): string {
     const safeName = sanitizeFileName(fileName);
     const stampedName = `${Date.now()}-${randomUUID().slice(0, 8)}-${safeName}`;
     return joinKey(config.s3MediaPrefix, safePrefix, stampedName);
+}
+
+function buildMediaFolderKey(prefix: string): string {
+    const safePrefix = sanitizePathFragment(prefix);
+    const folderKey = joinKey(config.s3MediaPrefix, safePrefix);
+    if (!folderKey) {
+        throw new Error("A folder name is required.");
+    }
+
+    assertMediaKey(folderKey);
+    return `${folderKey}/`;
 }
 
 function isDataKey(key: string): boolean {
@@ -297,6 +308,18 @@ async function walkLocalMedia(relativePrefix = ""): Promise<MediaItem[]> {
 
     async function visitDirectory(currentPath: string): Promise<void> {
         const entries = await fs.readdir(currentPath, { withFileTypes: true });
+        if (entries.length === 0 && currentPath !== rootPath) {
+            const folderKey = `${relative(mediaRootPath, currentPath).replace(/\\/g, "/")}/`;
+            items.push({
+                key: folderKey,
+                relativeKey: getRelativeMediaKey(folderKey),
+                size: 0,
+                lastModified: null,
+                publicUrl: getPublicUrlForMediaKey(folderKey),
+                isFolderMarker: true,
+            });
+            return;
+        }
 
         for (const entry of entries) {
             const nextPath = join(currentPath, entry.name);
@@ -410,6 +433,7 @@ export const storage = {
                         size: object.Size ?? 0,
                         lastModified: object.LastModified?.toISOString() ?? null,
                         publicUrl: getPublicUrlForMediaKey(object.Key),
+                        isFolderMarker: object.Key.endsWith("/") && (object.Size ?? 0) === 0,
                     });
                 }
 
@@ -420,6 +444,33 @@ export const storage = {
         }
 
         return walkLocalMedia(sanitizedPrefix);
+    },
+
+    async createMediaFolder(prefix: string): Promise<MediaFolderCreateResult> {
+        const safePrefix = sanitizePathFragment(prefix);
+        if (!safePrefix) {
+            throw new Error("A folder name is required.");
+        }
+
+        const folderKey = buildMediaFolderKey(safePrefix);
+
+        if (isS3Enabled) {
+            const [{ PutObjectCommand }, s3Client] = await Promise.all([getS3Sdk(), getS3Client()]);
+            await s3Client.send(new PutObjectCommand({
+                Bucket: config.s3Bucket,
+                Key: folderKey,
+                Body: "",
+                ContentType: "application/x-directory",
+            }));
+        } else {
+            const destinationPath = resolve(config.localMediaDir, folderKey);
+            await fs.mkdir(destinationPath, { recursive: true });
+        }
+
+        return {
+            prefix: getRelativeMediaKey(folderKey).replace(/\/+$/, ""),
+            key: folderKey,
+        };
     },
 
     async createMediaUploadTarget(params: {

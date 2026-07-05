@@ -3,7 +3,7 @@ import multer from "multer";
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import type { CalendarEvent, CalendarEventStatus, CalendarFeed, CalendarSnapshot, Lead, LeadStatus } from "./shared/crm.js";
+import type { CalendarEvent, CalendarEventStatus, CalendarFeed, CalendarSnapshot, Lead, LeadStatus, MediaFolderCreateResult } from "./shared/crm.js";
 import { mergeSiteSettings } from "./shared/siteSettings.js";
 import { clearSessionCookie, createSessionToken, isAdminCredentialMatch, readSessionFromRequest, requireAdmin, setSessionCookie } from "./server/auth.js";
 import { config, isS3Enabled } from "./server/config.js";
@@ -385,6 +385,18 @@ app.get("/api/admin/media", requireAdmin, asyncHandler(async (req, res) => {
     const prefix = trimText(req.query.prefix);
     const items = await storage.listMedia(prefix);
     res.json(items);
+}));
+
+app.post("/api/admin/media/folders", requireAdmin, asyncHandler(async (req, res) => {
+    const prefix = trimText(req.body.prefix);
+
+    if (!prefix) {
+        res.status(400).json({ error: "A folder name is required." });
+        return;
+    }
+
+    const folder: MediaFolderCreateResult = await storage.createMediaFolder(prefix);
+    res.status(201).json(folder);
 }));
 
 app.post("/api/admin/media/upload-target", requireAdmin, asyncHandler(async (req, res) => {

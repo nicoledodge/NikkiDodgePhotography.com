@@ -71,6 +71,7 @@ export interface MediaItem {
     size: number;
     lastModified: string | null;
     publicUrl: string;
+    isFolderMarker?: boolean;
 }
 
 export interface MediaUploadTarget {
@@ -82,6 +83,11 @@ export interface MediaUploadTarget {
     headers: Record<string, string>;
     maxBytes: number;
     expiresAt: string | null;
+}
+
+export interface MediaFolderCreateResult {
+    prefix: string;
+    key: string;
 }
 
 export interface CrmSnapshot {

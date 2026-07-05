@@ -3073,7 +3073,7 @@ admin
 .admin-input-button-row {
     display: grid;
     gap: 10px;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
 }
 
 .admin-media-breadcrumbs {
@@ -3093,6 +3093,19 @@ admin
     border: 1px solid rgba(42, 38, 30, 0.1);
     border-radius: 8px;
     background: #fff;
+}
+
+.admin-upload-picker-grid {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-upload-hint {
+    margin: -4px 0 0;
+    color: var(--fifth-color);
+    font-size: 0.9rem;
+    font-weight: 600;
 }
 
 .admin-upload-summary,
@@ -3189,6 +3202,22 @@ admin
 .admin-tree-folder-row .admin-secondary-button {
     padding: 8px 12px;
     white-space: nowrap;
+}
+
+.admin-tree-folder-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.admin-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    clip-path: inset(50%);
 }
 
 .admin-tree-toggle,
@@ -3479,7 +3508,8 @@ admin
     .admin-form-grid,
     .admin-color-grid,
     .admin-feed-form,
-    .admin-feed-item {
+    .admin-feed-item,
+    .admin-upload-picker-grid {
         grid-template-columns: 1fr;
     }
 
@@ -3501,6 +3531,10 @@ admin
     .admin-tree-folder-row {
         grid-template-columns: 1fr;
         align-items: stretch;
+    }
+
+    .admin-tree-folder-actions {
+        justify-content: flex-start;
     }
 
     .admin-tree-folder-toggle-button {

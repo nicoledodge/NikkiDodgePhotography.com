@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
     CalendarDisplayEvent,
     CalendarEvent,
@@ -6,6 +6,7 @@ import type {
     CalendarSnapshot,
     ImportedCalendarEvent,
     Lead,
+    MediaFolderCreateResult,
     MediaItem,
     MediaUploadTarget,
 } from "../shared/crm.js";
@@ -75,7 +76,12 @@ interface FileMediaPreview {
 type MediaPreview = FolderMediaPreview | FileMediaPreview;
 
 const folderPreviewLimit = 36;
+const bulkUploadConcurrency = 4;
 const imagePreviewExtensions = new Set(["avif", "gif", "jpg", "jpeg", "png", "svg", "webp"]);
+const directoryInputProps = {
+    directory: "",
+    webkitdirectory: "",
+} as Record<string, string>;
 
 const tabLabels: Record<AdminTab, string> = {
     leads: "Leads",
@@ -266,6 +272,23 @@ function getMediaItemName(relativeKey: string): string {
     return segments[segments.length - 1] ?? relativeKey;
 }
 
+function getFileRelativePath(file: File): string {
+    return (file as File & { webkitRelativePath?: string }).webkitRelativePath ?? "";
+}
+
+function getFileDisplayPath(file: File): string {
+    return getFileRelativePath(file) || file.name;
+}
+
+function getUploadPrefixForFile(basePrefix: string, file: File): string {
+    const relativePath = normalizeMediaPrefix(getFileRelativePath(file));
+    if (!relativePath) {
+        return normalizeMediaPrefix(basePrefix);
+    }
+
+    return joinMediaPrefix(basePrefix, getParentMediaPrefix(relativePath));
+}
+
 function buildMediaTree(items: MediaItem[], prefix: string): MediaTreeNode {
     const normalizedPrefix = normalizeMediaPrefix(prefix);
     const prefixWithSlash = normalizedPrefix ? `${normalizedPrefix}/` : "";
@@ -307,6 +330,16 @@ function buildMediaTree(items: MediaItem[], prefix: string): MediaTreeNode {
 
         const segments = relativeKey.split("/").filter(Boolean);
         if (segments.length === 0) {
+            continue;
+        }
+
+        if (item.isFolderMarker || item.relativeKey.endsWith("/")) {
+            let currentFolder = root;
+            let currentPath = normalizedPrefix;
+            for (const segment of segments) {
+                currentPath = joinMediaPrefix(currentPath, segment);
+                currentFolder = getOrCreateFolder(currentFolder, segment, currentPath);
+            }
             continue;
         }
 
@@ -407,6 +440,8 @@ function monthHeading(visibleMonth: Date): string {
 
 export default function Admin() {
     const { reloadSiteSettings } = useSiteSettings();
+    const quickUploadInputRef = useRef<HTMLInputElement | null>(null);
+    const quickUploadPrefixRef = useRef("");
     const [sessionChecked, setSessionChecked] = useState(false);
     const [authenticated, setAuthenticated] = useState(false);
     const [username, setUsername] = useState("");
@@ -431,6 +466,7 @@ export default function Admin() {
     const [movingMediaKey, setMovingMediaKey] = useState<string | null>(null);
     const [expandedMediaFolders, setExpandedMediaFolders] = useState<string[]>([]);
     const [mediaPreview, setMediaPreview] = useState<MediaPreview | null>(null);
+    const [creatingFolder, setCreatingFolder] = useState(false);
     const [savingLeadId, setSavingLeadId] = useState<string | null>(null);
     const [savingSettings, setSavingSettings] = useState(false);
     const [sendingDiscordTest, setSendingDiscordTest] = useState(false);
@@ -826,6 +862,39 @@ export default function Admin() {
         await openMediaFolder(nextFolderPrefix);
     };
 
+    const createNewMediaFolder = async () => {
+        const nextFolderPrefix = joinMediaPrefix(mediaPrefix, newFolderName);
+        if (!nextFolderPrefix) {
+            setDashboardError("Enter a folder name first.");
+            return;
+        }
+
+        setCreatingFolder(true);
+        setDashboardError(null);
+        setNotice(null);
+
+        try {
+            const folder = await request<MediaFolderCreateResult>("/api/admin/media/folders", {
+                method: "POST",
+                body: JSON.stringify({
+                    prefix: nextFolderPrefix,
+                }),
+            });
+            setNewFolderName("");
+            await loadMedia(folder.prefix);
+            setExpandedMediaFolders((currentFolders) => (
+                currentFolders.includes(folder.prefix)
+                    ? currentFolders
+                    : [...currentFolders, folder.prefix]
+            ));
+            setNotice(`Created folder ${folder.prefix}.`);
+        } catch (error) {
+            setDashboardError(error instanceof Error ? error.message : "Unable to create folder.");
+        } finally {
+            setCreatingFolder(false);
+        }
+    };
+
     const setUploadEntry = (index: number, update: Partial<UploadProgressEntry>) => {
         setUploadProgress((currentProgress) => currentProgress.map((entry, entryIndex) => (
             entryIndex === index
@@ -885,36 +954,71 @@ export default function Admin() {
         }
     };
 
-    const handleUpload = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        if (selectedFiles.length === 0) {
+    const uploadFiles = async (files: File[], basePrefix: string) => {
+        if (files.length === 0) {
             setDashboardError("Choose at least one file before uploading.");
             return;
         }
 
-        const uploadPrefix = normalizeMediaPrefix(mediaPrefix);
+        const uploadPrefix = normalizeMediaPrefix(basePrefix);
         setUploading(true);
         setDashboardError(null);
         setNotice(null);
-        setUploadProgress(selectedFiles.map((file) => ({
-            fileName: file.name,
+        setUploadProgress(files.map((file) => ({
+            fileName: getFileDisplayPath(file),
             status: "waiting",
         })));
 
         try {
-            for (const [index, file] of selectedFiles.entries()) {
-                await uploadFile(file, uploadPrefix, index);
+            let nextIndex = 0;
+            let failedUploads = 0;
+            const workers = Array.from({ length: Math.min(bulkUploadConcurrency, files.length) }, async () => {
+                while (nextIndex < files.length) {
+                    const index = nextIndex;
+                    nextIndex += 1;
+                    const file = files[index];
+                    try {
+                        await uploadFile(file, getUploadPrefixForFile(uploadPrefix, file), index);
+                    } catch {
+                        failedUploads += 1;
+                    }
+                }
+            });
+            await Promise.all(workers);
+            if (failedUploads > 0) {
+                throw new Error(`${failedUploads} of ${files.length} upload${files.length === 1 ? "" : "s"} failed. Check the file list for details.`);
             }
 
             setSelectedFiles([]);
             setFileInputKey((currentKey) => currentKey + 1);
             await loadMedia(uploadPrefix);
-            setNotice(`Uploaded ${selectedFiles.length} file${selectedFiles.length === 1 ? "" : "s"}.`);
+            setNotice(`Uploaded ${files.length} file${files.length === 1 ? "" : "s"} to ${uploadPrefix || "media root"}.`);
         } catch (error) {
             setDashboardError(error instanceof Error ? error.message : "Unable to upload media.");
         } finally {
             setUploading(false);
         }
+    };
+
+    const handleUpload = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        await uploadFiles(selectedFiles, mediaPrefix);
+    };
+
+    const startFolderBulkUpload = (prefix: string) => {
+        quickUploadPrefixRef.current = normalizeMediaPrefix(prefix);
+        if (quickUploadInputRef.current) {
+            quickUploadInputRef.current.value = "";
+            quickUploadInputRef.current.click();
+        }
+    };
+
+    const handleQuickUploadFiles = async (files: File[]) => {
+        if (files.length === 0) {
+            return;
+        }
+
+        await uploadFiles(files, quickUploadPrefixRef.current);
     };
 
     const moveMedia = async (item: MediaItem) => {
@@ -1115,9 +1219,14 @@ export default function Admin() {
                                 <span className="admin-tree-name">{folder.name}</span>
                                 <span className="admin-tree-meta">{folder.totalFiles} file{folder.totalFiles === 1 ? "" : "s"}</span>
                             </button>
-                            <button className="admin-secondary-button" type="button" onClick={() => openFolderPreview(folder)}>
-                                Preview
-                            </button>
+                            <div className="admin-tree-folder-actions">
+                                <button className="admin-secondary-button" type="button" onClick={() => startFolderBulkUpload(folder.path)} disabled={uploading}>
+                                    Upload
+                                </button>
+                                <button className="admin-secondary-button" type="button" onClick={() => openFolderPreview(folder)}>
+                                    Preview
+                                </button>
+                            </div>
                         </div>
                         {isExpanded && renderMediaTreeNode(folder, depth + 1)}
                     </div>
@@ -1622,6 +1731,15 @@ export default function Admin() {
 
                         {activeTab === "media" && (
                             <section className="admin-stack">
+                                <input
+                                    ref={quickUploadInputRef}
+                                    className="admin-visually-hidden"
+                                    type="file"
+                                    multiple
+                                    aria-hidden="true"
+                                    tabIndex={-1}
+                                    onChange={(event) => void handleQuickUploadFiles(Array.from(event.target.files ?? []))}
+                                />
                                 <div className="admin-card admin-media-workspace">
                                     <div className="admin-section-heading">
                                         <div>
@@ -1663,11 +1781,11 @@ export default function Admin() {
                                             />
                                         </label>
                                         <label>
-                                            Open or create folder
+                                            New folder
                                             <div className="admin-input-button-row">
                                                 <input
                                                     type="text"
-                                                    placeholder="new-gallery"
+                                                    placeholder="new-gallery or Portfolio/Weddings/New Client"
                                                     value={newFolderName}
                                                     onChange={(event) => setNewFolderName(event.target.value)}
                                                 />
@@ -1675,24 +1793,47 @@ export default function Admin() {
                                                     className="admin-secondary-button"
                                                     type="button"
                                                     onClick={() => void openNewMediaFolder()}
+                                                    disabled={creatingFolder}
                                                 >
                                                     Open
+                                                </button>
+                                                <button
+                                                    className="admin-primary-button"
+                                                    type="button"
+                                                    onClick={() => void createNewMediaFolder()}
+                                                    disabled={creatingFolder}
+                                                >
+                                                    {creatingFolder ? "Creating..." : "Create"}
                                                 </button>
                                             </div>
                                         </label>
                                     </div>
 
                                     <form className="admin-upload-panel" onSubmit={handleUpload}>
-                                        <label>
-                                            Files
-                                            <input
-                                                key={fileInputKey}
-                                                type="file"
-                                                multiple
-                                                onChange={(event) => setSelectedFiles(Array.from(event.target.files ?? []))}
-                                                required
-                                            />
-                                        </label>
+                                        <div className="admin-upload-picker-grid">
+                                            <label>
+                                                Bulk files
+                                                <input
+                                                    key={`files-${fileInputKey}`}
+                                                    type="file"
+                                                    multiple
+                                                    onChange={(event) => setSelectedFiles(Array.from(event.target.files ?? []))}
+                                                />
+                                            </label>
+                                            <label>
+                                                Folder upload
+                                                <input
+                                                    key={`folder-${fileInputKey}`}
+                                                    type="file"
+                                                    multiple
+                                                    {...directoryInputProps}
+                                                    onChange={(event) => setSelectedFiles(Array.from(event.target.files ?? []))}
+                                                />
+                                            </label>
+                                        </div>
+                                        <p className="admin-upload-hint">
+                                            Folder uploads keep their folder path inside the current media folder.
+                                        </p>
                                         <div className="admin-upload-summary">
                                             <span>
                                                 {selectedFileSummary.count === 0
@@ -1703,7 +1844,7 @@ export default function Admin() {
                                         </div>
                                         <div className="admin-inline-actions">
                                             <button className="admin-primary-button" type="submit" disabled={uploading}>
-                                                {uploading ? "Uploading..." : "Upload to S3"}
+                                                {uploading ? "Uploading..." : `Bulk Upload to ${mediaPrefix || "Media root"}`}
                                             </button>
                                             <button
                                                 className="admin-secondary-button"
@@ -1744,6 +1885,14 @@ export default function Admin() {
                                             <button
                                                 className="admin-secondary-button"
                                                 type="button"
+                                                onClick={() => startFolderBulkUpload(mediaPrefix)}
+                                                disabled={uploading}
+                                            >
+                                                Upload Here
+                                            </button>
+                                            <button
+                                                className="admin-secondary-button"
+                                                type="button"
                                                 onClick={() => openFolderPreview(mediaTree)}
                                                 disabled={mediaTree.totalFiles === 0}
                                             >
@@ -1768,7 +1917,7 @@ export default function Admin() {
                                         </div>
                                     </div>
 
-                                    {mediaTree.totalFiles === 0 ? (
+                                    {mediaTree.totalFiles === 0 && mediaTree.folders.length === 0 ? (
                                         <p className="admin-muted">No media found for this folder.</p>
                                     ) : (
                                         <div className="admin-media-tree" aria-label="S3 media bucket">
