@@ -106,8 +106,16 @@ function getRelativeMediaKey(key: string): string {
     return key.startsWith(prefixWithSlash) ? key.slice(prefixWithSlash.length) : key;
 }
 
+function sanitizeMediaKey(input: string): string {
+    const normalizedInput = input.trim().replace(/\\/g, "/");
+    const isFolderMarker = normalizedInput.endsWith("/");
+    const sanitizedKey = sanitizePathFragment(input);
+    return isFolderMarker && sanitizedKey ? `${sanitizedKey}/` : sanitizedKey;
+}
+
 function assertMediaKey(rawKey: string): string {
-    const sanitizedKey = sanitizePathFragment(rawKey);
+    const sanitizedKey = sanitizeMediaKey(rawKey);
+    const comparableKey = sanitizedKey.replace(/\/+$/, "");
     if (!sanitizedKey) {
         throw new Error("A media key is required.");
     }
@@ -121,7 +129,7 @@ function assertMediaKey(rawKey: string): string {
     }
 
     const mediaPrefixWithSlash = `${config.s3MediaPrefix}/`;
-    if (sanitizedKey !== config.s3MediaPrefix && !sanitizedKey.startsWith(mediaPrefixWithSlash)) {
+    if (comparableKey !== config.s3MediaPrefix && !comparableKey.startsWith(mediaPrefixWithSlash)) {
         throw new Error("Media key must live under the configured media prefix.");
     }
 
