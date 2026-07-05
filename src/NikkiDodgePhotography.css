@@ -3094,8 +3094,7 @@ admin
     font-weight: 600;
 }
 
-.admin-upload-progress-list,
-.admin-folder-grid {
+.admin-upload-progress-list {
     display: grid;
     gap: 10px;
 }
@@ -3117,32 +3116,91 @@ admin
     background: rgba(143, 42, 42, 0.08);
 }
 
-.admin-folder-grid {
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    margin-bottom: 18px;
+.admin-move-field {
+    max-width: 420px;
 }
 
-.admin-folder-button {
+.admin-media-tree {
+    --tree-indent: 22px;
     display: grid;
-    gap: 4px;
-    text-align: left;
-    border: 1px solid rgba(42, 38, 30, 0.12);
+    gap: 6px;
+    margin-top: 18px;
+    border: 1px solid rgba(42, 38, 30, 0.1);
     border-radius: 8px;
-    padding: 14px;
-    background: rgba(168, 154, 120, 0.12);
-    color: var(--primary-color);
+    padding: 10px;
+    background: #fff;
+    overflow-x: auto;
 }
 
-.admin-folder-button span {
+.admin-tree-branch {
+    display: grid;
+    gap: 6px;
+}
+
+.admin-tree-folder-row,
+.admin-tree-file-row {
+    margin-left: calc(var(--tree-depth) * var(--tree-indent));
+}
+
+.admin-tree-folder-row {
+    width: calc(100% - (var(--tree-depth) * var(--tree-indent)));
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: 24px 18px minmax(180px, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    background: rgba(42, 38, 30, 0.05);
+    color: var(--primary-color);
+    text-align: left;
+}
+
+.admin-tree-folder-row:hover {
+    border-color: rgba(42, 38, 30, 0.16);
+}
+
+.admin-tree-toggle,
+.admin-tree-name {
     font-weight: 700;
 }
 
-.admin-folder-button small {
-    color: var(--fifth-color);
+.admin-tree-toggle {
+    text-align: center;
 }
 
-.admin-move-field {
-    max-width: 420px;
+.admin-tree-meta {
+    color: var(--fifth-color);
+    font-weight: 600;
+}
+
+.admin-tree-file-row {
+    width: calc(100% - (var(--tree-depth) * var(--tree-indent)));
+    border: 1px solid rgba(42, 38, 30, 0.08);
+    border-radius: 8px;
+    padding: 12px;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: minmax(280px, 1fr) minmax(180px, 320px) auto;
+    align-items: center;
+    background: #fff;
+}
+
+.admin-tree-file-main {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 18px minmax(0, 1fr);
+    align-items: start;
+}
+
+.admin-tree-file-main a {
+    color: var(--primary-color);
+    font-weight: 700;
+    word-break: break-word;
+}
+
+.admin-tree-file-main p {
+    margin: 4px 0 0;
 }
 
 .admin-span-2 {
@@ -3232,6 +3290,24 @@ admin
     .admin-upload-summary,
     .admin-upload-progress-item {
         flex-direction: column;
+        align-items: stretch;
+    }
+
+    .admin-media-tree {
+        --tree-indent: 14px;
+        padding: 8px;
+    }
+
+    .admin-tree-folder-row {
+        grid-template-columns: 22px 18px minmax(120px, 1fr);
+    }
+
+    .admin-tree-meta {
+        grid-column: 3;
+    }
+
+    .admin-tree-file-row {
+        grid-template-columns: 1fr;
         align-items: stretch;
     }
 

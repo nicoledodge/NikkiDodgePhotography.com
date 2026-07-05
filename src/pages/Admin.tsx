@@ -37,6 +37,14 @@ interface UploadProgressEntry {
     message?: string;
 }
 
+interface MediaTreeNode {
+    name: string;
+    path: string;
+    folders: MediaTreeNode[];
+    files: MediaItem[];
+    totalFiles: number;
+}
+
 const tabLabels: Record<AdminTab, string> = {
     leads: "Leads",
     calendar: "Calendar",
@@ -179,11 +187,38 @@ function getMediaBreadcrumbs(prefix: string): MediaFolder[] {
     return folders;
 }
 
-function getImmediateMediaListing(items: MediaItem[], prefix: string): { folders: MediaFolder[]; files: MediaItem[] } {
+function getMediaItemName(relativeKey: string): string {
+    const segments = normalizeMediaPrefix(relativeKey).split("/").filter(Boolean);
+    return segments[segments.length - 1] ?? relativeKey;
+}
+
+function buildMediaTree(items: MediaItem[], prefix: string): MediaTreeNode {
     const normalizedPrefix = normalizeMediaPrefix(prefix);
     const prefixWithSlash = normalizedPrefix ? `${normalizedPrefix}/` : "";
-    const folderMap = new Map<string, MediaFolder>();
-    const files: MediaItem[] = [];
+    const root: MediaTreeNode = {
+        name: normalizedPrefix || "Media root",
+        path: normalizedPrefix,
+        folders: [],
+        files: [],
+        totalFiles: 0,
+    };
+
+    function getOrCreateFolder(parent: MediaTreeNode, name: string, path: string): MediaTreeNode {
+        const existingFolder = parent.folders.find((folder) => folder.path === path);
+        if (existingFolder) {
+            return existingFolder;
+        }
+
+        const nextFolder: MediaTreeNode = {
+            name,
+            path,
+            folders: [],
+            files: [],
+            totalFiles: 0,
+        };
+        parent.folders.push(nextFolder);
+        return nextFolder;
+    }
 
     for (const item of items) {
         let relativeKey = normalizeMediaPrefix(item.relativeKey);
@@ -196,29 +231,37 @@ function getImmediateMediaListing(items: MediaItem[], prefix: string): { folders
             relativeKey = relativeKey.slice(prefixWithSlash.length);
         }
 
-        const [firstSegment, ...remainingSegments] = relativeKey.split("/").filter(Boolean);
-        if (!firstSegment) {
+        const segments = relativeKey.split("/").filter(Boolean);
+        if (segments.length === 0) {
             continue;
         }
 
-        if (remainingSegments.length > 0) {
-            const folderPrefix = joinMediaPrefix(normalizedPrefix, firstSegment);
-            const existingFolder = folderMap.get(folderPrefix);
-            folderMap.set(folderPrefix, {
-                name: firstSegment,
-                prefix: folderPrefix,
-                count: (existingFolder?.count ?? 0) + 1,
-            });
-            continue;
+        let currentFolder = root;
+        let currentPath = normalizedPrefix;
+        for (const segment of segments.slice(0, -1)) {
+            currentPath = joinMediaPrefix(currentPath, segment);
+            currentFolder = getOrCreateFolder(currentFolder, segment, currentPath);
         }
 
-        files.push(item);
+        currentFolder.files.push(item);
     }
 
-    return {
-        folders: [...folderMap.values()].sort((left, right) => left.name.localeCompare(right.name)),
-        files: files.sort((left, right) => right.relativeKey.localeCompare(left.relativeKey)),
-    };
+    function sortAndCount(node: MediaTreeNode): number {
+        node.folders.sort((left, right) => left.name.localeCompare(right.name));
+        node.files.sort((left, right) => getMediaItemName(left.relativeKey).localeCompare(getMediaItemName(right.relativeKey)));
+        node.totalFiles = node.files.length + node.folders.reduce((sum, folder) => sum + sortAndCount(folder), 0);
+        return node.totalFiles;
+    }
+
+    sortAndCount(root);
+    return root;
+}
+
+function collectMediaFolderPaths(node: MediaTreeNode): string[] {
+    return node.folders.flatMap((folder) => [
+        folder.path,
+        ...collectMediaFolderPaths(folder),
+    ]);
 }
 
 function formatBytes(size: number): string {
@@ -289,6 +332,7 @@ export default function Admin() {
     const [newFolderName, setNewFolderName] = useState("");
     const [moveDrafts, setMoveDrafts] = useState<Record<string, string>>({});
     const [movingMediaKey, setMovingMediaKey] = useState<string | null>(null);
+    const [expandedMediaFolders, setExpandedMediaFolders] = useState<string[]>([]);
     const [savingLeadId, setSavingLeadId] = useState<string | null>(null);
     const [savingSettings, setSavingSettings] = useState(false);
     const [sendingDiscordTest, setSendingDiscordTest] = useState(false);
@@ -379,7 +423,9 @@ export default function Admin() {
         booked: leads.filter((lead) => lead.status === "booked").length,
         archived: leads.filter((lead) => lead.status === "archived").length,
     }), [leads]);
-    const mediaListing = useMemo(() => getImmediateMediaListing(mediaItems, mediaPrefix), [mediaItems, mediaPrefix]);
+    const mediaTree = useMemo(() => buildMediaTree(mediaItems, mediaPrefix), [mediaItems, mediaPrefix]);
+    const mediaFolderPaths = useMemo(() => collectMediaFolderPaths(mediaTree), [mediaTree]);
+    const expandedMediaFolderSet = useMemo(() => new Set(expandedMediaFolders), [expandedMediaFolders]);
     const mediaBreadcrumbs = useMemo(() => getMediaBreadcrumbs(mediaPrefix), [mediaPrefix]);
     const selectedFileSummary = useMemo(() => {
         const totalBytes = selectedFiles.reduce((sum, file) => sum + file.size, 0);
@@ -388,6 +434,10 @@ export default function Admin() {
             totalBytes,
         };
     }, [selectedFiles]);
+
+    useEffect(() => {
+        setExpandedMediaFolders(mediaFolderPaths);
+    }, [mediaFolderPaths]);
 
     const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -739,6 +789,84 @@ export default function Admin() {
         await navigator.clipboard.writeText(value);
         setNotice("Copied to clipboard.");
     };
+
+    const toggleMediaFolder = (folderPath: string) => {
+        setExpandedMediaFolders((currentFolders) => (
+            currentFolders.includes(folderPath)
+                ? currentFolders.filter((currentPath) => currentPath !== folderPath)
+                : [...currentFolders, folderPath]
+        ));
+    };
+
+    const treeDepthStyle = (depth: number) => ({
+        "--tree-depth": depth,
+    }) as React.CSSProperties;
+
+    const renderMediaTreeNode = (node: MediaTreeNode, depth = 0): React.ReactNode => (
+        <>
+            {node.folders.map((folder) => {
+                const isExpanded = expandedMediaFolderSet.has(folder.path);
+                return (
+                    <div className="admin-tree-branch" key={folder.path}>
+                        <button
+                            className="admin-tree-folder-row"
+                            type="button"
+                            style={treeDepthStyle(depth)}
+                            onClick={() => toggleMediaFolder(folder.path)}
+                            aria-expanded={isExpanded}
+                        >
+                            <span className="admin-tree-toggle">{isExpanded ? "-" : "+"}</span>
+                            <span className="fa-solid fa-folder" aria-hidden="true" />
+                            <span className="admin-tree-name">{folder.name}</span>
+                            <span className="admin-tree-meta">{folder.totalFiles} file{folder.totalFiles === 1 ? "" : "s"}</span>
+                        </button>
+                        {isExpanded && renderMediaTreeNode(folder, depth + 1)}
+                    </div>
+                );
+            })}
+
+            {node.files.map((item) => (
+                <article className="admin-tree-file-row" style={treeDepthStyle(depth)} key={item.key}>
+                    <div className="admin-tree-file-main">
+                        <span className="fa-regular fa-file-image" aria-hidden="true" />
+                        <div>
+                            <a href={item.publicUrl} target="_blank" rel="noreferrer">{getMediaItemName(item.relativeKey)}</a>
+                            <p className="admin-muted">
+                                {getParentMediaPrefix(item.relativeKey) || "Media root"} · {item.lastModified ? new Date(item.lastModified).toLocaleString() : "Uploaded"} · {formatBytes(item.size)}
+                            </p>
+                        </div>
+                    </div>
+                    <label className="admin-move-field">
+                        Move to folder
+                        <input
+                            type="text"
+                            value={moveDrafts[item.key] ?? getParentMediaPrefix(item.relativeKey)}
+                            onChange={(event) => setMoveDrafts((currentDrafts) => ({
+                                ...currentDrafts,
+                                [item.key]: event.target.value,
+                            }))}
+                        />
+                    </label>
+                    <div className="admin-inline-actions">
+                        <button className="admin-secondary-button" type="button" onClick={() => void copyToClipboard(item.publicUrl)}>
+                            Copy URL
+                        </button>
+                        <button
+                            className="admin-secondary-button"
+                            type="button"
+                            onClick={() => void moveMedia(item)}
+                            disabled={movingMediaKey === item.key}
+                        >
+                            {movingMediaKey === item.key ? "Moving..." : "Move"}
+                        </button>
+                        <button className="admin-danger-button" type="button" onClick={() => void deleteMedia(item.key)}>
+                            Delete
+                        </button>
+                    </div>
+                </article>
+            ))}
+        </>
+    );
 
     if (!sessionChecked) {
         return (
@@ -1210,68 +1338,37 @@ export default function Admin() {
 
                                 <div className="admin-card">
                                     <div className="admin-section-heading">
-                                        <h2>Media Library</h2>
-                                        <p className="admin-muted">{mediaPrefix ? `Folder: ${mediaPrefix}` : "Folder: media root"}</p>
+                                        <div>
+                                            <h2>Media Library</h2>
+                                            <p className="admin-muted">
+                                                {mediaPrefix ? `Folder: ${mediaPrefix}` : "Folder: media root"} · {mediaTree.totalFiles} file{mediaTree.totalFiles === 1 ? "" : "s"}
+                                            </p>
+                                        </div>
+                                        <div className="admin-inline-actions">
+                                            <button
+                                                className="admin-secondary-button"
+                                                type="button"
+                                                onClick={() => setExpandedMediaFolders(mediaFolderPaths)}
+                                                disabled={mediaFolderPaths.length === 0}
+                                            >
+                                                Expand All
+                                            </button>
+                                            <button
+                                                className="admin-secondary-button"
+                                                type="button"
+                                                onClick={() => setExpandedMediaFolders([])}
+                                                disabled={mediaFolderPaths.length === 0}
+                                            >
+                                                Collapse All
+                                            </button>
+                                        </div>
                                     </div>
 
-                                    {mediaListing.folders.length > 0 && (
-                                        <div className="admin-folder-grid">
-                                            {mediaListing.folders.map((folder) => (
-                                                <button
-                                                    className="admin-folder-button"
-                                                    type="button"
-                                                    key={folder.prefix}
-                                                    onClick={() => void openMediaFolder(folder.prefix)}
-                                                >
-                                                    <span>{folder.name}</span>
-                                                    <small>{folder.count} item{folder.count === 1 ? "" : "s"}</small>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    {mediaListing.files.length === 0 && mediaListing.folders.length === 0 ? (
+                                    {mediaTree.totalFiles === 0 ? (
                                         <p className="admin-muted">No media found for this folder.</p>
                                     ) : (
-                                        <div className="admin-media-list">
-                                            {mediaListing.files.map((item) => (
-                                                <article className="admin-media-item" key={item.key}>
-                                                    <div>
-                                                        <h3>{item.relativeKey}</h3>
-                                                        <p className="admin-muted">
-                                                            {item.lastModified ? new Date(item.lastModified).toLocaleString() : "Uploaded"} · {formatBytes(item.size)}
-                                                        </p>
-                                                        <a href={item.publicUrl} target="_blank" rel="noreferrer">{item.publicUrl}</a>
-                                                    </div>
-                                                    <label className="admin-move-field">
-                                                        Move to folder
-                                                        <input
-                                                            type="text"
-                                                            value={moveDrafts[item.key] ?? getParentMediaPrefix(item.relativeKey)}
-                                                            onChange={(event) => setMoveDrafts((currentDrafts) => ({
-                                                                ...currentDrafts,
-                                                                [item.key]: event.target.value,
-                                                            }))}
-                                                        />
-                                                    </label>
-                                                    <div className="admin-inline-actions">
-                                                        <button className="admin-secondary-button" type="button" onClick={() => void copyToClipboard(item.publicUrl)}>
-                                                            Copy URL
-                                                        </button>
-                                                        <button
-                                                            className="admin-secondary-button"
-                                                            type="button"
-                                                            onClick={() => void moveMedia(item)}
-                                                            disabled={movingMediaKey === item.key}
-                                                        >
-                                                            {movingMediaKey === item.key ? "Moving..." : "Move"}
-                                                        </button>
-                                                        <button className="admin-danger-button" type="button" onClick={() => void deleteMedia(item.key)}>
-                                                            Delete
-                                                        </button>
-                                                    </div>
-                                                </article>
-                                            ))}
+                                        <div className="admin-media-tree" aria-label="S3 media bucket">
+                                            {renderMediaTreeNode(mediaTree)}
                                         </div>
                                     )}
                                 </div>
