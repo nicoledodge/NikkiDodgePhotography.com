@@ -3,11 +3,12 @@ import multer from "multer";
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import type { CalendarEvent, CalendarEventStatus, Lead, LeadStatus } from "./shared/crm.js";
+import type { CalendarEvent, CalendarEventStatus, CalendarFeed, CalendarSnapshot, Lead, LeadStatus } from "./shared/crm.js";
 import { mergeSiteSettings } from "./shared/siteSettings.js";
 import { clearSessionCookie, createSessionToken, isAdminCredentialMatch, readSessionFromRequest, requireAdmin, setSessionCookie } from "./server/auth.js";
 import { config, isS3Enabled } from "./server/config.js";
 import { getNotificationStatus, sendDiscordTestNotification, sendLeadCreatedNotification } from "./server/notifications.js";
+import { importCalendarFeeds, normalizeCalendarFeedUrl } from "./server/calendarFeeds.js";
 import { storage } from "./server/storage.js";
 
 const app = express();
@@ -91,6 +92,15 @@ function validateCalendarPayload(payload: ReturnType<typeof normalizeCalendarInp
     }
 
     return null;
+}
+
+function getCalendarFeedName(name: unknown, url: string): string {
+    const requestedName = trimText(name);
+    if (requestedName) {
+        return requestedName;
+    }
+
+    return new URL(url).hostname || "iCal feed";
 }
 
 app.set("trust proxy", 1);
@@ -213,8 +223,26 @@ app.patch("/api/admin/leads/:id", requireAdmin, asyncHandler(async (req, res) =>
 }));
 
 app.get("/api/admin/calendar", requireAdmin, asyncHandler(async (_req, res) => {
-    const events = await storage.getCalendar();
-    res.json(events);
+    const [events, feeds] = await Promise.all([
+        storage.getCalendar(),
+        storage.getCalendarFeeds(),
+    ]);
+
+    const importResult = feeds.length > 0
+        ? await importCalendarFeeds(feeds)
+        : { feeds, importedEvents: [] };
+
+    if (feeds.length > 0) {
+        await storage.saveCalendarFeeds(importResult.feeds);
+    }
+
+    const snapshot: CalendarSnapshot = {
+        events,
+        importedEvents: importResult.importedEvents,
+        feeds: importResult.feeds,
+    };
+
+    res.json(snapshot);
 }));
 
 app.post("/api/admin/calendar", requireAdmin, asyncHandler(async (req, res) => {
@@ -281,6 +309,50 @@ app.delete("/api/admin/calendar/:id", requireAdmin, asyncHandler(async (req, res
     }
 
     await storage.saveCalendar(nextEvents);
+    res.status(204).end();
+}));
+
+app.post("/api/admin/calendar/feeds", requireAdmin, asyncHandler(async (req, res) => {
+    const url = normalizeCalendarFeedUrl(req.body.url);
+    if (!url) {
+        res.status(400).json({ error: "A valid http, https, or webcal iCal URL is required." });
+        return;
+    }
+
+    const feeds = await storage.getCalendarFeeds();
+    const duplicateFeed = feeds.find((feed) => feed.url === url);
+    if (duplicateFeed) {
+        res.status(409).json({ error: "That iCal link is already saved." });
+        return;
+    }
+
+    const now = new Date().toISOString();
+    const nextFeed: CalendarFeed = {
+        id: randomUUID(),
+        createdAt: now,
+        updatedAt: now,
+        name: getCalendarFeedName(req.body.name, url),
+        url,
+        lastFetchedAt: "",
+        lastError: "",
+    };
+
+    feeds.push(nextFeed);
+    await storage.saveCalendarFeeds(feeds);
+    res.status(201).json(nextFeed);
+}));
+
+app.delete("/api/admin/calendar/feeds/:id", requireAdmin, asyncHandler(async (req, res) => {
+    const feedId = trimText(req.params.id);
+    const feeds = await storage.getCalendarFeeds();
+    const nextFeeds = feeds.filter((feed) => feed.id !== feedId);
+
+    if (nextFeeds.length === feeds.length) {
+        res.status(404).json({ error: "iCal link not found." });
+        return;
+    }
+
+    await storage.saveCalendarFeeds(nextFeeds);
     res.status(204).end();
 }));
 

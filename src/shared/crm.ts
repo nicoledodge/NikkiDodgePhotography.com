@@ -31,6 +31,40 @@ export interface CalendarEvent {
     notes: string;
 }
 
+export interface CalendarFeed {
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    name: string;
+    url: string;
+    lastFetchedAt: string;
+    lastError: string;
+}
+
+export interface ImportedCalendarEvent {
+    id: string;
+    title: string;
+    clientName: string;
+    start: string;
+    end: string;
+    location: string;
+    status: CalendarEventStatus;
+    notes: string;
+    allDay: boolean;
+    source: "ical";
+    sourceFeedId: string;
+    sourceFeedName: string;
+    externalUid: string;
+}
+
+export type CalendarDisplayEvent = CalendarEvent | ImportedCalendarEvent;
+
+export interface CalendarSnapshot {
+    events: CalendarEvent[];
+    importedEvents: ImportedCalendarEvent[];
+    feeds: CalendarFeed[];
+}
+
 export interface MediaItem {
     key: string;
     relativeKey: string;
@@ -53,5 +87,6 @@ export interface MediaUploadTarget {
 export interface CrmSnapshot {
     leads: Lead[];
     calendar: CalendarEvent[];
+    calendarFeeds: CalendarFeed[];
     settings: SiteSettings;
 }

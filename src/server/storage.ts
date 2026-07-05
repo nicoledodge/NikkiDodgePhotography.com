@@ -3,15 +3,16 @@ import { randomUUID } from "node:crypto";
 import { dirname, join, relative, resolve } from "node:path";
 import { promises as fs } from "node:fs";
 import { Readable } from "node:stream";
-import type { CalendarEvent, Lead, MediaItem, MediaUploadTarget } from "../shared/crm.js";
+import type { CalendarEvent, CalendarFeed, Lead, MediaItem, MediaUploadTarget } from "../shared/crm.js";
 import { defaultSiteSettings, mergeSiteSettings, type SiteSettings } from "../shared/siteSettings.js";
 import { config, isS3Enabled } from "./config.js";
 
-type DataDocumentName = "leads" | "calendar" | "settings";
+type DataDocumentName = "leads" | "calendar" | "calendarFeeds" | "settings";
 
 const dataFileNames: Record<DataDocumentName, string> = {
     leads: "leads.json",
     calendar: "calendar.json",
+    calendarFeeds: "calendar-feeds.json",
     settings: "settings.json",
 };
 
@@ -358,6 +359,15 @@ export const storage = {
 
     async saveCalendar(events: CalendarEvent[]): Promise<void> {
         await writeJsonDocument("calendar", events);
+    },
+
+    async getCalendarFeeds(): Promise<CalendarFeed[]> {
+        const feeds = await readJsonDocument<CalendarFeed[]>("calendarFeeds", []);
+        return feeds.sort((left, right) => left.name.localeCompare(right.name));
+    },
+
+    async saveCalendarFeeds(feeds: CalendarFeed[]): Promise<void> {
+        await writeJsonDocument("calendarFeeds", feeds);
     },
 
     async getSettings(): Promise<SiteSettings> {

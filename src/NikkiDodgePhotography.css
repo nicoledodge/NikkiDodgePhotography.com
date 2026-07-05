@@ -3253,6 +3253,7 @@ admin
 }
 
 .admin-calendar-chip {
+    display: block;
     text-align: left;
     border: none;
     border-radius: 8px;
@@ -3260,6 +3261,59 @@ admin
     color: var(--primary-color);
     padding: 8px 10px;
     font-size: 0.85rem;
+}
+
+.admin-calendar-chip.is-imported {
+    background: rgba(62, 118, 82, 0.1);
+    border-left: 3px solid rgba(62, 118, 82, 0.48);
+}
+
+.admin-calendar-feed-card,
+.admin-feed-form,
+.admin-feed-list {
+    display: grid;
+    gap: 16px;
+}
+
+.admin-feed-form {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr);
+}
+
+.admin-feed-form button {
+    justify-self: start;
+}
+
+.admin-feed-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 14px;
+    border: 1px solid rgba(42, 38, 30, 0.1);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.admin-feed-item.is-error {
+    border-color: rgba(143, 42, 42, 0.24);
+    background: rgba(143, 42, 42, 0.06);
+}
+
+.admin-feed-url {
+    margin-bottom: 6px;
+    color: var(--fifth-color);
+    overflow-wrap: anywhere;
+}
+
+.admin-feed-error {
+    margin: 0;
+    color: #8f2a2a;
+    font-weight: 600;
+}
+
+.admin-feed-source {
+    margin: 6px 0 0;
+    color: #3e7652;
+    font-weight: 700;
 }
 
 .admin-media-item a,
@@ -3279,7 +3333,9 @@ admin
     }
 
     .admin-form-grid,
-    .admin-color-grid {
+    .admin-color-grid,
+    .admin-feed-form,
+    .admin-feed-item {
         grid-template-columns: 1fr;
     }
 

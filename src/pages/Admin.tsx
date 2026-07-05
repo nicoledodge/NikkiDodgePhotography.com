@@ -1,5 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import type { CalendarEvent, Lead, MediaItem, MediaUploadTarget } from "../shared/crm.js";
+import type {
+    CalendarDisplayEvent,
+    CalendarEvent,
+    CalendarFeed,
+    CalendarSnapshot,
+    ImportedCalendarEvent,
+    Lead,
+    MediaItem,
+    MediaUploadTarget,
+} from "../shared/crm.js";
 import { defaultSiteSettings, type SiteSettings } from "../shared/siteSettings.js";
 import { useSiteSettings } from "../site/SiteSettingsContext";
 
@@ -18,6 +27,11 @@ interface CalendarDraft {
     location: string;
     status: CalendarEvent["status"];
     notes: string;
+}
+
+interface CalendarFeedDraft {
+    name: string;
+    url: string;
 }
 
 interface NotificationStatus {
@@ -103,10 +117,21 @@ const initialCalendarDraft: CalendarDraft = {
     notes: "",
 };
 
+const initialCalendarFeedDraft: CalendarFeedDraft = {
+    name: "",
+    url: "",
+};
+
 function formatDateTime(value: string): string {
     return new Intl.DateTimeFormat("en-US", {
         dateStyle: "medium",
         timeStyle: "short",
+    }).format(new Date(value));
+}
+
+function formatDate(value: string): string {
+    return new Intl.DateTimeFormat("en-US", {
+        dateStyle: "medium",
     }).format(new Date(value));
 }
 
@@ -115,6 +140,37 @@ function formatDateKey(date: Date): string {
     const month = `${date.getMonth() + 1}`.padStart(2, "0");
     const day = `${date.getDate()}`.padStart(2, "0");
     return `${year}-${month}-${day}`;
+}
+
+function isImportedCalendarEvent(event: CalendarDisplayEvent): event is ImportedCalendarEvent {
+    return "source" in event && event.source === "ical";
+}
+
+function getCalendarChipLabel(event: CalendarDisplayEvent): string {
+    const timeLabel = isImportedCalendarEvent(event) && event.allDay
+        ? "All day"
+        : new Date(event.start).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+
+    return `${timeLabel} ${event.title}`;
+}
+
+function getCalendarEventRange(event: CalendarDisplayEvent): string {
+    if (isImportedCalendarEvent(event) && event.allDay) {
+        const startDate = formatDate(event.start);
+        const eventStart = new Date(event.start);
+        const eventEnd = new Date(event.end);
+        const inclusiveEnd = eventEnd > eventStart ? new Date(eventEnd) : eventEnd;
+
+        if (eventEnd > eventStart) {
+            inclusiveEnd.setDate(inclusiveEnd.getDate() - 1);
+        }
+
+        const endDate = formatDate(inclusiveEnd.toISOString());
+
+        return startDate === endDate ? startDate : `${startDate} to ${endDate}`;
+    }
+
+    return `${formatDateTime(event.start)} to ${formatDateTime(event.end)}`;
 }
 
 function addDays(date: Date, days: number): Date {
@@ -323,6 +379,8 @@ export default function Admin() {
     const [loadingDashboard, setLoadingDashboard] = useState(false);
     const [leads, setLeads] = useState<Lead[]>([]);
     const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+    const [importedCalendarEvents, setImportedCalendarEvents] = useState<ImportedCalendarEvent[]>([]);
+    const [calendarFeeds, setCalendarFeeds] = useState<CalendarFeed[]>([]);
     const [settingsDraft, setSettingsDraft] = useState<SiteSettings>(defaultSiteSettings);
     const [notificationStatus, setNotificationStatus] = useState<NotificationStatus | null>(null);
     const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
@@ -340,6 +398,9 @@ export default function Admin() {
     const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
     const [editingEventId, setEditingEventId] = useState<string | null>(null);
     const [calendarDraft, setCalendarDraft] = useState<CalendarDraft>(initialCalendarDraft);
+    const [calendarFeedDraft, setCalendarFeedDraft] = useState<CalendarFeedDraft>(initialCalendarFeedDraft);
+    const [savingCalendarFeed, setSavingCalendarFeed] = useState(false);
+    const [deletingCalendarFeedId, setDeletingCalendarFeedId] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<UploadProgressEntry[]>([]);
     const [visibleMonth, setVisibleMonth] = useState(() => {
@@ -357,6 +418,17 @@ export default function Admin() {
         setMediaPrefix(normalizedPrefix);
     }, []);
 
+    const applyCalendarSnapshot = useCallback((snapshot: CalendarSnapshot) => {
+        setCalendarEvents(snapshot.events);
+        setImportedCalendarEvents(snapshot.importedEvents);
+        setCalendarFeeds(snapshot.feeds);
+    }, []);
+
+    const loadCalendar = useCallback(async () => {
+        const nextCalendar = await request<CalendarSnapshot>("/api/admin/calendar");
+        applyCalendarSnapshot(nextCalendar);
+    }, [applyCalendarSnapshot]);
+
     const loadDashboard = useCallback(async () => {
         setLoadingDashboard(true);
         setDashboardError(null);
@@ -364,13 +436,13 @@ export default function Admin() {
         try {
             const [nextLeads, nextCalendar, nextSettings, nextNotificationStatus] = await Promise.all([
                 request<Lead[]>("/api/admin/leads"),
-                request<CalendarEvent[]>("/api/admin/calendar"),
+                request<CalendarSnapshot>("/api/admin/calendar"),
                 request<SiteSettings>("/api/admin/settings"),
                 request<NotificationStatus>("/api/admin/notifications/status"),
             ]);
 
             setLeads(nextLeads);
-            setCalendarEvents(nextCalendar);
+            applyCalendarSnapshot(nextCalendar);
             setSettingsDraft(nextSettings);
             setNotificationStatus(nextNotificationStatus);
             await loadMedia("");
@@ -380,7 +452,7 @@ export default function Admin() {
         } finally {
             setLoadingDashboard(false);
         }
-    }, [loadMedia]);
+    }, [applyCalendarSnapshot, loadMedia]);
 
     useEffect(() => {
         void (async () => {
@@ -399,10 +471,14 @@ export default function Admin() {
         })();
     }, [loadDashboard]);
 
-    const calendarEventsByDay = useMemo(() => {
-        const entries = new Map<string, CalendarEvent[]>();
+    const allCalendarEvents = useMemo<CalendarDisplayEvent[]>(() => (
+        [...calendarEvents, ...importedCalendarEvents].sort((left, right) => left.start.localeCompare(right.start))
+    ), [calendarEvents, importedCalendarEvents]);
 
-        for (const event of calendarEvents) {
+    const calendarEventsByDay = useMemo(() => {
+        const entries = new Map<string, CalendarDisplayEvent[]>();
+
+        for (const event of allCalendarEvents) {
             const key = formatDateKey(new Date(event.start));
             const dayEvents = entries.get(key) ?? [];
             dayEvents.push(event);
@@ -411,12 +487,10 @@ export default function Admin() {
         }
 
         return entries;
-    }, [calendarEvents]);
+    }, [allCalendarEvents]);
 
     const visibleDays = useMemo(() => buildCalendarGrid(visibleMonth), [visibleMonth]);
-    const upcomingEvents = useMemo(() => (
-        [...calendarEvents].sort((left, right) => left.start.localeCompare(right.start))
-    ), [calendarEvents]);
+    const upcomingEvents = allCalendarEvents;
     const leadCounts = useMemo(() => ({
         new: leads.filter((lead) => lead.status === "new").length,
         contacted: leads.filter((lead) => lead.status === "contacted").length,
@@ -468,6 +542,8 @@ export default function Admin() {
         setUsername("");
         setLeads([]);
         setCalendarEvents([]);
+        setImportedCalendarEvents([]);
+        setCalendarFeeds([]);
         setMediaItems([]);
         setSelectedFiles([]);
         setUploadProgress([]);
@@ -589,6 +665,50 @@ export default function Admin() {
             setDashboardError(error instanceof Error ? error.message : "Unable to delete calendar event.");
         } finally {
             setDeletingEventId(null);
+        }
+    };
+
+    const saveCalendarFeed = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setSavingCalendarFeed(true);
+        setDashboardError(null);
+        setNotice(null);
+
+        try {
+            const createdFeed = await request<CalendarFeed>("/api/admin/calendar/feeds", {
+                method: "POST",
+                body: JSON.stringify(calendarFeedDraft),
+            });
+
+            setCalendarFeedDraft(initialCalendarFeedDraft);
+            setNotice(`Saved ${createdFeed.name} iCal link.`);
+            await loadCalendar();
+        } catch (error) {
+            setDashboardError(error instanceof Error ? error.message : "Unable to save iCal link.");
+        } finally {
+            setSavingCalendarFeed(false);
+        }
+    };
+
+    const deleteCalendarFeed = async (feedId: string) => {
+        if (!window.confirm("Remove this iCal link? Imported events from it will stop showing.")) {
+            return;
+        }
+
+        setDeletingCalendarFeedId(feedId);
+        setDashboardError(null);
+        setNotice(null);
+
+        try {
+            await requestVoid(`/api/admin/calendar/feeds/${feedId}`, {
+                method: "DELETE",
+            });
+            setNotice("iCal link removed.");
+            await loadCalendar();
+        } catch (error) {
+            setDashboardError(error instanceof Error ? error.message : "Unable to remove iCal link.");
+        } finally {
+            setDeletingCalendarFeedId(null);
         }
     };
 
@@ -1068,14 +1188,24 @@ export default function Admin() {
                                                 >
                                                     <span className="admin-calendar-date">{day.getDate()}</span>
                                                     {eventsForDay.slice(0, 3).map((event) => (
-                                                        <button
-                                                            className="admin-calendar-chip"
-                                                            key={event.id}
-                                                            type="button"
-                                                            onClick={() => startEditingEvent(event)}
-                                                        >
-                                                            {new Date(event.start).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} {event.title}
-                                                        </button>
+                                                        isImportedCalendarEvent(event) ? (
+                                                            <span
+                                                                className="admin-calendar-chip is-imported"
+                                                                key={event.id}
+                                                                title={`Imported from ${event.sourceFeedName}`}
+                                                            >
+                                                                {getCalendarChipLabel(event)}
+                                                            </span>
+                                                        ) : (
+                                                            <button
+                                                                className="admin-calendar-chip"
+                                                                key={event.id}
+                                                                type="button"
+                                                                onClick={() => startEditingEvent(event)}
+                                                            >
+                                                                {getCalendarChipLabel(event)}
+                                                            </button>
+                                                        )
                                                     ))}
                                                     {eventsForDay.length > 3 && (
                                                         <span className="admin-muted">+{eventsForDay.length - 3} more</span>
@@ -1197,24 +1327,108 @@ export default function Admin() {
                                                     <article className="admin-upcoming-item" key={event.id}>
                                                         <div>
                                                             <h3>{event.title}</h3>
-                                                            <p className="admin-muted">{formatDateTime(event.start)} to {formatDateTime(event.end)}</p>
+                                                            <p className="admin-muted">{getCalendarEventRange(event)}</p>
                                                             {(event.clientName || event.location) && (
                                                                 <p>{[event.clientName, event.location].filter(Boolean).join(" · ")}</p>
                                                             )}
+                                                            {isImportedCalendarEvent(event) && (
+                                                                <p className="admin-feed-source">Imported from {event.sourceFeedName}</p>
+                                                            )}
                                                         </div>
-                                                        <div className="admin-inline-actions">
-                                                            <button className="admin-secondary-button" type="button" onClick={() => startEditingEvent(event)}>
-                                                                Edit
-                                                            </button>
-                                                            <button
-                                                                className="admin-danger-button"
-                                                                type="button"
-                                                                onClick={() => void deleteCalendarEvent(event.id)}
-                                                                disabled={deletingEventId === event.id}
-                                                            >
-                                                                {deletingEventId === event.id ? "Deleting..." : "Delete"}
-                                                            </button>
+                                                        {!isImportedCalendarEvent(event) && (
+                                                            <div className="admin-inline-actions">
+                                                                <button className="admin-secondary-button" type="button" onClick={() => startEditingEvent(event)}>
+                                                                    Edit
+                                                                </button>
+                                                                <button
+                                                                    className="admin-danger-button"
+                                                                    type="button"
+                                                                    onClick={() => void deleteCalendarEvent(event.id)}
+                                                                    disabled={deletingEventId === event.id}
+                                                                >
+                                                                    {deletingEventId === event.id ? "Deleting..." : "Delete"}
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </article>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="admin-card admin-calendar-feed-card">
+                                        <div className="admin-section-heading">
+                                            <div>
+                                                <h2>iCal Links</h2>
+                                                <p className="admin-muted">Saved links are imported into this calendar view.</p>
+                                            </div>
+                                            <button
+                                                className="admin-secondary-button"
+                                                type="button"
+                                                onClick={() => void loadCalendar()}
+                                                disabled={loadingDashboard}
+                                            >
+                                                Refresh
+                                            </button>
+                                        </div>
+
+                                        <form className="admin-feed-form" onSubmit={saveCalendarFeed}>
+                                            <label>
+                                                Calendar name
+                                                <input
+                                                    type="text"
+                                                    value={calendarFeedDraft.name}
+                                                    onChange={(event) => setCalendarFeedDraft((currentDraft) => ({
+                                                        ...currentDraft,
+                                                        name: event.target.value,
+                                                    }))}
+                                                    placeholder="Google Calendar"
+                                                />
+                                            </label>
+                                            <label>
+                                                iCal URL
+                                                <input
+                                                    type="text"
+                                                    inputMode="url"
+                                                    value={calendarFeedDraft.url}
+                                                    onChange={(event) => setCalendarFeedDraft((currentDraft) => ({
+                                                        ...currentDraft,
+                                                        url: event.target.value,
+                                                    }))}
+                                                    placeholder="https://calendar.google.com/calendar/ical/..."
+                                                    required
+                                                />
+                                            </label>
+                                            <button className="admin-primary-button" type="submit" disabled={savingCalendarFeed}>
+                                                {savingCalendarFeed ? "Saving..." : "Add iCal Link"}
+                                            </button>
+                                        </form>
+
+                                        {calendarFeeds.length === 0 ? (
+                                            <p className="admin-muted">No iCal links saved yet.</p>
+                                        ) : (
+                                            <div className="admin-feed-list">
+                                                {calendarFeeds.map((feed) => (
+                                                    <article className={feed.lastError ? "admin-feed-item is-error" : "admin-feed-item"} key={feed.id}>
+                                                        <div>
+                                                            <h3>{feed.name}</h3>
+                                                            <p className="admin-feed-url">{feed.url}</p>
+                                                            {feed.lastError ? (
+                                                                <p className="admin-feed-error">Import issue: {feed.lastError}</p>
+                                                            ) : (
+                                                                <p className="admin-muted">
+                                                                    {feed.lastFetchedAt ? `Last imported ${formatDateTime(feed.lastFetchedAt)}` : "Saved and ready to import."}
+                                                                </p>
+                                                            )}
                                                         </div>
+                                                        <button
+                                                            className="admin-danger-button"
+                                                            type="button"
+                                                            onClick={() => void deleteCalendarFeed(feed.id)}
+                                                            disabled={deletingCalendarFeedId === feed.id}
+                                                        >
+                                                            {deletingCalendarFeedId === feed.id ? "Removing..." : "Remove"}
+                                                        </button>
                                                     </article>
                                                 ))}
                                             </div>
