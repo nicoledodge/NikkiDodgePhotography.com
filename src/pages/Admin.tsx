@@ -48,6 +48,7 @@ interface MediaFolder {
 
 interface UploadProgressEntry {
     fileName: string;
+    fileSize: number;
     status: "waiting" | "signing" | "uploading" | "complete" | "error";
     message?: string;
 }
@@ -78,6 +79,7 @@ type MediaPreview = FolderMediaPreview | FileMediaPreview;
 const folderPreviewLimit = 36;
 const bulkUploadConcurrency = 4;
 const imagePreviewExtensions = new Set(["avif", "gif", "jpg", "jpeg", "png", "svg", "webp"]);
+const finishedUploadStatuses = new Set<UploadProgressEntry["status"]>(["complete", "error"]);
 const directoryInputProps = {
     directory: "",
     webkitdirectory: "",
@@ -378,6 +380,22 @@ function collectMediaTreeFiles(node: MediaTreeNode): MediaItem[] {
     ];
 }
 
+function findMediaTreeNode(node: MediaTreeNode, path: string): MediaTreeNode | null {
+    const normalizedPath = normalizeMediaPrefix(path);
+    if (node.path === normalizedPath) {
+        return node;
+    }
+
+    for (const folder of node.folders) {
+        const match = findMediaTreeNode(folder, normalizedPath);
+        if (match) {
+            return match;
+        }
+    }
+
+    return null;
+}
+
 function getMediaItemExtension(item: MediaItem): string {
     const mediaName = getMediaItemName(item.relativeKey);
     const extension = mediaName.includes(".") ? mediaName.split(".").pop() : "";
@@ -459,6 +477,8 @@ export default function Admin() {
     const [notificationStatus, setNotificationStatus] = useState<NotificationStatus | null>(null);
     const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
     const [mediaPrefix, setMediaPrefix] = useState("");
+    const [selectedMediaPath, setSelectedMediaPath] = useState("");
+    const [selectedMediaKey, setSelectedMediaKey] = useState<string | null>(null);
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [fileInputKey, setFileInputKey] = useState(0);
     const [newFolderName, setNewFolderName] = useState("");
@@ -478,6 +498,7 @@ export default function Admin() {
     const [savingCalendarFeed, setSavingCalendarFeed] = useState(false);
     const [deletingCalendarFeedId, setDeletingCalendarFeedId] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
+    const [isDraggingMediaFiles, setIsDraggingMediaFiles] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<UploadProgressEntry[]>([]);
     const [visibleMonth, setVisibleMonth] = useState(() => {
         const today = new Date();
@@ -492,6 +513,8 @@ export default function Admin() {
         const nextMediaItems = await request<MediaItem[]>(`/api/admin/media${params}`);
         setMediaItems(nextMediaItems);
         setMediaPrefix(normalizedPrefix);
+        setSelectedMediaPath(normalizedPrefix);
+        setSelectedMediaKey(null);
     }, []);
 
     const applyCalendarSnapshot = useCallback((snapshot: CalendarSnapshot) => {
@@ -577,6 +600,12 @@ export default function Admin() {
     const mediaFolderPaths = useMemo(() => collectMediaFolderPaths(mediaTree), [mediaTree]);
     const expandedMediaFolderSet = useMemo(() => new Set(expandedMediaFolders), [expandedMediaFolders]);
     const mediaBreadcrumbs = useMemo(() => getMediaBreadcrumbs(mediaPrefix), [mediaPrefix]);
+    const selectedMediaNode = useMemo(() => (
+        findMediaTreeNode(mediaTree, selectedMediaPath) ?? mediaTree
+    ), [mediaTree, selectedMediaPath]);
+    const selectedMediaFile = useMemo(() => (
+        selectedMediaKey ? mediaItems.find((item) => item.key === selectedMediaKey) ?? null : null
+    ), [mediaItems, selectedMediaKey]);
     const selectedFileSummary = useMemo(() => {
         const totalBytes = selectedFiles.reduce((sum, file) => sum + file.size, 0);
         return {
@@ -584,10 +613,25 @@ export default function Admin() {
             totalBytes,
         };
     }, [selectedFiles]);
+    const uploadSummary = useMemo(() => {
+        const total = uploadProgress.length;
+        const complete = uploadProgress.filter((entry) => entry.status === "complete").length;
+        const failed = uploadProgress.filter((entry) => entry.status === "error").length;
+        const finished = uploadProgress.filter((entry) => finishedUploadStatuses.has(entry.status)).length;
+        const percent = total > 0 ? Math.round((finished / total) * 100) : 0;
+        return { total, complete, failed, finished, percent };
+    }, [uploadProgress]);
 
     useEffect(() => {
         setExpandedMediaFolders(mediaFolderPaths);
     }, [mediaFolderPaths]);
+
+    useEffect(() => {
+        const selectedNodeExists = findMediaTreeNode(mediaTree, selectedMediaPath);
+        if (!selectedNodeExists) {
+            setSelectedMediaPath(mediaTree.path);
+        }
+    }, [mediaTree, selectedMediaPath]);
 
     useEffect(() => {
         if (!mediaPreview) {
@@ -966,6 +1010,7 @@ export default function Admin() {
         setNotice(null);
         setUploadProgress(files.map((file) => ({
             fileName: getFileDisplayPath(file),
+            fileSize: file.size,
             status: "waiting",
         })));
 
@@ -1000,9 +1045,42 @@ export default function Admin() {
         }
     };
 
+    const retryFailedUploads = async () => {
+        const failedFiles = selectedFiles.filter((_, index) => uploadProgress[index]?.status === "error");
+        if (failedFiles.length === 0) {
+            setDashboardError("There are no failed uploads to retry.");
+            return;
+        }
+
+        await uploadFiles(failedFiles, selectedMediaNode.path);
+    };
+
+    const chooseMediaFiles = (files: File[]) => {
+        setSelectedFiles(files);
+        setUploadProgress([]);
+        setDashboardError(null);
+    };
+
     const handleUpload = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        await uploadFiles(selectedFiles, mediaPrefix);
+        await uploadFiles(selectedFiles, selectedMediaNode.path);
+    };
+
+    const handleMediaDrop = (event: React.DragEvent<HTMLElement>) => {
+        event.preventDefault();
+        setIsDraggingMediaFiles(false);
+
+        if (uploading) {
+            return;
+        }
+
+        const droppedFiles = Array.from(event.dataTransfer.files ?? []);
+        if (droppedFiles.length === 0) {
+            return;
+        }
+
+        chooseMediaFiles(droppedFiles);
+        setNotice(`${droppedFiles.length} file${droppedFiles.length === 1 ? "" : "s"} ready to upload.`);
     };
 
     const startFolderBulkUpload = (prefix: string) => {
@@ -1088,6 +1166,17 @@ export default function Admin() {
             currentFolders.includes(folderPath)
                 ? currentFolders.filter((currentPath) => currentPath !== folderPath)
                 : [...currentFolders, folderPath]
+        ));
+    };
+
+    const selectMediaFolder = (folderPath: string) => {
+        const normalizedPath = normalizeMediaPrefix(folderPath);
+        setSelectedMediaPath(normalizedPath);
+        setSelectedMediaKey(null);
+        setExpandedMediaFolders((currentFolders) => (
+            currentFolders.includes(normalizedPath) || normalizedPath.length === 0
+                ? currentFolders
+                : [...currentFolders, normalizedPath]
         ));
     };
 
@@ -1201,83 +1290,194 @@ export default function Admin() {
         );
     };
 
-    const renderMediaTreeNode = (node: MediaTreeNode, depth = 0): React.ReactNode => (
+    const renderMediaFolderTree = (node: MediaTreeNode, depth = 0): React.ReactNode => (
         <>
             {node.folders.map((folder) => {
                 const isExpanded = expandedMediaFolderSet.has(folder.path);
+                const isSelected = selectedMediaNode.path === folder.path;
                 return (
                     <div className="admin-tree-branch" key={folder.path}>
-                        <div className="admin-tree-folder-row" style={treeDepthStyle(depth)}>
+                        <div className={isSelected ? "admin-tree-folder-row is-selected" : "admin-tree-folder-row"} style={treeDepthStyle(depth)}>
                             <button
-                                className="admin-tree-folder-toggle-button"
+                                className="admin-tree-toggle-button"
                                 type="button"
                                 onClick={() => toggleMediaFolder(folder.path)}
                                 aria-expanded={isExpanded}
+                                aria-label={`${isExpanded ? "Collapse" : "Expand"} ${folder.name}`}
                             >
-                                <span className="admin-tree-toggle">{isExpanded ? "-" : "+"}</span>
+                                {isExpanded ? "-" : "+"}
+                            </button>
+                            <button
+                                className="admin-tree-folder-select-button"
+                                type="button"
+                                onClick={() => selectMediaFolder(folder.path)}
+                                aria-current={isSelected ? "true" : undefined}
+                            >
                                 <span className="fa-solid fa-folder" aria-hidden="true" />
                                 <span className="admin-tree-name">{folder.name}</span>
                                 <span className="admin-tree-meta">{folder.totalFiles} file{folder.totalFiles === 1 ? "" : "s"}</span>
                             </button>
-                            <div className="admin-tree-folder-actions">
-                                <button className="admin-secondary-button" type="button" onClick={() => startFolderBulkUpload(folder.path)} disabled={uploading}>
-                                    Upload
-                                </button>
-                                <button className="admin-secondary-button" type="button" onClick={() => openFolderPreview(folder)}>
-                                    Preview
-                                </button>
-                            </div>
                         </div>
-                        {isExpanded && renderMediaTreeNode(folder, depth + 1)}
+                        {isExpanded && renderMediaFolderTree(folder, depth + 1)}
                     </div>
                 );
             })}
+        </>
+    );
 
-            {node.files.map((item) => (
-                <article className="admin-tree-file-row" style={treeDepthStyle(depth)} key={item.key}>
-                    <div className="admin-tree-file-main">
-                        <span className="fa-regular fa-file-image" aria-hidden="true" />
+    const renderDirectoryListing = () => (
+        <div className="admin-directory-list" aria-label="Selected folder contents">
+            {selectedMediaNode.folders.map((folder) => (
+                <article className="admin-directory-row is-folder" key={folder.path}>
+                    <button
+                        className="admin-directory-main"
+                        type="button"
+                        onClick={() => selectMediaFolder(folder.path)}
+                        onDoubleClick={() => void openMediaFolder(folder.path)}
+                    >
+                        <span className="fa-solid fa-folder" aria-hidden="true" />
                         <div>
-                            <a href={item.publicUrl} target="_blank" rel="noreferrer">{getMediaItemName(item.relativeKey)}</a>
-                            <p className="admin-muted">
-                                {getParentMediaPrefix(item.relativeKey) || "Media root"} · {item.lastModified ? new Date(item.lastModified).toLocaleString() : "Uploaded"} · {formatBytes(item.size)}
-                            </p>
+                            <strong>{folder.name}</strong>
+                            <span>{folder.totalFiles} file{folder.totalFiles === 1 ? "" : "s"}</span>
                         </div>
+                    </button>
+                    <div className="admin-directory-actions">
+                        <button className="admin-secondary-button" type="button" onClick={() => void openMediaFolder(folder.path)}>
+                            Open
+                        </button>
+                        <button className="admin-secondary-button" type="button" onClick={() => startFolderBulkUpload(folder.path)} disabled={uploading}>
+                            Upload
+                        </button>
+                        <button className="admin-secondary-button" type="button" onClick={() => openFolderPreview(folder)}>
+                            Preview
+                        </button>
                     </div>
+                </article>
+            ))}
+
+            {selectedMediaNode.files.map((item) => {
+                const isSelected = selectedMediaKey === item.key;
+                return (
+                    <article className={isSelected ? "admin-directory-row is-file is-selected" : "admin-directory-row is-file"} key={item.key}>
+                        <button className="admin-directory-main" type="button" onClick={() => setSelectedMediaKey(item.key)}>
+                            <span className={canPreviewMediaItem(item) ? "fa-regular fa-file-image" : "fa-regular fa-file"} aria-hidden="true" />
+                            <div>
+                                <strong>{getMediaItemName(item.relativeKey)}</strong>
+                                <span>{formatMediaTimestamp(item)} · {formatBytes(item.size)}</span>
+                            </div>
+                        </button>
+                        <div className="admin-directory-actions">
+                            <button className="admin-secondary-button" type="button" onClick={() => openFilePreview(item)}>
+                                Preview
+                            </button>
+                            <button className="admin-secondary-button" type="button" onClick={() => void copyToClipboard(item.publicUrl)}>
+                                Copy URL
+                            </button>
+                            <button className="admin-danger-button" type="button" onClick={() => void deleteMedia(item.key)}>
+                                Delete
+                            </button>
+                        </div>
+                    </article>
+                );
+            })}
+        </div>
+    );
+
+    const renderMediaDetailsPanel = () => {
+        if (selectedMediaFile) {
+            const parentFolder = getParentMediaPrefix(selectedMediaFile.relativeKey);
+
+            return (
+                <aside className="admin-media-details-panel" aria-label="Selected media details">
+                    <div className="admin-media-detail-preview">
+                        {renderFilePreviewMedia(selectedMediaFile)}
+                    </div>
+                    <div>
+                        <h3>{getMediaItemName(selectedMediaFile.relativeKey)}</h3>
+                        <p className="admin-muted">{parentFolder || "Media root"}</p>
+                    </div>
+                    <dl className="admin-media-detail-list">
+                        <div>
+                            <dt>Size</dt>
+                            <dd>{formatBytes(selectedMediaFile.size)}</dd>
+                        </div>
+                        <div>
+                            <dt>Uploaded</dt>
+                            <dd>{formatMediaTimestamp(selectedMediaFile)}</dd>
+                        </div>
+                        <div>
+                            <dt>S3 key</dt>
+                            <dd>{selectedMediaFile.key}</dd>
+                        </div>
+                    </dl>
                     <label className="admin-move-field">
                         Move to folder
                         <input
                             type="text"
-                            value={moveDrafts[item.key] ?? getParentMediaPrefix(item.relativeKey)}
+                            value={moveDrafts[selectedMediaFile.key] ?? parentFolder}
                             onChange={(event) => setMoveDrafts((currentDrafts) => ({
                                 ...currentDrafts,
-                                [item.key]: event.target.value,
+                                [selectedMediaFile.key]: event.target.value,
                             }))}
                         />
                     </label>
                     <div className="admin-inline-actions">
-                        <button className="admin-secondary-button" type="button" onClick={() => openFilePreview(item)}>
+                        <button className="admin-secondary-button" type="button" onClick={() => openFilePreview(selectedMediaFile)}>
                             Preview
                         </button>
-                        <button className="admin-secondary-button" type="button" onClick={() => void copyToClipboard(item.publicUrl)}>
+                        <button className="admin-secondary-button" type="button" onClick={() => void copyToClipboard(selectedMediaFile.publicUrl)}>
                             Copy URL
                         </button>
                         <button
                             className="admin-secondary-button"
                             type="button"
-                            onClick={() => void moveMedia(item)}
-                            disabled={movingMediaKey === item.key}
+                            onClick={() => void moveMedia(selectedMediaFile)}
+                            disabled={movingMediaKey === selectedMediaFile.key}
                         >
-                            {movingMediaKey === item.key ? "Moving..." : "Move"}
-                        </button>
-                        <button className="admin-danger-button" type="button" onClick={() => void deleteMedia(item.key)}>
-                            Delete
+                            {movingMediaKey === selectedMediaFile.key ? "Moving..." : "Move"}
                         </button>
                     </div>
-                </article>
-            ))}
-        </>
-    );
+                </aside>
+            );
+        }
+
+        return (
+            <aside className="admin-media-details-panel" aria-label="Selected folder details">
+                <div className="admin-media-detail-folder-icon">
+                    <span className="fa-solid fa-folder" aria-hidden="true" />
+                </div>
+                <div>
+                    <h3>{selectedMediaNode.name}</h3>
+                    <p className="admin-muted">{selectedMediaNode.path || "Media root"}</p>
+                </div>
+                <dl className="admin-media-detail-list">
+                    <div>
+                        <dt>Folders</dt>
+                        <dd>{selectedMediaNode.folders.length}</dd>
+                    </div>
+                    <div>
+                        <dt>Files here</dt>
+                        <dd>{selectedMediaNode.files.length}</dd>
+                    </div>
+                    <div>
+                        <dt>Total files</dt>
+                        <dd>{selectedMediaNode.totalFiles}</dd>
+                    </div>
+                </dl>
+                <div className="admin-inline-actions">
+                    <button className="admin-secondary-button" type="button" onClick={() => startFolderBulkUpload(selectedMediaNode.path)} disabled={uploading}>
+                        Upload Here
+                    </button>
+                    <button className="admin-secondary-button" type="button" onClick={() => openFolderPreview(selectedMediaNode)} disabled={selectedMediaNode.totalFiles === 0}>
+                        Preview Folder
+                    </button>
+                    <button className="admin-secondary-button" type="button" onClick={() => void openMediaFolder(selectedMediaNode.path)}>
+                        Load Folder
+                    </button>
+                </div>
+            </aside>
+        );
+    };
 
     if (!sessionChecked) {
         return (
@@ -1809,7 +2009,35 @@ export default function Admin() {
                                         </label>
                                     </div>
 
-                                    <form className="admin-upload-panel" onSubmit={handleUpload}>
+                                    <form
+                                        className={isDraggingMediaFiles ? "admin-upload-panel is-dragging" : "admin-upload-panel"}
+                                        onSubmit={handleUpload}
+                                        onDragEnter={(event) => {
+                                            event.preventDefault();
+                                            setIsDraggingMediaFiles(true);
+                                        }}
+                                        onDragOver={(event) => {
+                                            event.preventDefault();
+                                            event.dataTransfer.dropEffect = "copy";
+                                            setIsDraggingMediaFiles(true);
+                                        }}
+                                        onDragLeave={(event) => {
+                                            const nextTarget = event.relatedTarget;
+                                            if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) {
+                                                return;
+                                            }
+
+                                            setIsDraggingMediaFiles(false);
+                                        }}
+                                        onDrop={handleMediaDrop}
+                                    >
+                                        <div className="admin-upload-dropzone">
+                                            <span className="fa-solid fa-cloud-arrow-up" aria-hidden="true" />
+                                            <div>
+                                                <strong>Drop files here</strong>
+                                                <span>Uploads target {selectedMediaNode.path || "Media root"}</span>
+                                            </div>
+                                        </div>
                                         <div className="admin-upload-picker-grid">
                                             <label>
                                                 Bulk files
@@ -1817,7 +2045,7 @@ export default function Admin() {
                                                     key={`files-${fileInputKey}`}
                                                     type="file"
                                                     multiple
-                                                    onChange={(event) => setSelectedFiles(Array.from(event.target.files ?? []))}
+                                                    onChange={(event) => chooseMediaFiles(Array.from(event.target.files ?? []))}
                                                 />
                                             </label>
                                             <label>
@@ -1827,7 +2055,7 @@ export default function Admin() {
                                                     type="file"
                                                     multiple
                                                     {...directoryInputProps}
-                                                    onChange={(event) => setSelectedFiles(Array.from(event.target.files ?? []))}
+                                                    onChange={(event) => chooseMediaFiles(Array.from(event.target.files ?? []))}
                                                 />
                                             </label>
                                         </div>
@@ -1844,7 +2072,15 @@ export default function Admin() {
                                         </div>
                                         <div className="admin-inline-actions">
                                             <button className="admin-primary-button" type="submit" disabled={uploading}>
-                                                {uploading ? "Uploading..." : `Bulk Upload to ${mediaPrefix || "Media root"}`}
+                                                {uploading ? "Uploading..." : `Bulk Upload to ${selectedMediaNode.path || "Media root"}`}
+                                            </button>
+                                            <button
+                                                className="admin-secondary-button"
+                                                type="button"
+                                                onClick={() => void retryFailedUploads()}
+                                                disabled={uploading || uploadSummary.failed === 0}
+                                            >
+                                                Retry Failed
                                             </button>
                                             <button
                                                 className="admin-secondary-button"
@@ -1863,9 +2099,19 @@ export default function Admin() {
 
                                     {uploadProgress.length > 0 && (
                                         <div className="admin-upload-progress-list" aria-live="polite">
+                                            <div className="admin-upload-progress-total">
+                                                <div>
+                                                    <strong>{uploadSummary.finished} of {uploadSummary.total} processed</strong>
+                                                    <span>{uploadSummary.complete} complete · {uploadSummary.failed} failed</span>
+                                                </div>
+                                                <progress value={uploadSummary.percent} max={100}>{uploadSummary.percent}%</progress>
+                                            </div>
                                             {uploadProgress.map((entry, index) => (
                                                 <div className={`admin-upload-progress-item is-${entry.status}`} key={`${entry.fileName}-${index}`}>
-                                                    <strong>{entry.fileName}</strong>
+                                                    <div>
+                                                        <strong>{entry.fileName}</strong>
+                                                        <span>{formatBytes(entry.fileSize)}</span>
+                                                    </div>
                                                     <span>{entry.message ?? entry.status}</span>
                                                 </div>
                                             ))}
@@ -1873,7 +2119,7 @@ export default function Admin() {
                                     )}
                                 </div>
 
-                                <div className="admin-card">
+                                <div className="admin-card admin-media-library-card">
                                     <div className="admin-section-heading">
                                         <div>
                                             <h2>Media Library</h2>
@@ -1885,7 +2131,7 @@ export default function Admin() {
                                             <button
                                                 className="admin-secondary-button"
                                                 type="button"
-                                                onClick={() => startFolderBulkUpload(mediaPrefix)}
+                                                onClick={() => startFolderBulkUpload(selectedMediaNode.path)}
                                                 disabled={uploading}
                                             >
                                                 Upload Here
@@ -1893,8 +2139,8 @@ export default function Admin() {
                                             <button
                                                 className="admin-secondary-button"
                                                 type="button"
-                                                onClick={() => openFolderPreview(mediaTree)}
-                                                disabled={mediaTree.totalFiles === 0}
+                                                onClick={() => openFolderPreview(selectedMediaNode)}
+                                                disabled={selectedMediaNode.totalFiles === 0}
                                             >
                                                 Preview Folder
                                             </button>
@@ -1917,13 +2163,71 @@ export default function Admin() {
                                         </div>
                                     </div>
 
-                                    {mediaTree.totalFiles === 0 && mediaTree.folders.length === 0 ? (
-                                        <p className="admin-muted">No media found for this folder.</p>
-                                    ) : (
-                                        <div className="admin-media-tree" aria-label="S3 media bucket">
-                                            {renderMediaTreeNode(mediaTree)}
-                                        </div>
-                                    )}
+                                    <div className="admin-file-manager">
+                                        <aside className="admin-file-manager-sidebar" aria-label="S3 folder tree">
+                                            <button
+                                                className={selectedMediaNode.path === mediaTree.path ? "admin-tree-root-button is-selected" : "admin-tree-root-button"}
+                                                type="button"
+                                                onClick={() => selectMediaFolder(mediaTree.path)}
+                                            >
+                                                <span className="fa-solid fa-box-archive" aria-hidden="true" />
+                                                <span>{mediaTree.name}</span>
+                                                <strong>{mediaTree.totalFiles}</strong>
+                                            </button>
+                                            {mediaTree.folders.length === 0 ? (
+                                                <p className="admin-muted">No folders yet.</p>
+                                            ) : (
+                                                <div className="admin-media-tree">
+                                                    {renderMediaFolderTree(mediaTree)}
+                                                </div>
+                                            )}
+                                        </aside>
+
+                                        <section className="admin-file-manager-directory" aria-label="Selected folder files">
+                                            <div className="admin-directory-header">
+                                                <div>
+                                                    <p className="admin-kicker">Selected folder</p>
+                                                    <h3>{selectedMediaNode.name}</h3>
+                                                    <p className="admin-muted">
+                                                        {selectedMediaNode.path || "Media root"} · {selectedMediaNode.folders.length} folder{selectedMediaNode.folders.length === 1 ? "" : "s"} · {selectedMediaNode.files.length} file{selectedMediaNode.files.length === 1 ? "" : "s"}
+                                                    </p>
+                                                </div>
+                                                <div className="admin-inline-actions">
+                                                    <button
+                                                        className="admin-secondary-button"
+                                                        type="button"
+                                                        onClick={() => void openMediaFolder(selectedMediaNode.path)}
+                                                    >
+                                                        Load
+                                                    </button>
+                                                    <button
+                                                        className="admin-secondary-button"
+                                                        type="button"
+                                                        onClick={() => startFolderBulkUpload(selectedMediaNode.path)}
+                                                        disabled={uploading}
+                                                    >
+                                                        Upload
+                                                    </button>
+                                                    <button
+                                                        className="admin-secondary-button"
+                                                        type="button"
+                                                        onClick={() => openFolderPreview(selectedMediaNode)}
+                                                        disabled={selectedMediaNode.totalFiles === 0}
+                                                    >
+                                                        Preview
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {selectedMediaNode.files.length === 0 && selectedMediaNode.folders.length === 0 ? (
+                                                <p className="admin-muted">No media found for this folder.</p>
+                                            ) : (
+                                                renderDirectoryListing()
+                                            )}
+                                        </section>
+
+                                        {renderMediaDetailsPanel()}
+                                    </div>
                                 </div>
                                 {renderMediaPreview()}
                             </section>

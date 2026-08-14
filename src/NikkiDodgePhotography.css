@@ -3291,6 +3291,39 @@ admin
     background: #fff;
 }
 
+.admin-upload-panel.is-dragging {
+    border-color: rgba(62, 118, 82, 0.45);
+    background: rgba(62, 118, 82, 0.06);
+}
+
+.admin-upload-dropzone {
+    min-height: 96px;
+    border: 1px dashed rgba(42, 38, 30, 0.24);
+    border-radius: 8px;
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    color: var(--primary-color);
+    text-align: left;
+}
+
+.admin-upload-dropzone .fa-solid {
+    font-size: 1.7rem;
+    color: #3e7652;
+}
+
+.admin-upload-dropzone div {
+    display: grid;
+    gap: 4px;
+}
+
+.admin-upload-dropzone span:last-child {
+    color: var(--fifth-color);
+    font-weight: 600;
+}
+
 .admin-upload-picker-grid {
     display: grid;
     gap: 14px;
@@ -3322,6 +3355,34 @@ admin
     gap: 10px;
 }
 
+.admin-upload-progress-total {
+    border: 1px solid rgba(42, 38, 30, 0.1);
+    border-radius: 8px;
+    padding: 14px;
+    display: grid;
+    gap: 10px;
+    background: rgba(42, 38, 30, 0.04);
+}
+
+.admin-upload-progress-total div,
+.admin-upload-progress-item div {
+    display: grid;
+    gap: 4px;
+}
+
+.admin-upload-progress-total span,
+.admin-upload-progress-item div span {
+    color: var(--fifth-color);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.admin-upload-progress-total progress {
+    width: 100%;
+    height: 10px;
+    accent-color: #3e7652;
+}
+
 .admin-upload-progress-item {
     border: 1px solid rgba(42, 38, 30, 0.1);
     border-radius: 8px;
@@ -3343,67 +3404,265 @@ admin
     max-width: 420px;
 }
 
-.admin-media-tree {
-    --tree-indent: 22px;
+.admin-media-library-card {
     display: grid;
-    gap: 6px;
-    margin-top: 18px;
+    gap: 18px;
+}
+
+.admin-file-manager {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr) minmax(260px, 320px);
+    align-items: stretch;
+}
+
+.admin-file-manager-sidebar,
+.admin-file-manager-directory,
+.admin-media-details-panel {
+    min-height: 520px;
     border: 1px solid rgba(42, 38, 30, 0.1);
     border-radius: 8px;
-    padding: 10px;
     background: #fff;
+}
+
+.admin-file-manager-sidebar,
+.admin-media-details-panel {
+    padding: 14px;
+}
+
+.admin-file-manager-directory {
+    padding: 16px;
+    display: grid;
+    align-content: start;
+    gap: 14px;
+}
+
+.admin-tree-root-button {
+    width: 100%;
+    border: 1px solid rgba(42, 38, 30, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    background: rgba(42, 38, 30, 0.04);
+    color: var(--primary-color);
+    text-align: left;
+}
+
+.admin-tree-root-button.is-selected,
+.admin-tree-folder-row.is-selected,
+.admin-directory-row.is-selected {
+    border-color: rgba(62, 118, 82, 0.36);
+    background: rgba(62, 118, 82, 0.08);
+}
+
+.admin-media-tree {
+    --tree-indent: 18px;
+    display: grid;
+    gap: 4px;
+    margin-top: 12px;
     overflow-x: auto;
 }
 
 .admin-tree-branch {
     display: grid;
-    gap: 6px;
-}
-
-.admin-tree-folder-row,
-.admin-tree-file-row {
-    margin-left: calc(var(--tree-depth) * var(--tree-indent));
+    gap: 4px;
 }
 
 .admin-tree-folder-row {
+    margin-left: calc(var(--tree-depth) * var(--tree-indent));
     width: calc(100% - (var(--tree-depth) * var(--tree-indent)));
     border: 1px solid transparent;
     border-radius: 8px;
-    padding: 10px 12px;
+    padding: 4px;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: 28px minmax(0, 1fr);
     align-items: center;
-    gap: 10px;
-    background: rgba(42, 38, 30, 0.05);
-    color: var(--primary-color);
+    gap: 4px;
 }
 
-.admin-tree-folder-row:hover {
-    border-color: rgba(42, 38, 30, 0.16);
-}
-
-.admin-tree-folder-toggle-button {
+.admin-tree-toggle-button,
+.admin-tree-folder-select-button,
+.admin-directory-main {
     border: 0;
-    padding: 0;
-    display: grid;
-    grid-template-columns: 24px 18px minmax(180px, 1fr) auto;
-    align-items: center;
-    gap: 10px;
-    min-width: 0;
     background: transparent;
     color: var(--primary-color);
+}
+
+.admin-tree-toggle-button {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    font-weight: 800;
+}
+
+.admin-tree-toggle-button:hover,
+.admin-tree-folder-select-button:hover,
+.admin-directory-main:hover {
+    background: rgba(42, 38, 30, 0.06);
+}
+
+.admin-tree-folder-select-button {
+    min-width: 0;
+    border-radius: 6px;
+    padding: 7px;
+    display: grid;
+    grid-template-columns: 18px minmax(96px, 1fr);
+    align-items: center;
+    gap: 8px;
     text-align: left;
 }
 
-.admin-tree-folder-row .admin-secondary-button {
-    padding: 8px 12px;
+.admin-tree-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 700;
+}
+
+.admin-tree-meta {
+    grid-column: 2;
+    color: var(--fifth-color);
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.admin-directory-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.admin-directory-header h3 {
+    margin: 0 0 6px;
+    color: var(--primary-color);
+}
+
+.admin-directory-list {
+    display: grid;
+    gap: 8px;
+}
+
+.admin-directory-row {
+    border: 1px solid rgba(42, 38, 30, 0.09);
+    border-radius: 8px;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.96);
+}
+
+.admin-directory-main {
+    min-width: 0;
+    border-radius: 6px;
+    padding: 8px;
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    text-align: left;
+}
+
+.admin-directory-main div {
+    min-width: 0;
+    display: grid;
+    gap: 4px;
+}
+
+.admin-directory-main strong,
+.admin-directory-main span {
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.admin-tree-folder-actions {
+.admin-directory-main strong {
+    color: var(--primary-color);
+}
+
+.admin-directory-main span {
+    color: var(--fifth-color);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.admin-directory-actions {
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
     gap: 8px;
+}
+
+.admin-directory-actions .admin-secondary-button,
+.admin-directory-actions .admin-danger-button {
+    padding: 8px 11px;
+}
+
+.admin-media-details-panel {
+    display: grid;
+    align-content: start;
+    gap: 14px;
+}
+
+.admin-media-details-panel h3 {
+    margin: 0 0 6px;
+    color: var(--primary-color);
+    overflow-wrap: anywhere;
+}
+
+.admin-media-detail-preview,
+.admin-media-detail-folder-icon {
+    min-height: 180px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background: rgba(42, 38, 30, 0.06);
+    color: var(--primary-color);
+}
+
+.admin-media-detail-preview img {
+    width: 100%;
+    height: 100%;
+    max-height: 240px;
+    object-fit: contain;
+}
+
+.admin-media-detail-folder-icon .fa-solid {
+    font-size: 3rem;
+}
+
+.admin-media-detail-list {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+}
+
+.admin-media-detail-list div {
+    border-bottom: 1px solid rgba(42, 38, 30, 0.08);
+    padding-bottom: 8px;
+    display: grid;
+    gap: 3px;
+}
+
+.admin-media-detail-list dt {
+    color: var(--fifth-color);
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.admin-media-detail-list dd {
+    margin: 0;
+    color: var(--primary-color);
+    font-weight: 600;
+    overflow-wrap: anywhere;
 }
 
 .admin-visually-hidden {
@@ -3414,49 +3673,6 @@ admin
     clip: rect(0 0 0 0);
     white-space: nowrap;
     clip-path: inset(50%);
-}
-
-.admin-tree-toggle,
-.admin-tree-name {
-    font-weight: 700;
-}
-
-.admin-tree-toggle {
-    text-align: center;
-}
-
-.admin-tree-meta {
-    color: var(--fifth-color);
-    font-weight: 600;
-}
-
-.admin-tree-file-row {
-    width: calc(100% - (var(--tree-depth) * var(--tree-indent)));
-    border: 1px solid rgba(42, 38, 30, 0.08);
-    border-radius: 8px;
-    padding: 12px;
-    display: grid;
-    gap: 12px;
-    grid-template-columns: minmax(280px, 1fr) minmax(180px, 320px) auto;
-    align-items: center;
-    background: #fff;
-}
-
-.admin-tree-file-main {
-    display: grid;
-    gap: 10px;
-    grid-template-columns: 18px minmax(0, 1fr);
-    align-items: start;
-}
-
-.admin-tree-file-main a {
-    color: var(--primary-color);
-    font-weight: 700;
-    word-break: break-word;
-}
-
-.admin-tree-file-main p {
-    margin: 4px 0 0;
 }
 
 .admin-preview-backdrop {
@@ -3694,6 +3910,15 @@ admin
     .admin-calendar-layout {
         grid-template-columns: 1fr;
     }
+
+    .admin-file-manager {
+        grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+    }
+
+    .admin-media-details-panel {
+        grid-column: 1 / -1;
+        min-height: 0;
+    }
 }
 
 @media (max-width: 767px) {
@@ -3719,31 +3944,40 @@ admin
         align-items: stretch;
     }
 
-    .admin-media-tree {
-        --tree-indent: 14px;
-        padding: 8px;
+    .admin-file-manager {
+        grid-template-columns: 1fr;
     }
 
-    .admin-tree-folder-row {
+    .admin-file-manager-sidebar,
+    .admin-file-manager-directory,
+    .admin-media-details-panel {
+        min-height: 0;
+    }
+
+    .admin-directory-header,
+    .admin-directory-row {
         grid-template-columns: 1fr;
         align-items: stretch;
     }
 
-    .admin-tree-folder-actions {
+    .admin-directory-header {
+        flex-direction: column;
+    }
+
+    .admin-directory-actions {
         justify-content: flex-start;
     }
 
-    .admin-tree-folder-toggle-button {
-        grid-template-columns: 22px 18px minmax(120px, 1fr);
+    .admin-media-tree {
+        --tree-indent: 14px;
+    }
+
+    .admin-tree-folder-select-button {
+        grid-template-columns: 1fr;
     }
 
     .admin-tree-meta {
-        grid-column: 3;
-    }
-
-    .admin-tree-file-row {
-        grid-template-columns: 1fr;
-        align-items: stretch;
+        grid-column: 1;
     }
 
     .admin-preview-dialog {
