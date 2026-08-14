@@ -55,16 +55,16 @@ const SessionExplorer = (
     const currentSessions = filteredSessions.slice(startIndex, startIndex + itemsPerPage);
 
     return (
-        <section className="gallery-list">
+        <section className="gallery-list" aria-labelledby="recent-sessions-title">
             <div className="container">
                 <div className="row">
                     <div className="col-lg-12">
-                        <h5>Recent Sessions</h5>
+                        <h5 id="recent-sessions-title">Recent Sessions</h5>
                     </div>
 
                     {currentSessions.length === 0 && (
                         <div className="col-lg-12">
-                            <p>No matching galleries yet. Try a broader category or search term.</p>
+                            <p className="gallery-list__empty" role="status">No matching galleries yet. Try a broader category or search term.</p>
                         </div>
                     )}
 
@@ -111,32 +111,42 @@ const SessionExplorer = (
                     {/* Pagination */}
                     {totalPages > 1 && (
                         <div className="col-lg-12">
+                            <nav className="gallery-pagination" aria-label="Gallery pages">
                             <ul className="pagination">
                                 <li className={currentPage === 1 ? "disabled" : ""}>
-                                    <a href="#" onClick={(e) => {
-                                        e.preventDefault();
-                                        setCurrentPage(prev => Math.max(prev - 1, 1));
-                                    }}>
-                                        <i className="fa fa-arrow-left"></i>
-                                    </a>
+                                    <button
+                                        type="button"
+                                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                        disabled={currentPage === 1}
+                                        aria-label="Show previous gallery page"
+                                    >
+                                        <i className="fa fa-arrow-left" aria-hidden="true"></i>
+                                    </button>
                                 </li>
                                 {Array.from({length: totalPages}, (_, i) => (
                                     <li key={i} className={currentPage === i + 1 ? "active" : ""}>
-                                        <a href="#" onClick={(e) => {
-                                            e.preventDefault();
-                                            setCurrentPage(i + 1);
-                                        }}>{i + 1}</a>
+                                        <button
+                                            type="button"
+                                            onClick={() => setCurrentPage(i + 1)}
+                                            aria-current={currentPage === i + 1 ? "page" : undefined}
+                                            aria-label={`Show gallery page ${i + 1}`}
+                                        >
+                                            {i + 1}
+                                        </button>
                                     </li>
                                 ))}
                                 <li className={currentPage === totalPages ? "disabled" : ""}>
-                                    <a href="#" onClick={(e) => {
-                                        e.preventDefault();
-                                        setCurrentPage(prev => Math.min(prev + 1, totalPages));
-                                    }}>
-                                        <i className="fa fa-arrow-right"></i>
-                                    </a>
+                                    <button
+                                        type="button"
+                                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                        disabled={currentPage === totalPages}
+                                        aria-label="Show next gallery page"
+                                    >
+                                        <i className="fa fa-arrow-right" aria-hidden="true"></i>
+                                    </button>
                                 </li>
                             </ul>
+                            </nav>
                         </div>
                     )}
                 </div>

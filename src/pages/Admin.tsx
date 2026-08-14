@@ -103,6 +103,7 @@ const settingsFields: Array<{
     { key: "profilePhotoUrl", label: "Profile Photo URL", help: "Used on the contact page." },
     { key: "contactEmail", label: "Contact Email" },
     { key: "contactPhone", label: "Contact Phone" },
+    { key: "instagramUrl", label: "Instagram Reels URL", help: "Used by public social links and the home hero." },
     { key: "serviceArea", label: "Service Area" },
     { key: "heroTitle", label: "Home Hero Title", help: "Use *asterisks* around words that should stay emphasized." },
     { key: "heroBody", label: "Home Hero Body", multiline: true },

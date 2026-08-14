@@ -8,30 +8,39 @@ import {PRICING} from "../../pages/Pricing";
 const featuredSessions = [
     {
         id: 1,
-        image: mediaLibrary.Family.path + '/' + mediaLibrary.Family.sessions[0].name + '/' + mediaLibrary.Family.sessions[0].featuredHorizontal,
-        label: "Families",
-        focus: "Connection-first sessions",
-        detail: "Helpful pacing for kids and room to move",
-        support: "Planning support",
-        delivery: "Online gallery delivery"
+        image: mediaLibrary.Music.path + '/' + mediaLibrary.Music.sessions[0].name + '/' + mediaLibrary.Music.sessions[0].featuredHorizontal,
+        label: "Music",
+        focus: "Concert and artist coverage",
+        detail: "Fast-moving light, crowds, and backstage context",
+        support: "Shot-list planning",
+        delivery: "Web and social-ready favorites"
     },
     {
         id: 2,
-        image: mediaLibrary.Weddings.path + '/' + mediaLibrary.Weddings.sessions[3].name + '/'+ mediaLibrary.Weddings.sessions[3].featuredHorizontal,
-        label: "Weddings",
-        focus: "Full-story wedding coverage",
-        detail: "From getting ready through the dance floor",
-        support: "Timeline guidance",
-        delivery: "Print-ready high-resolution files"
+        image: mediaLibrary.Sports.path + '/' + mediaLibrary.Sports.sessions[0].name + '/' + mediaLibrary.Sports.sessions[0].featuredHorizontal,
+        label: "Sports",
+        focus: "Athlete and team stories",
+        detail: "Action, portraits, and personality in one gallery",
+        support: "Schedule guidance",
+        delivery: "Family and media-use images"
     },
     {
         id: 3,
-        image: mediaLibrary.Engagements.path + '/' + mediaLibrary.Engagements.sessions[0].name + '/' + mediaLibrary.Engagements.sessions[0].featuredHorizontal,
-        label: "Couples",
-        focus: "Engagements and anniversaries",
-        detail: "A mix of movement, direction, and genuine reactions",
-        support: "Location ideas",
-        delivery: "Save-the-date ready favorites"
+        image: mediaLibrary.Graduations.path + '/' + mediaLibrary.Graduations.sessions[0].name + '/' + mediaLibrary.Graduations.sessions[0].featuredHorizontal,
+        label: "Graduates",
+        focus: "Senior portraits with range",
+        detail: "Outfits, locations, and personality without rushing",
+        support: "Prep support",
+        delivery: "Print and announcement-ready files"
+    },
+    {
+        id: 4,
+        image: mediaLibrary.Lifestyles.path + '/' + mediaLibrary.Lifestyles.sessions[0].name + '/' + mediaLibrary.Lifestyles.sessions[0].featuredHorizontal,
+        label: "Lifestyle",
+        focus: "Creative personal stories",
+        detail: "Editorial-feeling images with room for real life",
+        support: "Creative direction",
+        delivery: "Brand and social-use galleries"
     }
 ];
 
@@ -44,11 +53,11 @@ const ClientHighlights = () => {
                         <div className="section-heading text-center">
                             <p className="section-eyebrow" style={{
                                 color: "var(--fourth-color)"
-                            }}>Why clients keep reaching out</p>
+                            }}>Ways To Make The Work Work Harder</p>
                             <h2 style={{
                                 color: "var(--fourth-color)"
                             }}>
-                                Clear communication, beautiful light, and galleries that still feel like <em>you</em>
+                                Concerts, athletes, graduates, brands, families, and weddings can each have their own <em>pace</em>
                             </h2>
                         </div>
                     </div>

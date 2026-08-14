@@ -17,25 +17,30 @@ export const getSession = ({categoryName, sessionName}: {
         ...session,
         mediaFiles: session.mediaFiles.map((image) => sessionPath + "/" + image),
         featuredVertical: sessionPath + "/" + categoryData.featuredVertical,
-        featuredHorizontal: sessionPath + categoryData.featuredHorizontal
+        featuredHorizontal: sessionPath + "/" + categoryData.featuredHorizontal
     };
 }
 
-const defaultMedia: SpecificSession[] = mediaLibrary.Weddings.sessions.flatMap(s => ({
-    ...mediaLibrary.Weddings,
-    ...s,
-    mediaFiles: s.mediaFiles
-        .filter(image =>
-            [
-                s.featuredHorizontal,
-                s.featuredVertical
-            ].includes(image))
-        .map((image) => {
-            return mediaLibrary.Weddings.path + '/' + s.name + '/' + image
-        }),
-    featuredHorizontal: mediaLibrary.Weddings.path + '/' + s.name + '/' + s.featuredHorizontal,
-    featuredVertical: mediaLibrary.Weddings.path + '/' + s.name + '/' + s.featuredVertical
-}));
+const defaultCategoryOrder = ["Music", "Sports", "Graduations", "Lifestyles", "Family", "Engagements", "Weddings", "Representatives"];
+
+const defaultMedia: SpecificSession[] = Object.values(mediaLibrary)
+    .filter((category) => defaultCategoryOrder.includes(category.category))
+    .sort((left, right) => defaultCategoryOrder.indexOf(left.category) - defaultCategoryOrder.indexOf(right.category))
+    .flatMap((category) => category.sessions
+        .filter((session) => session.featuredHorizontal && session.featuredVertical)
+        .slice(0, 2)
+        .map((session) => {
+            const sessionPath = `${category.path}/${session.name}`;
+            return {
+                ...category,
+                ...session,
+                mediaFiles: session.mediaFiles
+                    .filter((image) => [session.featuredHorizontal, session.featuredVertical].includes(image))
+                    .map((image) => `${sessionPath}/${image}`),
+                featuredHorizontal: `${sessionPath}/${session.featuredHorizontal}`,
+                featuredVertical: `${sessionPath}/${session.featuredVertical}`,
+            };
+        }));
 
 const Masonry: React.FC<{
     sessions?: SpecificSession[];

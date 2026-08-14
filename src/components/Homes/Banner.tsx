@@ -22,9 +22,11 @@ const Banner = () => {
                         </p>
                         <div className="main-banner__services" aria-label="Photography services">
                             <span>Weddings</span>
-                            <span>Engagements</span>
+                            <span>Live Music</span>
+                            <span>Sports</span>
                             <span>Families</span>
                             <span>Graduates</span>
+                            <span>Lifestyle</span>
                         </div>
                         <div className="buttons">
                             <Link className="hero-button hero-button--primary" to={PORTFOLIO}>
@@ -34,6 +36,15 @@ const Banner = () => {
                                 <i className="fa fa-envelope" aria-hidden="true"></i>
                                 {siteSettings.heroSecondaryCtaLabel}
                             </Link>
+                            <a
+                                className="hero-button hero-button--social"
+                                href={siteSettings.instagramUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                <i className="fa-brands fa-instagram" aria-hidden="true"></i>
+                                Recent Reels
+                            </a>
                         </div>
                     </div>
                 </div>

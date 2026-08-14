@@ -20,7 +20,7 @@ export const categoryCopy: Partial<Record<Categories, CategoryCopy>> = {
         lead: "These galleries are built around movement, conversation, and the moments in between the poses."
     },
     Featured: {
-        description: "A quick cross-section of favorite images pulled from recent weddings, portraits, and family sessions.",
+        description: "A quick cross-section of favorite images pulled from recent events, portraits, weddings, and family sessions.",
         lead: "Start here if you want the fastest feel for Nikki's style across the whole portfolio."
     },
     Graduations: {

@@ -4,6 +4,7 @@ export interface SiteSettings {
     profilePhotoUrl: string;
     contactEmail: string;
     contactPhone: string;
+    instagramUrl: string;
     serviceArea: string;
     heroTitle: string;
     heroBody: string;
@@ -37,22 +38,23 @@ export const defaultSiteSettings: SiteSettings = {
     profilePhotoUrl: "/assets/images/profilePhoto.jpg",
     contactEmail: "nicoledodge5@gmail.com",
     contactPhone: "972-523-3420",
+    instagramUrl: "https://www.instagram.com/nikkideeznutzz/reels/",
     serviceArea: "Highlands Ranch, Denver, and destinations across Colorado",
     heroTitle: "Colorado photography that feels *personal*, calm, and worth remembering.",
-    heroBody: "Nikki photographs weddings, engagements, graduates, families, and creative brands with a candid-first approach that keeps the experience relaxed, intentional, and true to you.",
+    heroBody: "Nikki photographs live music, athletes, graduates, families, weddings, and creative brands with a candid-first approach that keeps the experience relaxed, intentional, and true to you.",
     heroPrimaryCtaLabel: "View the Portfolio",
     heroSecondaryCtaLabel: "Start Your Inquiry",
     homeAboutTitle: "A *guided* experience with room for real *emotion*",
-    homeAboutBody: "Nikki Dodge Photography is built for clients who want beautiful images without feeling like they are performing all day. From wedding timelines and engagement locations to senior outfit changes and family pacing, the process stays simple, communicative, and centered on the people in front of the camera.",
+    homeAboutBody: "Nikki Dodge Photography is built for clients who want beautiful images without feeling like they are performing all day. From concerts and team days to wedding timelines, senior outfit changes, and family pacing, the process stays simple, communicative, and centered on the people in front of the camera.",
     homeAvailabilityCtaLabel: "Ask About Availability",
-    aboutPageTitle: "Meet *Nikki Dodge*, your Colorado wedding and portrait *Photographer*",
+    aboutPageTitle: "Meet *Nikki Dodge*, your Colorado event, portrait, and wedding *Photographer*",
     aboutPageBody: "Nikki works with couples, families, graduates, and creative businesses who want images that look polished without feeling stiff. The approach is equal parts preparation and intuition: good light, steady communication, and enough direction to help people relax.",
     profileName: "Nikki Dodge",
-    profileRole: "Wedding, portrait, and lifestyle photographer based in Highlands Ranch, Colorado.",
+    profileRole: "Event, portrait, lifestyle, and wedding photographer based in Highlands Ranch, Colorado.",
     pricingPageTitle: "Invest in *Timeless Memories*",
-    pricingPageBody: "These collections are built to make the booking decision easier, not more confusing. Wedding coverage starts with clear essentials and scales up for clients who want more time, more portraits, or both. Families, graduates, headshots, and brand sessions can be quoted separately based on scope.",
+    pricingPageBody: "These collections are built to make the booking decision easier, not more confusing. Coverage starts with clear essentials and scales up for clients who want more time, more portraits, or both. Weddings, events, families, graduates, headshots, and brand sessions can be quoted based on scope.",
     pricingPageCtaLabel: "Let's Chat About Your Day",
-    contactPageTitle: "Reach out about your *session, wedding, or project*",
+    contactPageTitle: "Reach out about your *session, event, or wedding*",
     contactPageBody: "Use this page to start the conversation. Share what you are planning, when you need it, and what kind of images matter most. Nikki will follow up with next steps, availability, and the best fit for your timeline.",
     inquirySectionEyebrow: "Start Your Inquiry",
     inquirySectionTitle: "Tell Nikki what you are planning and get the conversation moving",
@@ -70,6 +72,7 @@ const stringSettingKeys = [
     "profilePhotoUrl",
     "contactEmail",
     "contactPhone",
+    "instagramUrl",
     "serviceArea",
     "heroTitle",
     "heroBody",
