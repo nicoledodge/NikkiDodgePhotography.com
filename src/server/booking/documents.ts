@@ -154,6 +154,42 @@ function footer(pdf: PDFDocument, font: PDFFont, proposalId: string) {
     }),
   );
 }
+function auditDate(value: unknown): string {
+  const date = value instanceof Date ? value : new Date(String(value));
+  return Number.isNaN(date.getTime())
+    ? "Time unavailable"
+    : `${date.toISOString().slice(0, 19).replace("T", " ")} UTC`;
+}
+function auditDetails(event: Record<string, unknown>): Record<string, unknown> {
+  return event.details && typeof event.details === "object"
+    ? (event.details as Record<string, unknown>)
+    : {};
+}
+function auditSummary(event: Record<string, unknown>): string {
+  const details = auditDetails(event);
+  switch (event.event_type) {
+    case "proposal_created":
+      return `Proposal created${Number.isInteger(details.version) ? `, version ${details.version}` : ""}`;
+    case "contract_signed":
+      return `Contract signed${details.method === "typed" || details.method === "drawn" ? ` (${details.method} signature)` : ""}`;
+    case "proposal_sent":
+      return "Proposal sent to client signers";
+    case "payment_received":
+      return `${details.kind === "balance" ? "Balance" : details.kind === "retainer" ? "Retainer" : "Payment"} received${typeof details.amountCents === "number" ? `: $${(details.amountCents / 100).toFixed(2)} USD` : ""}${details.confirmed === true ? "; date confirmed" : ""}`;
+    case "payment_refunded":
+      return `${details.fullRefund === true ? "Full" : "Partial"} payment refund recorded`;
+    case "hold_expired":
+      return "Date hold expired and released";
+    case "documents_generated":
+      return "Signed agreement and completion certificate prepared";
+    default:
+      return typeof event.event_type === "string"
+        ? event.event_type
+            .replace(/_/g, " ")
+            .replace(/^./, (char) => char.toUpperCase())
+        : "Booking event recorded";
+  }
+}
 export async function renderSignedDocuments(data: ContractData) {
   assertFrozenContract(data.snapshot, data.snapshotHash);
   if (
@@ -241,11 +277,32 @@ export async function renderSignedDocuments(data: ContractData) {
     );
   certificate.y -= 12;
   certificate.text("Audit events", 14);
-  for (const event of data.auditEvents)
+  certificate.text(
+    "Full event details are preserved in the attached audit-evidence.json file.",
+    8,
+  );
+  const actorNames = new Map<string, string>();
+  for (const event of data.auditEvents) {
+    const details = auditDetails(event);
+    if (
+      typeof event.actor_id === "string" &&
+      typeof details.legalName === "string"
+    ) {
+      actorNames.set(event.actor_id, details.legalName);
+    }
+  }
+  for (const event of data.auditEvents) {
+    const actor =
+      typeof event.actor_id === "string" && event.actor_id
+        ? actorNames.get(event.actor_id) || `Account ${event.actor_id}`
+        : "System";
+    if (certificate.y < 105) certificate.nextPage();
+    certificate.y -= 5;
     certificate.text(
-      `${String(event.created_at)} · ${String(event.event_type)}\n${JSON.stringify(event.details)}`,
+      `${auditDate(event.created_at)} · ${auditSummary(event)}\nActor: ${actor}`,
       8,
     );
+  }
   await certificateDoc.pdf.attach(
     Buffer.from(
       JSON.stringify(

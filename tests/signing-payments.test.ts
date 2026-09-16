@@ -2,7 +2,14 @@ import test from "node:test";
 import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import sharp from "sharp";
-import { PDFDocument } from "pdf-lib";
+import {
+  PDFDocument,
+  PDFDict,
+  PDFArray,
+  PDFName,
+  PDFRawStream,
+  decodePDFRawStream,
+} from "pdf-lib";
 import type Stripe from "stripe";
 import {
   assertFrozenContract,
@@ -165,6 +172,53 @@ test("signed PDF and separate certificate render frozen source with Unicode sign
     ip: "192.0.2.1",
     user_agent: "Test browser",
   };
+  const auditEvents = [
+    {
+      created_at: "2026-09-16T11:55:00Z",
+      event_type: "proposal_created",
+      actor_id: "staff-account",
+      details: { version: 1, templateId: "approved-template" },
+    },
+    {
+      created_at: "2026-09-16T11:56:00Z",
+      event_type: "contract_signed",
+      actor_id: "staff-account",
+      details: {
+        legalName: "Nicole Dodge",
+        method: "typed",
+        contractHash: snapshotHash(snapshot),
+        signatureHash: "a".repeat(64),
+        consentVersion: CONSENT_VERSION,
+        consentAccepted: true,
+        intentAccepted: true,
+        authorityAccepted: true,
+      },
+    },
+    {
+      created_at: "2026-09-16T11:57:00Z",
+      event_type: "proposal_sent",
+      actor_id: "staff-account",
+      details: {
+        contractHash: snapshotHash(snapshot),
+        holdExpiresAt: "2026-09-18T12:00:00Z",
+      },
+    },
+    {
+      created_at: "2026-09-16T12:00:00Z",
+      event_type: "contract_signed",
+      actor_id: "client-account",
+      details: {
+        legalName: "Zoë García",
+        method: "typed",
+        contractHash: snapshotHash(snapshot),
+        signatureHash: "b".repeat(64),
+        consentVersion: CONSENT_VERSION,
+        consentAccepted: true,
+        intentAccepted: true,
+        authorityAccepted: true,
+      },
+    },
+  ];
   const rendered = await renderSignedDocuments({
     proposalId: "test-proposal",
     bookingId: "test-booking",
@@ -185,7 +239,7 @@ test("signed PDF and separate certificate render frozen source with Unicode sign
         role: "client",
       },
     ],
-    auditEvents: [],
+    auditEvents,
   });
   assert.equal(
     createHash("sha256").update(rendered.contract).digest("hex"),
@@ -200,6 +254,28 @@ test("signed PDF and separate certificate render frozen source with Unicode sign
   );
   assert.equal(rendered.contractHash.length, 64);
   assert.notDeepEqual(rendered.contract, rendered.certificate);
+  assert.equal(
+    certificate.getPageCount(),
+    1,
+    "A routine two-signer certificate fits on one page",
+  );
+  const names = certificate.catalog.lookup(PDFName.of("Names"), PDFDict);
+  const attachments = names
+    .lookup(PDFName.of("EmbeddedFiles"), PDFDict)
+    .lookup(PDFName.of("Names"), PDFArray);
+  const file = attachments
+    .lookup(1, PDFDict)
+    .lookup(PDFName.of("EF"), PDFDict)
+    .lookup(PDFName.of("F"), PDFRawStream);
+  const evidence = JSON.parse(
+    Buffer.from(decodePDFRawStream(file).decode()).toString("utf8"),
+  );
+  assert.deepEqual(
+    evidence.events,
+    auditEvents,
+    "Readable summaries preserve every original audit field in the attachment",
+  );
+  assert.equal(evidence.contractSha256, rendered.contractHash);
 });
 
 test("signer access follows stable account ID after an email change", () => {
