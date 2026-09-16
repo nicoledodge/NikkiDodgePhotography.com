@@ -11,3 +11,11 @@ vite.config.d.ts
 *.local
 *.mp4
 public/assets/images/Portfolio
+.env
+.env.*
+!.env.example
+data
+backups
+*.dump
+*.age
+dist-server

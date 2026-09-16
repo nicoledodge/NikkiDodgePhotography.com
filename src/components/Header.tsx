@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
+import { useBooking } from "./booking/BookingContext";
 
 const links = [
   { to: "/Portfolio", label: "The work" },
   { to: "/howdy", label: "Meet Nikki" },
-  { to: "/pricing", label: "The experience" },
+  { to: "/pricing", label: "Packages" },
 ];
 
 export default function Header() {
   const [open, setOpen] = useState(false);
+  const { user } = useBooking();
   const location = useLocation();
   const toggleRef = useRef<HTMLButtonElement>(null);
   useEffect(() => setOpen(false), [location.pathname]);
@@ -61,12 +63,13 @@ export default function Header() {
               {link.label}
             </NavLink>
           ))}
+          <NavLink to={user ? "/client" : "/login"} onClick={() => setOpen(false)}>{user ? "My account" : "Client login"}</NavLink>
           <NavLink
             onClick={() => setOpen(false)}
             className="nav-inquire"
-            to="/Contact"
+            to="/book"
           >
-            Let’s make something <span aria-hidden="true">↗</span>
+            Request your date <span aria-hidden="true">↗</span>
           </NavLink>
         </nav>
       </div>

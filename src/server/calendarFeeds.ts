@@ -1,4 +1,5 @@
 import ICAL from "ical.js";
+import { DateTime } from "luxon";
 import type { CalendarEventStatus, CalendarFeed, ImportedCalendarEvent } from "../shared/crm.js";
 
 type IcalComponent = InstanceType<typeof ICAL.Component>;
@@ -11,6 +12,9 @@ const maxImportedEventsPerFeed = 750;
 const maxRecurrenceIterationsPerEvent = 5000;
 const importWindowPastDays = 365;
 const importWindowFutureDays = 365 * 3;
+const availabilityZone = "America/Denver";
+const maxAvailabilityComponents = 10000;
+const maxAvailabilityIterations = 25000;
 
 interface CalendarFeedImportResult {
     feeds: CalendarFeed[];
@@ -260,4 +264,161 @@ export async function importCalendarFeeds(feeds: CalendarFeed[]): Promise<Calend
             .flatMap((result) => result.importedEvents)
             .sort((left, right) => left.start.localeCompare(right.start)),
     };
+}
+
+function availabilityError(reason: string): Error {
+    return new Error(`A connected calendar could not be checked completely. ${reason}`);
+}
+
+function calendarTimeMillis(time: IcalTime, floatingZone: string): number {
+    if (!time) throw availabilityError("An event is missing its date.");
+    // DATE values block civil days in the photography business's timezone.
+    // Floating DATE-TIME values use the feed timezone, or Denver when unspecified.
+    if (time.isDate || time.zone.tzid === "floating") {
+        const value = DateTime.fromObject({
+            year: time.year, month: time.month, day: time.day,
+            hour: time.isDate ? 0 : time.hour, minute: time.isDate ? 0 : time.minute, second: time.isDate ? 0 : time.second,
+        }, { zone: time.isDate ? availabilityZone : floatingZone });
+        if (!value.isValid) throw availabilityError("An event has an invalid date or timezone.");
+        return value.toMillis();
+    }
+    const value = time.toUnixTime() * 1000;
+    if (!Number.isFinite(value)) throw availabilityError("An event has an invalid date.");
+    return value;
+}
+
+function eventBlocksTime(component: IcalComponent): boolean {
+    return calendarStatusFromComponent(component) !== "cancelled"
+        && cleanText(component.getFirstPropertyValue("transp")).toUpperCase() !== "TRANSPARENT";
+}
+
+function checkCalendarTextForDate(calendarText: string, dayStart: number, dayEnd: number): boolean {
+    const calendar = new ICAL.Component(ICAL.parse(calendarText));
+    if (calendar.name !== "vcalendar") throw availabilityError("The feed is not an iCalendar document.");
+    if (calendar.getAllSubcomponents("vfreebusy").length) throw availabilityError("Free/busy components require calendar review.");
+    for (const timezone of calendar.getAllSubcomponents("vtimezone")) {
+        const transitions = timezone.getAllSubcomponents().filter(component => ["standard", "daylight"].includes(component.name));
+        if (!transitions.length || transitions.some(component => !component.hasProperty("dtstart") || !component.hasProperty("tzoffsetfrom") || !component.hasProperty("tzoffsetto"))) {
+            throw availabilityError("A timezone definition is incomplete.");
+        }
+    }
+    const components = calendar.getAllSubcomponents("vevent");
+    if (components.length > maxAvailabilityComponents) throw availabilityError("The calendar exceeds the event scan limit.");
+    const floatingZone = cleanText(calendar.getFirstPropertyValue("x-wr-timezone")) || availabilityZone;
+    if (!DateTime.now().setZone(floatingZone).isValid) throw availabilityError("The calendar timezone is unknown.");
+    const masters = new Map<string, IcalComponent>();
+    const exceptions = new Map<string, IcalComponent[]>();
+    let iterations = 0;
+    let busy = false;
+
+    for (const component of components) {
+        const uid = cleanText(component.getFirstPropertyValue("uid"));
+        if (!uid) throw availabilityError("An event is missing its unique identifier.");
+        if (component.hasProperty("exrule")) throw availabilityError("The calendar uses an unsupported recurrence exclusion rule.");
+        for (const propertyName of ["dtstart", "dtend", "recurrence-id", "rdate", "exdate"]) {
+            for (const property of component.getAllProperties(propertyName)) {
+                if (property.type === "period") throw availabilityError("Period-valued recurrence dates require calendar review.");
+                const timezone = property.getParameter("tzid");
+                if (timezone && (typeof timezone !== "string" || (!calendar.getTimeZoneByID(timezone) && !ICAL.TimezoneService.get(timezone)))) {
+                    // ICAL otherwise silently treats an unknown TZID as floating time.
+                    throw availabilityError("A referenced timezone definition is missing.");
+                }
+            }
+        }
+        if (component.hasProperty("recurrence-id")) {
+            const related = exceptions.get(uid) || [];
+            const recurrenceId = component.getFirstPropertyValue("recurrence-id") as IcalTime;
+            if (related.some(other => String(other.getFirstPropertyValue("recurrence-id")) === String(recurrenceId))) {
+                throw availabilityError("The calendar contains duplicate recurrence overrides.");
+            }
+            // Cancellation overrides may legitimately omit DTSTART and DTEND.
+            if (!component.hasProperty("dtstart") && !eventBlocksTime(component)) {
+                component.addPropertyWithValue("dtstart", recurrenceId.clone());
+            }
+            related.push(component);
+            exceptions.set(uid, related);
+        } else {
+            if (masters.has(uid)) throw availabilityError("The calendar contains duplicate event series.");
+            masters.set(uid, component);
+        }
+    }
+    for (const uid of exceptions.keys()) {
+        if (!masters.has(uid)) throw availabilityError("A recurrence override is missing its event series.");
+    }
+
+    const overlaps = (start: IcalTime, end: IcalTime): boolean => {
+        const startMillis = calendarTimeMillis(start, floatingZone);
+        const endMillis = calendarTimeMillis(end, floatingZone);
+        if (endMillis < startMillis) throw availabilityError("An event ends before it starts.");
+        // A timed event without an end is an instant, and still occupies its date.
+        return endMillis === startMillis ? startMillis >= dayStart && startMillis < dayEnd : startMillis < dayEnd && endMillis > dayStart;
+    };
+
+    for (const [uid, component] of masters) {
+        const related = exceptions.get(uid) || [];
+        if (!eventBlocksTime(component) && !related.some(eventBlocksTime)) continue;
+        const event = new ICAL.Event(component, { exceptions: related, strictExceptions: true });
+        if (!event.startDate) throw availabilityError("An event is missing its start date.");
+        // Validate event duration even when its start is beyond the requested date.
+        if (calendarTimeMillis(event.endDate, floatingZone) < calendarTimeMillis(event.startDate, floatingZone)) {
+            throw availabilityError("An event ends before it starts.");
+        }
+        if (!event.isRecurring()) {
+            if (related.length) throw availabilityError("A nonrecurring event has recurrence overrides.");
+            busy = overlaps(event.startDate, event.endDate) || busy;
+            continue;
+        }
+
+        for (const property of component.getAllProperties("rrule")) {
+            const rule = property.getFirstValue() as InstanceType<typeof ICAL.Recur>;
+            if (rule.until && event.startDate.zone.tzid === "floating" && !event.startDate.isDate && rule.until.zone.tzid === "UTC") {
+                throw availabilityError("A floating recurrence has an inconsistent UTC end boundary.");
+            }
+        }
+
+        let maximumBackwardShift = 0;
+        let hasRangeException = false;
+        for (const exceptionComponent of related) {
+            const exception = new ICAL.Event(exceptionComponent);
+            if (!eventBlocksTime(exceptionComponent)) continue;
+            // Check moved-in overrides before stopping expansion at the day boundary.
+            busy = overlaps(exception.startDate, exception.endDate) || busy;
+            if (exception.modifiesFuture()) {
+                hasRangeException = true;
+                maximumBackwardShift = Math.max(maximumBackwardShift,
+                    calendarTimeMillis(exception.recurrenceId, floatingZone) - calendarTimeMillis(exception.startDate, floatingZone));
+            }
+        }
+        // Two days cover timezone/DST offset differences in a THISANDFUTURE shift.
+        const expansionEnd = dayEnd + (hasRangeException ? maximumBackwardShift + 2 * 86400000 : 0);
+        const iterator = event.iterator();
+        let complete = false;
+        for (let count = 0; count < maxRecurrenceIterationsPerEvent; count += 1) {
+            iterations += 1;
+            if (iterations > maxAvailabilityIterations) throw availabilityError("The calendar exceeds the recurrence scan limit.");
+            const occurrence = iterator.next() as IcalTime | null;
+            if (!occurrence || calendarTimeMillis(occurrence, floatingZone) >= expansionEnd) { complete = true; break; }
+            const details = event.getOccurrenceDetails(occurrence);
+            if (eventBlocksTime(details.item.component)) busy = overlaps(details.startDate, details.endDate) || busy;
+        }
+        if (!complete) throw availabilityError("An event exceeds the recurrence scan limit.");
+    }
+    return busy;
+}
+
+/** Authoritative, date-specific check. Never uses the truncated calendar UI snapshot. */
+export async function checkCalendarFeedsForDate(feeds: CalendarFeed[], eventDate: string): Promise<boolean> {
+    const start = DateTime.fromISO(eventDate, { zone: availabilityZone }).startOf("day");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(eventDate) || !start.isValid) throw availabilityError("The requested date is invalid.");
+    const end = start.plus({ days: 1 });
+    let busy = false;
+    for (const feed of feeds) {
+        try {
+            busy = checkCalendarTextForDate(await fetchCalendarText(feed), start.toMillis(), end.toMillis()) || busy;
+        } catch (error) {
+            if (error instanceof Error && error.message.startsWith("A connected calendar could not be checked completely.")) throw error;
+            throw availabilityError("Refresh the feed or check its events before approving this date.");
+        }
+    }
+    return busy;
 }

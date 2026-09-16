@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express, { type NextFunction, type Request, type Response } from "express";
 import multer from "multer";
 import { randomUUID } from "node:crypto";
@@ -5,7 +6,13 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import type { CalendarEvent, CalendarEventStatus, CalendarFeed, CalendarSnapshot, Lead, LeadStatus, MediaFolderCreateResult } from "./shared/crm.js";
 import { mergeSiteSettings } from "./shared/siteSettings.js";
-import { clearSessionCookie, createSessionToken, isAdminCredentialMatch, readSessionFromRequest, requireAdmin, setSessionCookie } from "./server/auth.js";
+import { requireAdmin } from "./server/auth.js";
+import { toNodeHandler } from "better-auth/node";
+import { auth, authOrigin, sameOriginMutation } from "./server/booking/auth.js";
+import { bookingRouter } from "./server/booking/router.js";
+import { handleStripeWebhook } from "./server/booking/payments.js";
+import { processBookingJobs } from "./server/booking/worker.js";
+import { withScheduleLock, assertNoReservationConflict, bookingCalendarEvents } from "./server/booking/service.js";
 import { config, isS3Enabled } from "./server/config.js";
 import { getNotificationStatus, sendDiscordTestNotification, sendLeadCreatedNotification } from "./server/notifications.js";
 import { importCalendarFeeds, normalizeCalendarFeedUrl } from "./server/calendarFeeds.js";
@@ -104,7 +111,26 @@ function getCalendarFeedName(name: unknown, url: string): string {
 }
 
 app.set("trust proxy", 1);
+app.use((req, res, next) => {
+    // Keep OAuth callbacks, cookies and mutation origins on the canonical site.
+    if (config.isProduction && req.get("host")?.split(":")[0] === "www.nikkidodgephotography.com"
+        && new URL(authOrigin).hostname === "nikkidodgephotography.com") {
+        res.redirect(308, `${authOrigin}${req.originalUrl}`); return;
+    }
+    next();
+});
+// Auth and Stripe must receive the original request stream.
+if (auth) app.all("/api/auth/*", toNodeHandler(auth));
+else app.all("/api/auth/*", (_req, res) => { res.status(503).json({ error: "Social sign-in is being configured." }); });
+app.post("/api/stripe/webhook", express.raw({ type: "application/json", limit: "1mb" }), asyncHandler(async (req, res) => {
+    const signature = req.get("stripe-signature");
+    if (!signature) { res.status(400).json({ error: "Missing webhook signature." }); return; }
+    try { await handleStripeWebhook(req.body as Buffer, signature); res.json({ received: true }); }
+    catch (error) { console.error("Stripe webhook failed", error instanceof Error ? error.name : "UnknownError"); res.status((error as {statusCode?:number}).statusCode || 500).json({error:"Webhook could not be processed."}); }
+}));
 app.use(express.json({ limit: "2mb" }));
+app.use("/api/booking", bookingRouter);
+app.use("/api/admin", sameOriginMutation);
 app.use(express.urlencoded({ extended: true }));
 
 if (!isS3Enabled) {
@@ -155,42 +181,6 @@ app.post("/api/public/inquiries", asyncHandler(async (req, res) => {
     });
 }));
 
-app.post("/api/auth/login", (req, res) => {
-    const username = trimText(req.body.username);
-    const password = trimText(req.body.password);
-
-    if (!isAdminCredentialMatch(username, password)) {
-        res.status(401).json({ error: "Invalid username or password." });
-        return;
-    }
-
-    const token = createSessionToken(username);
-    setSessionCookie(req, res, token);
-
-    res.json({
-        authenticated: true,
-        username: config.adminUsername,
-    });
-});
-
-app.post("/api/auth/logout", (req, res) => {
-    clearSessionCookie(req, res);
-    res.json({ authenticated: false });
-});
-
-app.get("/api/auth/session", (req, res) => {
-    const session = readSessionFromRequest(req);
-    if (!session) {
-        res.json({ authenticated: false });
-        return;
-    }
-
-    res.json({
-        authenticated: true,
-        username: session.sub,
-    });
-});
-
 app.get("/api/admin/leads", requireAdmin, asyncHandler(async (_req, res) => {
     const leads = await storage.getLeads();
     res.json(leads);
@@ -237,7 +227,7 @@ app.get("/api/admin/calendar", requireAdmin, asyncHandler(async (_req, res) => {
     }
 
     const snapshot: CalendarSnapshot = {
-        events,
+        events: [...events, ...await bookingCalendarEvents()],
         importedEvents: importResult.importedEvents,
         feeds: importResult.feeds,
     };
@@ -246,12 +236,15 @@ app.get("/api/admin/calendar", requireAdmin, asyncHandler(async (_req, res) => {
 }));
 
 app.post("/api/admin/calendar", requireAdmin, asyncHandler(async (req, res) => {
+    await withScheduleLock(async (scheduleDb) => {
     const normalizedPayload = normalizeCalendarInput(req.body as Partial<CalendarEvent>);
     const validationError = validateCalendarPayload(normalizedPayload);
     if (validationError) {
         res.status(400).json({ error: validationError });
         return;
     }
+
+    if (normalizedPayload.status !== "cancelled") await assertNoReservationConflict(normalizedPayload.start, normalizedPayload.end, scheduleDb);
 
     const now = new Date().toISOString();
     const nextEvent: CalendarEvent = {
@@ -265,9 +258,11 @@ app.post("/api/admin/calendar", requireAdmin, asyncHandler(async (req, res) => {
     events.push(nextEvent);
     await storage.saveCalendar(events);
     res.status(201).json(nextEvent);
+    });
 }));
 
 app.patch("/api/admin/calendar/:id", requireAdmin, asyncHandler(async (req, res) => {
+    await withScheduleLock(async (scheduleDb) => {
     const eventId = trimText(req.params.id);
     const events = await storage.getCalendar();
     const index = events.findIndex((event) => event.id === eventId);
@@ -287,6 +282,8 @@ app.patch("/api/admin/calendar/:id", requireAdmin, asyncHandler(async (req, res)
         return;
     }
 
+    if (normalizedPayload.status !== "cancelled") await assertNoReservationConflict(normalizedPayload.start, normalizedPayload.end, scheduleDb);
+
     const nextEvent: CalendarEvent = {
         ...events[index],
         ...normalizedPayload,
@@ -296,9 +293,11 @@ app.patch("/api/admin/calendar/:id", requireAdmin, asyncHandler(async (req, res)
     events[index] = nextEvent;
     await storage.saveCalendar(events);
     res.json(nextEvent);
+    });
 }));
 
 app.delete("/api/admin/calendar/:id", requireAdmin, asyncHandler(async (req, res) => {
+    await withScheduleLock(async () => {
     const eventId = trimText(req.params.id);
     const events = await storage.getCalendar();
     const nextEvents = events.filter((event) => event.id !== eventId);
@@ -310,6 +309,7 @@ app.delete("/api/admin/calendar/:id", requireAdmin, asyncHandler(async (req, res
 
     await storage.saveCalendar(nextEvents);
     res.status(204).end();
+    });
 }));
 
 app.post("/api/admin/calendar/feeds", requireAdmin, asyncHandler(async (req, res) => {
@@ -498,10 +498,20 @@ app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
         return;
     }
 
-    const message = error instanceof Error ? error.message : "Unexpected server error.";
-    res.status(500).json({ error: message });
+    const status = (error as {statusCode?:number}).statusCode;
+    if (status && status >= 400 && status < 500) { res.status(status).json({error: error instanceof Error ? error.message : "Request failed."}); return; }
+    res.status(500).json({ error: "We could not complete this request. Please try again." });
 });
 
+let workerRunning = false;
+if (auth) {
+    const interval = setInterval(() => {
+        if (workerRunning) return;
+        workerRunning = true;
+        void processBookingJobs().catch(() => console.error("Booking background processing failed")).finally(() => { workerRunning = false; });
+    }, 15000);
+    interval.unref();
+}
 app.listen(config.port, () => {
     console.log(`Server listening on http://0.0.0.0:${config.port}`);
 });

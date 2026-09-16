@@ -183,6 +183,7 @@ export default function Portfolio() {
           </div>
         )}
       </section>
+      <section className="booking-public-cta"><p className="eyebrow">Your story comes next</p><h2>Let’s make something personal.</h2><p>Choose a session and tell me what you have in mind.</p><Link className="text-link" to="/book">Start your booking ↗</Link></section>
     </div>
   );
 }

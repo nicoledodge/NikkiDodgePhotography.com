@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { useSiteSettings } from "../site/SiteSettingsContext";
-import { CONTACT } from "./Contact";
 import "../styles/inner-pages.css";
 
 export const HOWDY = "/howdy";
@@ -30,7 +29,7 @@ export default function Howdy() {
                     <p className="inner-lead">Photographs with feeling. An experience that feels like you.</p>
                     <p>{siteSettings.aboutPageBody}</p>
                     <p className="inner-about-location">{siteSettings.profileRole}</p>
-                    <Link className="text-link" to={CONTACT}>Let’s get to know each other <span aria-hidden="true">↗</span></Link>
+                    <Link className="text-link" to="/book">Let’s plan your session <span aria-hidden="true">↗</span></Link>
                 </div>
             </section>
             <section className="inner-approach site-container" aria-labelledby="approach-title">

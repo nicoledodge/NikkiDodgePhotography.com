@@ -1,0 +1,129 @@
+# Optional self-hosted database. Nothing applies this manifest automatically.
+# Apply to the app namespace only after preparing the Secret and storage/backup plan.
+apiVersion: v1
+kind: Service
+metadata:
+  name: booking-postgres
+spec:
+  type: ClusterIP
+  selector:
+    app: booking-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: booking-postgres-init
+data:
+  10-application-user.sql: |
+    \getenv app_password POSTGRES_APP_PASSWORD
+    SELECT format('CREATE ROLE booking_app LOGIN PASSWORD %L', :'app_password') \gexec
+    ALTER DATABASE nikki_booking OWNER TO booking_app;
+    GRANT ALL ON SCHEMA public TO booking_app;
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: booking-postgres
+spec:
+  serviceName: booking-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: booking-postgres
+  template:
+    metadata:
+      labels:
+        app: booking-postgres
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: postgres
+          image: postgres:17-bookworm
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_DB
+              value: nikki_booking
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: booking-postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_APP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: booking-postgres-secret
+                  key: POSTGRES_APP_PASSWORD
+          ports:
+            - name: postgres
+              containerPort: 5432
+          startupProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres", "-d", "nikki_booking"]
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres", "-d", "nikki_booking"]
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres", "-d", "nikki_booking"]
+            periodSeconds: 20
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: database
+              mountPath: /var/lib/postgresql/data
+            - name: initialization
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+      volumes:
+        - name: initialization
+          configMap:
+            name: booking-postgres-init
+  volumeClaimTemplates:
+    - metadata:
+        name: database
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        # Uses the cluster default StorageClass. Set explicitly when required.
+        resources:
+          requests:
+            storage: 10Gi
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: booking-postgres
+spec:
+  podSelector:
+    matchLabels:
+      app: booking-postgres
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        # Adjust if APP_NAME differs. Migration Jobs use the same app label.
+        - podSelector:
+            matchLabels:
+              app: nikkidodgephotography
+        - podSelector:
+            matchLabels:
+              component: booking-backup
+      ports:
+        - protocol: TCP
+          port: 5432

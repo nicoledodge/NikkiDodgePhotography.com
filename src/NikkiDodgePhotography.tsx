@@ -18,6 +18,12 @@ import Howdy, { HOWDY } from "./pages/Howdy";
 import Blog, { BLOG } from "./pages/Blog";
 import Gallery, { GALLERY } from "./pages/Gallery";
 const Admin = lazy(() => import("./pages/Admin"));
+const Book = lazy(() => import("./pages/Book"));
+const Login = lazy(() => import("./pages/Login"));
+const Client = lazy(() => import("./pages/Client"));
+const ClientBooking = lazy(() => import("./pages/ClientBooking"));
+const ClientSettings = lazy(() => import("./pages/ClientSettings"));
+import { BookingProvider } from "./components/booking/BookingContext";
 import { SiteSettingsProvider } from "./site/SiteSettingsContext";
 
 const AppLayout = () => {
@@ -27,6 +33,11 @@ const AppLayout = () => {
   const routeMarkup = (
     <Routes>
       <Route path="/" element={<Home />} />
+      <Route path="/book" element={<Suspense fallback={<p className="site-container booking-loading">Loading booking…</p>}><Book /></Suspense>} />
+      <Route path="/login" element={<Suspense fallback={<p className="site-container booking-loading">Loading sign in…</p>}><Login /></Suspense>} />
+      <Route path="/client" element={<Suspense fallback={<p className="site-container booking-loading">Loading your account…</p>}><Client /></Suspense>} />
+      <Route path="/client/bookings/:id" element={<Suspense fallback={<p className="site-container booking-loading">Loading your booking…</p>}><ClientBooking /></Suspense>} />
+      <Route path="/client/settings" element={<Suspense fallback={<p className="site-container booking-loading">Loading your account…</p>}><ClientSettings /></Suspense>} />
       <Route path={PRICING} element={<Pricing />} />
       <Route path={PORTFOLIO} element={<Portfolio />} />
       <Route path={PORTFOLIO + "/:categoryName"} element={<Portfolio />} />
@@ -79,6 +90,10 @@ const AppLayout = () => {
       "/pricing": "The Experience & Pricing",
       "/contact": "Start Your Inquiry",
       "/blog": "Field Notes",
+      "/book": "Request a Date",
+      "/login": "Sign In",
+      "/client": "Your Client Space",
+      "/client/settings": "Your Account",
     };
     const titleKey = location.pathname.toLowerCase();
     document.title = `${titles[titleKey] || (titleKey.startsWith("/gallery") ? "A Photo Story" : "The Portfolio")} | Nikki Dodge Photography`;
@@ -118,7 +133,7 @@ const NikkiDodgePhotography = () => {
   return (
     <Router>
       <SiteSettingsProvider>
-        <AppLayout />
+        <BookingProvider><AppLayout /></BookingProvider>
       </SiteSettingsProvider>
     </Router>
   );

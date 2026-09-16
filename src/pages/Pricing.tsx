@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { CONTACT } from "./Contact";
 import "../styles/inner-pages.css";
 
 export const PRICING = "/pricing";
@@ -37,7 +36,7 @@ export default function Pricing() {
                         <li>Online delivery with high-resolution downloads</li>
                     </ul>
                     <p className="inner-fine-print">Bridal, couples, and engagement sessions can be discussed as part of your collection. Share your plans for a personal quote.</p>
-                    <Link className="button" to={CONTACT}>Let’s talk about your day <span aria-hidden="true">↗</span></Link>
+                    <Link className="button" to="/book?package=wedding">Start your wedding booking <span aria-hidden="true">↗</span></Link>
                 </div>
             </section>
             <section className="inner-other-work site-container" aria-labelledby="other-sessions-title">
@@ -52,7 +51,7 @@ export default function Pricing() {
                             <span className="inner-index" aria-hidden="true">{session.number}</span>
                             <h3>{session.title}</h3>
                             <p>{session.description}</p>
-                            <Link className="text-link" to={CONTACT} aria-label={`Inquire about ${session.title.toLowerCase()}`}>Inquire <span aria-hidden="true">↗</span></Link>
+                            <Link className="text-link" to="/book?package=custom" aria-label={`Request a proposal for ${session.title.toLowerCase()}`}>Get started <span aria-hidden="true">↗</span></Link>
                         </div>
                     ))}
                 </div>
@@ -61,7 +60,7 @@ export default function Pricing() {
                 <p className="eyebrow">Let’s make a plan</p>
                 <h2>Start with a conversation.</h2>
                 <p>Tell me the when, the where, and what you’re hoping to remember. We’ll take it from there.</p>
-                <Link className="text-link" to={CONTACT}>Ask about availability <span aria-hidden="true">↗</span></Link>
+                <Link className="text-link" to="/book">Request your date <span aria-hidden="true">↗</span></Link>
             </section>
         </div>
     );

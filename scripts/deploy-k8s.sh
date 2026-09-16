@@ -19,6 +19,25 @@ TLS_SECRET="${TLS_SECRET:-}"
 SECRET_NAME="${SECRET_NAME:-}"
 CONFIGMAP_NAME="${CONFIGMAP_NAME:-}"
 IMAGE_PULL_SECRET="${IMAGE_PULL_SECRET:-}"
+AUTH_ENABLED="${AUTH_ENABLED:-false}"
+BOOKING_ENABLED="${BOOKING_ENABLED:-false}"
+
+if [[ "$AUTH_ENABLED" != "true" && "$AUTH_ENABLED" != "false" ]] || [[ "$BOOKING_ENABLED" != "true" && "$BOOKING_ENABLED" != "false" ]]; then
+  echo "AUTH_ENABLED and BOOKING_ENABLED must each be true or false" >&2
+  exit 1
+fi
+if [[ "$AUTH_ENABLED" != "true" ]]; then
+  echo "This release replaces admin authentication. AUTH_ENABLED=true and a verified social admin are required before production deployment." >&2
+  exit 1
+fi
+if [[ "$BOOKING_ENABLED" == "true" && "$AUTH_ENABLED" != "true" ]]; then
+  echo "Booking activation requires AUTH_ENABLED=true" >&2
+  exit 1
+fi
+if [[ "$AUTH_ENABLED" == "true" && -z "$SECRET_NAME" ]]; then
+  echo "Authentication activation requires the existing app SECRET_NAME" >&2
+  exit 1
+fi
 
 hosts=()
 if [[ -n "$HOSTNAME" ]]; then
@@ -39,6 +58,82 @@ trap 'rm -rf "$tmp_dir"' EXIT
 deployment_file="$tmp_dir/deployment.yaml"
 service_file="$tmp_dir/service.yaml"
 ingress_file="$tmp_dir/ingress.yaml"
+
+# A failed preflight or migration leaves the currently running application intact.
+# Migrations are additive and serialized in the application database module.
+if [[ "$AUTH_ENABLED" == "true" ]]; then
+  migration_name="${APP_NAME:0:35}-booking-migrate-$(date +%s)"
+  migration_file="$tmp_dir/migration.yaml"
+  cat <<EOF > "$migration_file"
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ${migration_name}
+  namespace: ${NAMESPACE}
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 300
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app: ${APP_NAME}
+        component: booking-migration
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+EOF
+  if [[ -n "$IMAGE_PULL_SECRET" ]]; then
+    cat <<EOF >> "$migration_file"
+      imagePullSecrets:
+        - name: ${IMAGE_PULL_SECRET}
+EOF
+  fi
+  cat <<EOF >> "$migration_file"
+      containers:
+        - name: migrate
+          image: ${IMAGE}
+          imagePullPolicy: Always
+          command: ["/bin/sh", "-ec"]
+          args:
+            - >-
+              node scripts/check-booking-env.mjs --mode auth &&
+              node scripts/migrate-booking.mjs &&
+              node scripts/check-booking-env.mjs --mode auth --database &&
+              if [ "\$BOOKING_ENABLED" = "true" ]; then node scripts/check-booking-env.mjs --mode booking --database; fi
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: AUTH_ENABLED
+              value: "${AUTH_ENABLED}"
+            - name: BOOKING_ENABLED
+              value: "${BOOKING_ENABLED}"
+          envFrom:
+            - secretRef:
+                name: ${SECRET_NAME}
+EOF
+  if [[ -n "$CONFIGMAP_NAME" ]]; then
+    cat <<EOF >> "$migration_file"
+            - configMapRef:
+                name: ${CONFIGMAP_NAME}
+EOF
+  fi
+  cat <<EOF >> "$migration_file"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+EOF
+  kubectl apply -f "$migration_file"
+  if ! kubectl -n "$NAMESPACE" wait --for=condition=complete "job/$migration_name" --timeout=310s; then
+    kubectl -n "$NAMESPACE" logs "job/$migration_name" --tail=80 || true
+    echo "Booking preflight/migration failed. The app deployment was not changed." >&2
+    exit 1
+  fi
+fi
 
 cat <<EOF > "$deployment_file"
 apiVersion: apps/v1
@@ -64,6 +159,7 @@ spec:
       labels:
         app: ${APP_NAME}
     spec:
+      automountServiceAccountToken: false
 EOF
 
 if [[ -n "$IMAGE_PULL_SECRET" ]]; then
@@ -85,15 +181,19 @@ cat <<EOF >> "$deployment_file"
               value: production
             - name: PORT
               value: "${PORT}"
+            - name: AUTH_ENABLED
+              value: "${AUTH_ENABLED}"
+            - name: BOOKING_ENABLED
+              value: "${BOOKING_ENABLED}"
           readinessProbe:
             httpGet:
-              path: /
+              path: /api/health
               port: ${PORT}
             initialDelaySeconds: 3
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /
+              path: /api/health
               port: ${PORT}
             initialDelaySeconds: 10
             periodSeconds: 20
@@ -201,5 +301,5 @@ EOF
   kubectl apply -f "$ingress_file"
 fi
 
-kubectl -n "$NAMESPACE" rollout status deployment/"$APP_NAME" --timeout=120s || true
+kubectl -n "$NAMESPACE" rollout status deployment/"$APP_NAME" --timeout=180s
 kubectl -n "$NAMESPACE" get deploy,svc,ingress -o wide | grep "$APP_NAME" || true

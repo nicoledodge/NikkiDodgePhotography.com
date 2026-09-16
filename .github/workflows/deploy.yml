@@ -21,6 +21,10 @@ permissions:
   contents: read
   packages: write
 
+concurrency:
+  group: deployment-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   REGISTRY: ghcr.io
   APP_NAME: nikkidodgephotography
@@ -164,7 +168,7 @@ jobs:
             echo "HARVESTER_KUBECONFIG is empty or invalid" >&2
             exit 1
           fi
-          kubectl config view
+          echo "Kubernetes configuration loaded."
 
       - name: Pick namespace
         id: namespace
@@ -220,6 +224,9 @@ jobs:
           HOSTNAME: ${{ steps.hostname.outputs.hostname }}
           TLS_SECRET: ${{ vars.TLS_SECRET_NAME || 'nikkidodgephotography-tls' }}
           SECRET_NAME: ${{ vars.APP_SECRET_NAME }}
+          CONFIGMAP_NAME: ${{ vars.APP_CONFIGMAP_NAME }}
+          AUTH_ENABLED: ${{ vars.AUTH_ENABLED || 'false' }}
+          BOOKING_ENABLED: ${{ vars.BOOKING_ENABLED || 'false' }}
           SERVICE_TYPE: ${{ env.SERVICE_TYPE }}
         run: |
           set -euo pipefail

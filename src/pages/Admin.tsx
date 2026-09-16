@@ -1,5 +1,9 @@
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import "../styles/admin.css";
+import { Link } from "react-router-dom";
+import AdminBookings from "../components/booking/AdminBookings";
+import { useBooking } from "../components/booking/BookingContext";
+import type { BookingUser } from "../shared/booking";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
     CalendarDisplayEvent,
@@ -15,11 +19,11 @@ import type {
 import { defaultSiteSettings, type SiteSettings } from "../shared/siteSettings.js";
 import { useSiteSettings } from "../site/SiteSettingsContext";
 
-type AdminTab = "leads" | "calendar" | "media" | "settings";
+type AdminTab = "bookings" | "leads" | "calendar" | "media" | "settings";
 
 interface SessionResponse {
-    authenticated: boolean;
-    username?: string;
+    user: BookingUser | null;
+    providers: string[];
 }
 
 interface CalendarDraft {
@@ -88,6 +92,7 @@ const directoryInputProps = {
 } as Record<string, string>;
 
 const tabLabels: Record<AdminTab, string> = {
+    bookings: "Bookings & Contracts",
     leads: "Leads",
     calendar: "Calendar",
     media: "Media",
@@ -147,6 +152,10 @@ function formatDateKey(date: Date): string {
 
 function isImportedCalendarEvent(event: CalendarDisplayEvent): event is ImportedCalendarEvent {
     return "source" in event && event.source === "ical";
+}
+
+function isBookingCalendarEvent(event: CalendarDisplayEvent): boolean {
+    return event.id.startsWith("booking-");
 }
 
 function getCalendarChipLabel(event: CalendarDisplayEvent): string {
@@ -440,9 +449,8 @@ export default function Admin() {
     const [sessionChecked, setSessionChecked] = useState(false);
     const [authenticated, setAuthenticated] = useState(false);
     const [username, setUsername] = useState("");
-    const [loginForm, setLoginForm] = useState({ username: "admin", password: "" });
-    const [loginError, setLoginError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<AdminTab>("leads");
+    const { user: bookingUser, signOut } = useBooking();
+    const [activeTab, setActiveTab] = useState<AdminTab>("bookings");
     const [notice, setNotice] = useState<string | null>(null);
     const [dashboardError, setDashboardError] = useState<string | null>(null);
     const [loadingDashboard, setLoadingDashboard] = useState(false);
@@ -533,10 +541,10 @@ export default function Admin() {
     useEffect(() => {
         void (async () => {
             try {
-                const session = await request<SessionResponse>("/api/auth/session");
-                if (session.authenticated) {
+                const session = await request<SessionResponse>("/api/booking/session");
+                if (session.user?.role === "admin" && session.user.emailVerified) {
                     setAuthenticated(true);
-                    setUsername(session.username ?? "admin");
+                    setUsername(session.user.name || session.user.email);
                     await loadDashboard();
                 }
             } catch {
@@ -625,30 +633,13 @@ export default function Admin() {
         return () => window.removeEventListener("keydown", handlePreviewKeyDown);
     }, [mediaPreview]);
 
-    const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        setLoginError(null);
-
-        try {
-            const response = await request<SessionResponse>("/api/auth/login", {
-                method: "POST",
-                body: JSON.stringify(loginForm),
-            });
-
-            setAuthenticated(response.authenticated);
-            setUsername(response.username ?? (loginForm.username.trim() || "admin"));
-            setSessionChecked(true);
-            setNotice("Signed in.");
-            await loadDashboard();
-        } catch (error) {
-            setLoginError(error instanceof Error ? error.message : "Unable to sign in.");
-        }
-    };
-
     const handleLogout = async () => {
-        await request<SessionResponse>("/api/auth/logout", {
-            method: "POST",
-        });
+        try {
+            await signOut();
+        } catch {
+            setDashboardError("Unable to sign out. Please try again.");
+            return;
+        }
 
         setAuthenticated(false);
         setUsername("");
@@ -704,6 +695,7 @@ export default function Admin() {
     };
 
     const startEditingEvent = (event: CalendarEvent) => {
+        if (isBookingCalendarEvent(event)) { setActiveTab("bookings"); return; }
         setEditingEventId(event.id);
         setCalendarDraft({
             title: event.title,
@@ -757,6 +749,7 @@ export default function Admin() {
     };
 
     const deleteCalendarEvent = async (eventId: string) => {
+        if (eventId.startsWith("booking-")) { setActiveTab("bookings"); return; }
         if (!window.confirm("Delete this calendar event?")) {
             return;
         }
@@ -1469,40 +1462,13 @@ export default function Admin() {
     if (!authenticated) {
         return (
             <main className="admin-shell">
-                <form className="admin-card admin-login-card" onSubmit={handleLogin}>
-                    <div className="admin-header-copy">
-                        <p className="admin-kicker">Nikki Dodge Photography</p>
-                        <h1>CRM Login</h1>
-                        <p className="admin-muted">Sign in to manage leads, dates, media, and site settings.</p>
-                    </div>
-                    <label>
-                        Username
-                        <input
-                            type="text"
-                            value={loginForm.username}
-                            onChange={(event) => setLoginForm((currentForm) => ({
-                                ...currentForm,
-                                username: event.target.value,
-                            }))}
-                            required
-                        />
-                    </label>
-                    <label>
-                        Password
-                        <input
-                            type="password"
-                            value={loginForm.password}
-                            onChange={(event) => setLoginForm((currentForm) => ({
-                                ...currentForm,
-                                password: event.target.value,
-                            }))}
-                            required
-                        />
-                    </label>
-                    {loginError && <p className="admin-alert admin-alert-error">{loginError}</p>}
-                    {notice && <p className="admin-alert admin-alert-success">{notice}</p>}
-                    <button className="admin-primary-button" type="submit">Sign In</button>
-                </form>
+                <section className="admin-card admin-login-card">
+                    <p className="admin-kicker">Nikki Dodge Photography</p>
+                    <h1>Admin sign in</h1>
+                    <p className="admin-muted">Sign in with an authorized social account to manage bookings, clients, media, and site settings.</p>
+                    {bookingUser ? <><p className="admin-muted">This account does not have verified administrator access. Use your client account to verify your email, or sign out to choose another account.</p><button className="admin-primary-button" onClick={() => void handleLogout()}>Sign out of this account</button></> : <Link className="admin-primary-button" to="/login?next=%2Fadmin">Continue to secure sign in</Link>}
+                    <Link className="admin-secondary-link" to="/client">Go to my client account</Link>
+                </section>
             </main>
         );
     }
@@ -1542,6 +1508,7 @@ export default function Admin() {
                     </div>
                 ) : (
                     <>
+                        {activeTab === "bookings" && <AdminBookings />}
                         {activeTab === "leads" && (
                             <section className="admin-section">
                                 <div className="admin-stat-grid">
@@ -1664,6 +1631,8 @@ export default function Admin() {
                                                             >
                                                                 {getCalendarChipLabel(event)}
                                                             </span>
+                                                        ) : isBookingCalendarEvent(event) ? (
+                                                            <span className="admin-calendar-chip" key={event.id} title="Managed in Bookings">{getCalendarChipLabel(event)}</span>
                                                         ) : (
                                                             <button
                                                                 className="admin-calendar-chip"
@@ -1803,7 +1772,8 @@ export default function Admin() {
                                                                 <p className="admin-feed-source">Imported from {event.sourceFeedName}</p>
                                                             )}
                                                         </div>
-                                                        {!isImportedCalendarEvent(event) && (
+                                                        {isBookingCalendarEvent(event) && <div><p className="admin-feed-source">Managed in Bookings</p><button className="admin-secondary-button" type="button" onClick={() => setActiveTab("bookings")}>Open Bookings</button></div>}
+                                                        {!isImportedCalendarEvent(event) && !isBookingCalendarEvent(event) && (
                                                             <div className="admin-inline-actions">
                                                                 <button className="admin-secondary-button" type="button" onClick={() => startEditingEvent(event)}>
                                                                     Edit

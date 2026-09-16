@@ -216,8 +216,8 @@ export default function Home() {
             find the light, make a little space, and create photographs that
             feel like you.
           </p>
-          <Link className="text-link" to="/pricing">
-            Explore the experience & pricing <span aria-hidden="true">↗</span>
+          <Link className="text-link" to="/book">
+            Start planning your session <span aria-hidden="true">↗</span>
           </Link>
         </div>
       </section>

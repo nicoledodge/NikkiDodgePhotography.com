@@ -2,6 +2,23 @@
 
 Marketing site for Nikki Dodge Photography, built with React, TypeScript, and Vite.
 
+## Booking platform rollout
+
+The booking platform adds PostgreSQL, Better Auth social sign-in, Stripe payments, SMTP notifications, and private contract storage. Authentication and booking activation are separate gates, both disabled by default. This release replaces admin authentication, so production deployment is blocked until social authentication and a verified social admin are ready. The currently deployed version remains in service until that gate passes.
+
+Use [the deployment and recovery runbook](deploy/booking/README.md) for the staged rollout, OAuth callbacks, admin bootstrap, migration Job, private S3 configuration, backup/restore, and acceptance checks. [`.env.example`](.env.example) contains names and safe defaults only. Do not commit runtime environment files or put secrets in `VITE_` variables.
+
+After building the server, the operator commands are:
+
+```sh
+node scripts/migrate-booking.mjs
+node scripts/check-booking-env.mjs --mode auth
+node scripts/bootstrap-booking-admin.mjs --provider google --subject <verified-provider-account-id>
+node scripts/check-booking-env.mjs --mode booking --database
+```
+
+The optional [PostgreSQL manifest](deploy/booking/postgres.yaml) is not applied automatically. Production activation requires functioning OAuth providers, database and backups, signed Stripe webhook verification, delivered test emails, private document access checks, verified social admin access, and owner-approved contract text.
+
 ## Local development
 
 - Use the pinned Node version from `.nvmrc`.

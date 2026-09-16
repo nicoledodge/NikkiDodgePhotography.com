@@ -25,12 +25,19 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=5000
+ENV AUTH_ENABLED=false
+ENV BOOKING_ENABLED=false
 
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/dist-server ./dist-server
+COPY assets ./assets
+COPY scripts/migrate-booking.mjs scripts/bootstrap-booking-admin.mjs scripts/check-booking-env.mjs ./scripts/
+
+RUN mkdir -p /app/data && chown node:node /app/data
+USER node
 
 EXPOSE 5000
 
