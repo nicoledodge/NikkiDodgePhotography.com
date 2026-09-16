@@ -1,0 +1,30 @@
+[
+  {
+    "op": "test",
+    "path": "/spec/template/spec/volumes/0/configMap/name",
+    "value": "smtp-gateway-ktm4mtd859"
+  },
+  {
+    "op": "replace",
+    "path": "/spec/template/spec/volumes/0/configMap/name",
+    "value": "smtp-gateway-photography"
+  },
+  {
+    "op": "add",
+    "path": "/spec/template/spec/containers/0/ports/-",
+    "value": {
+      "containerPort": 10465,
+      "name": "smtps",
+      "protocol": "TCP"
+    }
+  },
+  {
+    "op": "add",
+    "path": "/spec/template/spec/containers/0/ports/-",
+    "value": {
+      "containerPort": 10993,
+      "name": "imaps",
+      "protocol": "TCP"
+    }
+  }
+]

@@ -1,0 +1,128 @@
+# Encrypted mail clients and the existing shared SMTP gateway.
+# Apply with the separately reviewed DaemonSet and Service patches in MAIL-SETUP.md.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smtp-gateway-photography
+  namespace: mailcow
+data:
+  nginx.conf: |
+    worker_processes auto;
+    pid /tmp/nginx.pid;
+    error_log /dev/stderr warn;
+    events { worker_connections 1024; }
+    stream {
+        log_format mail '$remote_addr [$time_local] $server_port $status $bytes_sent $bytes_received $session_time';
+        access_log /dev/stdout mail;
+        limit_conn_zone $binary_remote_addr zone=mail_per_ip:1m;
+        server {
+            listen 10025;
+            limit_conn mail_per_ip 20;
+            proxy_connect_timeout 10s;
+            proxy_timeout 600s;
+            proxy_pass mailcow-smtp.mailcow.svc.cluster.local:10025;
+            proxy_protocol on;
+        }
+        server {
+            listen 10465;
+            limit_conn mail_per_ip 20;
+            proxy_connect_timeout 10s;
+            proxy_timeout 600s;
+            proxy_pass mailcow-client-tls.mailcow.svc.cluster.local:465;
+        }
+        server {
+            listen 10993;
+            limit_conn mail_per_ip 20;
+            proxy_connect_timeout 10s;
+            proxy_timeout 3600s;
+            proxy_pass mailcow-client-tls.mailcow.svc.cluster.local:993;
+        }
+    }
+    http {
+        access_log off;
+        client_body_temp_path /tmp/client_temp;
+        proxy_temp_path /tmp/proxy_temp;
+        fastcgi_temp_path /tmp/fastcgi_temp;
+        uwsgi_temp_path /tmp/uwsgi_temp;
+        scgi_temp_path /tmp/scgi_temp;
+        server {
+            listen 8081;
+            location = /health { return 200 'ok\n'; }
+            location / { return 404; }
+        }
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mailcow-client-tls
+  namespace: mailcow
+spec:
+  selector:
+    kubevirt.io/domain: mailcow
+  ports:
+    - name: smtps
+      port: 465
+      targetPort: 465
+    - name: imaps
+      port: 993
+      targetPort: 993
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mail-client-gateway-to-vm
+  namespace: mailcow
+spec:
+  podSelector:
+    matchLabels:
+      kubevirt.io/domain: mailcow
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: smtp-gateway
+      ports:
+        - protocol: TCP
+          port: 465
+        - protocol: TCP
+          port: 993
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mail-client-gateway-ingress
+  namespace: mailcow
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: smtp-gateway
+  policyTypes: [Ingress]
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 10465
+        - protocol: TCP
+          port: 10993
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mail-client-gateway-egress
+  namespace: mailcow
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: smtp-gateway
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              kubevirt.io/domain: mailcow
+      ports:
+        - protocol: TCP
+          port: 465
+        - protocol: TCP
+          port: 993

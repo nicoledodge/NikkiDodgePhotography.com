@@ -28,6 +28,8 @@ The environment checker verifies configuration shape and optional database prere
 
 ### Private mailcow submission
 
+See [MAIL-SETUP.md](MAIL-SETUP.md) for the deployed mailbox, DNS state, client settings, and pending edge-router activation.
+
 Website notifications can use a private ClusterIP Service forwarding TCP 587 to the mailcow VM, with a NetworkPolicy allowing only the photography app's namespace and pod labels. The worker does not require public SMTP or IMAP access. For a service named `mailcow-submission` in the `mailcow` namespace, use:
 
 ```dotenv
