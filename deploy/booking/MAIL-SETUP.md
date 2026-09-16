@@ -21,7 +21,7 @@ Public Route 53 hosted zone: `Z07692281ZPA69XU7TVMH`.
 
 On September 16, 2026, Richard's SSO profile `richard-nikki-mail` in the Shared Networking account applied the four records. Route 53 change `C05682622ROG1HNFQWMW7` reached `INSYNC`; all four authoritative nameservers returned the new records, and all seven pre-existing records were unchanged. The cluster's narrower cert-manager credential remains unchanged.
 
-DNS is active, but public mail activation is **not complete**: the edge router still needs the forwarding rules below. Do not report external delivery as verified.
+DNS and the edge-router forwarding rules are active. External inbound delivery was verified from the owner's iCloud account to `hello@`; the message reached the Nicole INBOX with SPF, DKIM, and DMARC passing. Outbound delivery to another provider still requires a confirmed destination-server result.
 
 For a fresh setup only, the reviewed creation command is below. The records already exist in this deployment; do not rerun the CREATE batch:
 
@@ -37,9 +37,9 @@ Verify Route 53 reports the change as `INSYNC`, then query the authoritative nam
 
 The encrypted client gateway is deployed and ready on the LAN. `mailcow-public-mail.yaml` adds the gateway configuration, TLS backend Service, and narrow NetworkPolicies. `mailcow-gateway-patch.json` updates the existing DaemonSet without replacing its image or other configuration; `mailcow-client-service-patch.json` adds TLS client ports to its existing Service. The patches have already been applied and intentionally fail if their expected starting state differs. All seven gateway pods were ready after rollout.
 
-An authenticated test sent as `hello@` was delivered to the Nicole INBOX over verified TLS; the delivered message included a DKIM signature. Public ports 465 and 993 still time out, while the LAN endpoints work. The existing public port 25 route was restored to Assessorly until the edge router can preserve client IPs through mailcow. The website and SSH ingress Service settings remain unchanged.
+An authenticated test sent as `hello@` was delivered to the Nicole INBOX over verified TLS; the delivered message included a DKIM signature. The owner approved all three forwarding changes, which were applied through the Calix router UI on September 16, 2026. Public-hostname connections on ports 465 and 993 now pass TLS and authentication from this Mac. The router's incoming port 25 now targets the shared mailcow gateway. The unrelated router mappings and the website/SSH ingress Service settings remain unchanged.
 
-Required router port forwards for public IP `204.57.21.205`:
+Active router port forwards for public IP `204.57.21.205`:
 
 | Public TCP port | Internal target | Purpose |
 | --- | --- | --- |
@@ -53,7 +53,7 @@ The gateway forwards inbound SMTP using PROXY protocol to mailcow. Mailcow alrea
 
 Do not route public SMTP through the shared `ingress-expose` Service with its existing `externalTrafficPolicy: Cluster`: it masks client IPs and breaks SPF evaluation. A temporary test of that path was rolled back. The original `rke2-ingress-nginx-tcp-services` port-25 entry is `production/express-www-reconnect-mail-forwarder:25`.
 
-After the router changes, verify the real external sender IP in mailcow logs, valid/invalid recipients for both domains, unauthorized relay rejection, SMTP/IMAP certificate validation and authentication, and an external end-to-end delivery test. Outbound delivery to other providers is not yet verified; the public IP currently has an ISP-generated PTR and may need a matching reverse-DNS hostname for reliable outbound delivery.
+After the router changes, a real iCloud message arrived over TLS 1.3 with its Apple sending IP preserved and SPF, DKIM, and DMARC passing. Private gateway probes accepted valid Nikki and Assessorly recipients, rejected unknown recipients, and denied unrelated relaying. Public SMTP TLS and the website/API/Assessorly/webmail health checks passed. LAN hairpin SMTP probes use the router's public source IP and can trigger its DNSBL listing; do not weaken filtering to make those probes pass. Outbound delivery to other providers is not yet verified; the public IP currently has an ISP-generated PTR and may need a matching reverse-DNS hostname for reliable outbound delivery.
 
 Apple Mail settings:
 
@@ -63,7 +63,9 @@ Apple Mail settings:
 - Outgoing host: `mail.miles.systems`, SMTP port 465, SSL/TLS on, password authentication.
 - Use the mailbox password from the private local login file. Never disable certificate verification.
 
-The Mac's Mail account form has these identity and host values entered. Account activation still requires reachable public client ports; the account has not yet been successfully added.
+The Mac's Mail account is saved as `Nikki Dodge Photography` and reports `Online`. Mail Connection Doctor confirms successful login for both IMAP and SMTP. Both ports are explicitly configured with TLS/SSL and password authentication; automatic connection-setting management is off. Mail is enabled without Notes. The existing iCloud account was preserved.
+
+A return test to the owner's iCloud account was submitted from `hello@` using Apple Mail. Mailcow accepted the authenticated submission as queue `440A8144224` and established an IPv4 SMTP connection to the destination MX. Destination acceptance was still pending at the last check; submission acceptance alone does not verify delivery. Do not resend or flush that queue merely to repeat the test.
 
 ## Private website submission
 
