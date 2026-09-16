@@ -20,11 +20,24 @@ The migration runner is `node scripts/migrate-booking.mjs` after `npm run build:
 - `BETTER_AUTH_URL` and `PUBLIC_APP_URL`: the canonical HTTPS application origin in production. Use consistent origins and register exact provider callback URLs. Better Auth's standard callback path is `/api/auth/callback/<provider>`; verify the configured auth base path in the release before registering URLs.
 - `BETTER_AUTH_SECRET`: independently generated random secret with at least 32 bytes; keep stable across replicas and deployments. Google, Facebook, and Microsoft each need their matching `*_CLIENT_ID` and `*_CLIENT_SECRET` keys. Changing an OAuth app or origin requires a new callback smoke test.
 - `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, and `STRIPE_WEBHOOK_SECRET`: use test mode until acceptance passes. Register the exact webhook route implemented by the release and the event types handled in its webhook module. Deliver the untouched request body to signature verification before Express JSON parsing. Never confirm a payment from the browser return URL alone.
-- `SMTP_URL`, or `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`; plus `SMTP_FROM`. The sender domain must be authorized by the SMTP service. Existing `GMAIL_USER`/`GMAIL_PASS` keys alone do not configure this new SMTP transport.
+- `SMTP_URL`, or `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`; plus `SMTP_FROM`. Optional `SMTP_TLS_SERVERNAME` sets the certificate hostname and TLS SNI when the connection host uses private service DNS. It applies to both configuration styles and keeps certificate verification enabled. The sender domain must be authorized by the SMTP service. Existing `GMAIL_USER`/`GMAIL_PASS` keys alone do not configure this new SMTP transport.
 - `DOCUMENTS_S3_BUCKET`: a dedicated private bucket, separate from `CRM_S3_BUCKET`/`APP_S3_BUCKET` and any public CDN bucket. Block public access, enable encryption and versioning, restrict the runtime role to the required document prefix, and verify an unauthenticated object request is denied. Optional `DOCUMENTS_S3_REGION` and `DOCUMENTS_S3_PREFIX` tune region/prefix. Do not set a public asset URL for signed documents. Preserve existing `CRM_S3_*` keys exactly.
 - The document renderer uses `assets/fonts/NotoSans-Regular.ttf` and its accompanying license. `DOCUMENTS_FONT_PATH` optionally overrides the bundled font.
 
 The environment checker verifies configuration shape and optional database prerequisites. It does not claim OAuth works, funds arrived, mail was delivered, a bucket is private, or contract text is approved.
+
+### Private mailcow submission
+
+Website notifications can use a private ClusterIP Service forwarding TCP 587 to the mailcow VM, with a NetworkPolicy allowing only the photography app's namespace and pod labels. The worker does not require public SMTP or IMAP access. For a service named `mailcow-submission` in the `mailcow` namespace, use:
+
+```dotenv
+SMTP_HOST=mailcow-submission.mailcow.svc.cluster.local
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_TLS_SERVERNAME=mail.miles.systems
+```
+
+Leave `SMTP_URL` empty when using these connection fields. Store the dedicated SMTP account in `SMTP_USER`/`SMTP_PASSWORD` and set `SMTP_FROM` to its authorized sender address through the app Secret. Port 587 uses STARTTLS; production requires TLS. The connection goes to the private service, while the certificate is verified against `mail.miles.systems`. The same hostname override can be used with `SMTP_URL`. In production, `smtp:` URLs require STARTTLS even if URL query options request an unencrypted fallback, and `smtps:` URLs use TLS immediately. Certificate verification stays enabled for both protocols.
 
 ## Optional self-hosted PostgreSQL
 

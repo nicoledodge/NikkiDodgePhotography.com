@@ -1,0 +1,41 @@
+# Optional private SMTP connection for the photography application.
+# No public listener is created. Credentials live in a separate Kubernetes Secret.
+apiVersion: v1
+kind: Service
+metadata:
+  name: mailcow-submission
+  namespace: mailcow
+  labels:
+    app.kubernetes.io/part-of: nikkidodgephotography
+spec:
+  type: ClusterIP
+  selector:
+    kubevirt.io/domain: mailcow
+  ports:
+    - name: submission
+      protocol: TCP
+      port: 587
+      targetPort: 587
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: photography-smtp-to-mailcow
+  namespace: mailcow
+spec:
+  podSelector:
+    matchLabels:
+      kubevirt.io/domain: mailcow
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: default
+          podSelector:
+            matchLabels:
+              app: nikkidodgephotography
+      ports:
+        - protocol: TCP
+          port: 587

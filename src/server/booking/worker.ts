@@ -15,19 +15,38 @@ function mailTransport() {
     greetingTimeout: 20_000,
     socketTimeout: 120_000,
   };
-  if (process.env.SMTP_URL)
+  const isProduction = process.env.NODE_ENV === "production";
+  const tlsServername = process.env.SMTP_TLS_SERVERNAME?.trim();
+  if (process.env.SMTP_URL) {
+    let smtpUrl = process.env.SMTP_URL;
+    if (isProduction || tlsServername) {
+      // URL options take precedence in Nodemailer, including nested TLS options.
+      const connectionUrl = new URL(smtpUrl);
+      if (isProduction && connectionUrl.protocol === "smtp:") {
+        connectionUrl.searchParams.set("requireTLS", "true");
+        connectionUrl.searchParams.set("ignoreTLS", "false");
+        connectionUrl.searchParams.set("opportunisticTLS", "false");
+      }
+      if (tlsServername) {
+        connectionUrl.searchParams.set("tls.servername", tlsServername);
+      }
+      connectionUrl.searchParams.set("tls.rejectUnauthorized", "true");
+      smtpUrl = connectionUrl.toString();
+    }
     return nodemailer.createTransport({
-      url: process.env.SMTP_URL,
+      url: smtpUrl,
       ...timeouts,
     });
+  }
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT || 587),
     secure: process.env.SMTP_SECURE === "true",
     ...timeouts,
-    requireTLS:
-      process.env.NODE_ENV === "production" &&
-      process.env.SMTP_SECURE !== "true",
+    requireTLS: isProduction && process.env.SMTP_SECURE !== "true",
+    ...(tlsServername
+      ? { tls: { servername: tlsServername, rejectUnauthorized: true } }
+      : {}),
     ...(process.env.SMTP_USER
       ? {
           auth: {

@@ -1,0 +1,57 @@
+{
+  "Comment": "Rollback only the four photography mail records from the approved change",
+  "Changes": [
+    {
+      "Action": "DELETE",
+      "ResourceRecordSet": {
+        "Name": "nikkidodgephotography.com.",
+        "Type": "MX",
+        "TTL": 300,
+        "ResourceRecords": [
+          {
+            "Value": "10 mail.miles.systems."
+          }
+        ]
+      }
+    },
+    {
+      "Action": "DELETE",
+      "ResourceRecordSet": {
+        "Name": "nikkidodgephotography.com.",
+        "Type": "TXT",
+        "TTL": 300,
+        "ResourceRecords": [
+          {
+            "Value": "\"v=spf1 mx -all\""
+          }
+        ]
+      }
+    },
+    {
+      "Action": "DELETE",
+      "ResourceRecordSet": {
+        "Name": "dkim._domainkey.nikkidodgephotography.com.",
+        "Type": "TXT",
+        "TTL": 300,
+        "ResourceRecords": [
+          {
+            "Value": "\"v=DKIM1;k=rsa;t=s;s=email;p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAszjMLgityl+lctDIBP9bXaquKsYZf/uf7aMRxLvy4gH4XB0Rq/6a3KqvPKutZv2prxFxRypjiWcXEQ+i9qdmQfA1MxmqHI+5E+VbtezvOEomnIqvcep6zhGeM/Es/F6WSXtrM7PJJfY3ZmO5mlumq6mnXmhxkT2i0DbQGvlfW8DVp9FS33QC119\" \"4m0yG9FK8vSnwqYhyCJGSOFhKw3AkQ8EbtEftwteFRSWavN5Y5H6J1OihA5gvwR1FmZO1aMqC2AnKw8GptBMc2f+cVZcShkM/vcktLN6w41love0ZcBsnbj1mVRSdvMg0cByCmMSrX/PalMSPw2CM3btfehrLNwIDAQAB\""
+          }
+        ]
+      }
+    },
+    {
+      "Action": "DELETE",
+      "ResourceRecordSet": {
+        "Name": "_dmarc.nikkidodgephotography.com.",
+        "Type": "TXT",
+        "TTL": 300,
+        "ResourceRecords": [
+          {
+            "Value": "\"v=DMARC1; p=none; rua=mailto:dmarc@nikkidodgephotography.com; adkim=s; aspf=s\""
+          }
+        ]
+      }
+    }
+  ]
+}
