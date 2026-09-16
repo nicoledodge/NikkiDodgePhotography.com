@@ -1,3 +1,5 @@
+import "@fortawesome/fontawesome-free/css/all.min.css";
+import "../styles/admin.css";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
     CalendarDisplayEvent,
@@ -98,40 +100,14 @@ const settingsFields: Array<{
     multiline?: boolean;
     help?: string;
 }> = [
-    { key: "businessName", label: "Business Name" },
-    { key: "logoUrl", label: "Logo URL", help: "Paste a public media URL after upload." },
-    { key: "profilePhotoUrl", label: "Profile Photo URL", help: "Used on the contact page." },
     { key: "contactEmail", label: "Contact Email" },
     { key: "contactPhone", label: "Contact Phone" },
-    { key: "instagramUrl", label: "Instagram Reels URL", help: "Used by public social links and the home hero." },
+    { key: "instagramUrl", label: "Instagram URL", help: "Used by public social links." },
     { key: "serviceArea", label: "Service Area" },
-    { key: "heroTitle", label: "Home Hero Title", help: "Use *asterisks* around words that should stay emphasized." },
-    { key: "heroBody", label: "Home Hero Body", multiline: true },
-    { key: "heroPrimaryCtaLabel", label: "Hero Primary Button" },
-    { key: "heroSecondaryCtaLabel", label: "Hero Secondary Button" },
-    { key: "homeAboutTitle", label: "Home About Title", help: "Use *asterisks* around words that should stay emphasized." },
-    { key: "homeAboutBody", label: "Home About Body", multiline: true },
-    { key: "homeAvailabilityCtaLabel", label: "Home About Button" },
-    { key: "aboutPageTitle", label: "About Page Title", help: "Use *asterisks* around words that should stay emphasized." },
-    { key: "aboutPageBody", label: "About Page Body", multiline: true },
+    { key: "profilePhotoUrl", label: "Profile Photo URL", help: "Used on the home and about pages. Upload a photo in Media, then paste its public URL here." },
     { key: "profileName", label: "Profile Name" },
     { key: "profileRole", label: "Profile Role", multiline: true },
-    { key: "pricingPageTitle", label: "Pricing Page Title", help: "Use *asterisks* around words that should stay emphasized." },
-    { key: "pricingPageBody", label: "Pricing Page Body", multiline: true },
-    { key: "pricingPageCtaLabel", label: "Pricing CTA Label" },
-    { key: "contactPageTitle", label: "Contact Page Title", help: "Use *asterisks* around words that should stay emphasized." },
-    { key: "contactPageBody", label: "Contact Page Body", multiline: true },
-    { key: "inquirySectionEyebrow", label: "Inquiry Eyebrow" },
-    { key: "inquirySectionTitle", label: "Inquiry Title", multiline: true },
-];
-
-const colorFields: Array<{ key: keyof SiteSettings; label: string }> = [
-    { key: "primaryColor", label: "Primary Color" },
-    { key: "secondaryColor", label: "Background Color" },
-    { key: "accentColor", label: "Accent Color" },
-    { key: "buttonColor", label: "Button Color" },
-    { key: "darkBackgroundColor", label: "Dark Background Color" },
-    { key: "highlightColor", label: "Highlight Color" },
+    { key: "aboutPageBody", label: "About Page Body", multiline: true },
 ];
 
 const initialCalendarDraft: CalendarDraft = {
@@ -2239,7 +2215,7 @@ export default function Admin() {
                                 <div className="admin-section-heading">
                                     <div>
                                         <h2>Site Settings</h2>
-                                        <p className="admin-muted">These fields feed the public site at runtime. Upload images in the media tab, then paste the URL here.</p>
+                                        <p className="admin-muted">Update the contact details and about information shown on the public site. The editorial layout, colors, and other page copy are managed in the site source.</p>
                                     </div>
                                 </div>
 
@@ -2290,22 +2266,6 @@ export default function Admin() {
                                                 />
                                             )}
                                             {field.help && <span className="admin-field-help">{field.help}</span>}
-                                        </label>
-                                    ))}
-                                </div>
-
-                                <div className="admin-color-grid">
-                                    {colorFields.map((field) => (
-                                        <label key={field.key}>
-                                            {field.label}
-                                            <input
-                                                type="color"
-                                                value={settingsDraft[field.key]}
-                                                onChange={(event) => setSettingsDraft((currentDraft) => ({
-                                                    ...currentDraft,
-                                                    [field.key]: event.target.value,
-                                                }))}
-                                            />
                                         </label>
                                     ))}
                                 </div>

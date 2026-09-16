@@ -1,58 +1,75 @@
-import {useEffect, useState} from "react";
-import {Link, NavLink, useLocation} from "react-router-dom";
-import {PORTFOLIO} from "../pages/Portfolio";
-import {HOWDY} from "../pages/Howdy";
-import {CONTACT} from "../pages/Contact";
-import {PRICING} from "../pages/Pricing";
-import {BLOG} from "../pages/Blog";
-import { useSiteSettings } from "../site/SiteSettingsContext";
+import { useEffect, useRef, useState } from "react";
+import { Link, NavLink, useLocation } from "react-router-dom";
 
-const navigationLinkClass = ({ isActive }: { isActive: boolean }) => isActive ? "active" : undefined;
+const links = [
+  { to: "/Portfolio", label: "The work" },
+  { to: "/howdy", label: "Meet Nikki" },
+  { to: "/pricing", label: "The experience" },
+];
 
-const Header = () => {
-    const { siteSettings } = useSiteSettings();
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const location = useLocation();
-
-    useEffect(() => {
-        setIsMenuOpen(false);
-    }, [location.pathname]);
-
-    const navClassName = isMenuOpen ? "nav is-open" : "nav";
-
-    return <header className={isMenuOpen ? "header-area header-sticky site-nav-open" : "header-area header-sticky"}>
-        <nav className="main-nav" aria-label="Primary navigation">
-            {/* ***** Menu Start ***** */}
-            <ul className={navClassName} id="primary-nav-left">
-                <li><NavLink to="/" end className={navigationLinkClass}>Home</NavLink></li>
-                <li><NavLink to={HOWDY} className={navigationLinkClass}>About</NavLink></li>
-                <li><NavLink to={PORTFOLIO} className={navigationLinkClass}>Portfolio</NavLink></li>
-            </ul>
-            {/* ***** Logo Start ***** */}
-            <Link to={'/'} className="logo">
-                <img src={siteSettings.logoUrl}
-                     alt={siteSettings.businessName}/>
-            </Link>
-            {/* ***** Logo End ***** */}
-            <ul className={navClassName} id="primary-nav-right">
-                <li><NavLink to={PRICING} className={navigationLinkClass}>Pricing</NavLink></li>
-                <li><NavLink to={BLOG} className={navigationLinkClass}>Blog</NavLink></li>
-                <li><NavLink to={CONTACT} className={navigationLinkClass}>Inquire</NavLink></li>
-            </ul>
-            <button
-                className={isMenuOpen ? "menu-trigger active" : "menu-trigger"}
-                type="button"
-                aria-controls="primary-nav-left primary-nav-right"
-                aria-expanded={isMenuOpen}
-                aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
-                onClick={() => setIsMenuOpen((currentValue) => !currentValue)}
-            >
-                <span aria-hidden="true" />
-            </button>
-            {/* ***** Menu End ***** */}
+export default function Header() {
+  const [open, setOpen] = useState(false);
+  const location = useLocation();
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => setOpen(false), [location.pathname]);
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        toggleRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", close);
+    return () => document.removeEventListener("keydown", close);
+  }, [open]);
+  return (
+    <header className="site-header">
+      <div className="site-container header-inner">
+        <Link
+          className="wordmark"
+          to="/"
+          aria-label="Nikki Dodge Photography home"
+        >
+          <span className="brand-logo">
+            <img
+              src="/assets/editorial/nikki-dodge-logo.png"
+              alt="Nikki Dodge Photography"
+              width="2172"
+              height="724"
+            />
+          </span>
+        </Link>
+        <button
+          ref={toggleRef}
+          className="menu-toggle"
+          type="button"
+          aria-expanded={open}
+          aria-controls="site-navigation"
+          onClick={() => setOpen(!open)}
+        >
+          {open ? "Close" : "Menu"}{" "}
+          <span aria-hidden="true">{open ? "×" : "+"}</span>
+        </button>
+        <nav
+          id="site-navigation"
+          className={`site-nav${open ? " is-open" : ""}`}
+          aria-label="Main navigation"
+        >
+          {links.map((link) => (
+            <NavLink onClick={() => setOpen(false)} key={link.to} to={link.to}>
+              {link.label}
+            </NavLink>
+          ))}
+          <NavLink
+            onClick={() => setOpen(false)}
+            className="nav-inquire"
+            to="/Contact"
+          >
+            Let’s make something <span aria-hidden="true">↗</span>
+          </NavLink>
         </nav>
+      </div>
     </header>
-
-};
-
-export default Header;
+  );
+}

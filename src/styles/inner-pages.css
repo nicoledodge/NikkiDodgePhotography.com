@@ -1,0 +1,736 @@
+.inner-page {
+  --inner-line: rgba(36, 41, 35, 0.2);
+  --inner-muted: #62665c;
+}
+.inner-page p {
+  line-height: 1.8;
+}
+.inner-page figure {
+  margin: 0;
+}
+.inner-page img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+.inner-page h1,
+.inner-page h2,
+.inner-page h3 {
+  font-weight: 400;
+}
+.inner-page h1 em,
+.inner-page h2 em {
+  font-weight: 400;
+}
+.inner-page .eyebrow {
+  margin: 0 0 22px;
+}
+.inner-intro {
+  padding-top: 90px;
+  padding-bottom: 76px;
+}
+.inner-intro h1 {
+  max-width: 880px;
+  margin: 0;
+  font-size: clamp(3.6rem, 6.2vw, 6.5rem);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+}
+.inner-intro-split {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 90px;
+  align-items: end;
+}
+.inner-page .inner-lead {
+  font-size: 17px;
+  line-height: 1.85;
+}
+.inner-intro-split > .inner-lead {
+  max-width: 365px;
+  margin: 0 0 3px;
+}
+.inner-section-heading {
+  max-width: 760px;
+  margin-bottom: 55px;
+}
+.inner-section-heading h2 {
+  margin: 0 0 22px;
+  font-size: clamp(2.8rem, 4.8vw, 4.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+.inner-section-heading > p:last-child {
+  max-width: 620px;
+  color: var(--inner-muted);
+}
+.inner-index {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: #6b705c;
+  font-variant-numeric: tabular-nums;
+}
+.inner-page .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 35px;
+}
+.inner-page .text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 28px;
+}
+.inner-cta {
+  padding-top: 112px;
+  padding-bottom: 112px;
+  text-align: center;
+  border-top: 1px solid var(--inner-line);
+}
+.inner-cta h2 {
+  margin: 0 0 20px;
+  font-size: clamp(2.8rem, 4.8vw, 4.8rem);
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+}
+.inner-cta > p:not(.eyebrow) {
+  max-width: 540px;
+  margin: 0 auto 26px;
+  color: var(--inner-muted);
+}
+
+/* A personal, direct inquiry page. */
+.inner-contact-layout {
+  display: grid;
+  grid-template-columns: 0.86fr 1.14fr;
+  gap: clamp(48px, 8vw, 126px);
+  padding-bottom: 110px;
+}
+.inner-contact-aside > .inner-lead {
+  max-width: 380px;
+  margin: 0 0 26px;
+}
+.inner-contact-info {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 10px;
+  font-size: 13px;
+}
+.inner-contact-info a {
+  overflow-wrap: anywhere;
+}
+.inner-contact-info p {
+  margin: 4px 0 32px;
+  color: var(--inner-muted);
+  max-width: 310px;
+}
+.inner-contact-photo {
+  aspect-ratio: 7/6;
+  max-height: 380px;
+  object-position: center 40%;
+}
+.inner-social-link {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+  padding: 8px 0;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+.inner-inquiry {
+  border-top: 1px solid var(--inner-line);
+  padding-top: 30px;
+  min-width: 0;
+}
+.inner-inquiry > .eyebrow {
+  margin-bottom: 14px;
+}
+.inner-inquiry h2 {
+  margin: 0 0 16px;
+  font-size: clamp(2.25rem, 3vw, 3.25rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+}
+.inner-form-intro {
+  max-width: 440px;
+  margin: 0 0 16px;
+  color: var(--inner-muted);
+  font-size: 14px;
+}
+.inner-required-note {
+  margin: 0 0 32px;
+  font-size: 11px;
+  color: var(--inner-muted);
+}
+.inner-inquiry-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px 26px;
+}
+.inner-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.inner-field-full {
+  grid-column: 1 / -1;
+}
+.inner-field label {
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+.inner-field label span {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--inner-muted);
+}
+.inner-field input,
+.inner-field textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 12px 0;
+  border: 0;
+  border-bottom: 1px solid #888b7f;
+  border-radius: 0;
+  background: transparent;
+  color: #242923;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+  transition: border-color 0.2s;
+}
+.inner-field input {
+  min-height: 48px;
+}
+.inner-field input::placeholder {
+  font-size: 12px;
+  color: #74786e;
+  opacity: 1;
+}
+.inner-field textarea {
+  min-height: 130px;
+  resize: vertical;
+}
+.inner-field input:focus,
+.inner-field textarea:focus {
+  outline: 2px solid #6b705c;
+  outline-offset: 4px;
+  border-bottom-color: #242923;
+}
+.inner-field [aria-invalid="true"] {
+  border-bottom-color: #9c3930;
+}
+.inner-field-help {
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--inner-muted);
+  max-width: 420px;
+}
+.inner-field-error {
+  font-size: 11px;
+  line-height: 1.7;
+  margin-top: 9px;
+  color: #8e3027;
+}
+.inner-form-message {
+  padding: 18px 0;
+  margin: 0;
+  border-top: 1px solid;
+  border-bottom: 1px solid;
+  font-size: 13px;
+}
+.inner-form-message.is-error {
+  color: #8e3027;
+}
+.inner-form-message.is-success {
+  color: #42573e;
+}
+.inner-form-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 22px;
+  margin-top: 8px;
+}
+.inner-form-actions button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+.inner-email-fallback {
+  font-size: 11px;
+  color: var(--inner-muted);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* Simple, transparent collections. */
+.inner-wedding {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: clamp(48px, 8vw, 120px);
+  align-items: center;
+  padding-bottom: 110px;
+}
+.inner-wedding-photo img {
+  aspect-ratio: 4/5;
+  max-height: 850px;
+}
+.inner-wedding-photo figcaption {
+  padding-top: 15px;
+  font-size: 11px;
+  color: var(--inner-muted);
+}
+.inner-wedding-copy h2 {
+  margin: 0 0 24px;
+  font-size: clamp(3rem, 4.6vw, 4.8rem);
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+.inner-wedding-copy > p:not(.eyebrow):not(.inner-price) {
+  max-width: 440px;
+  color: var(--inner-muted);
+  font-size: 14px;
+}
+.inner-page .inner-price {
+  margin: 35px 0 23px;
+  font-size: 42px;
+  line-height: 1.1;
+  font-family: "Cormorant Garamond", Georgia, serif;
+}
+.inner-price > span {
+  display: block;
+  margin-bottom: 10px;
+  font-family: "Manrope", sans-serif;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+.inner-price small {
+  font-family: "Manrope", sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+.inner-inclusions {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 22px;
+  border-top: 1px solid var(--inner-line);
+}
+.inner-inclusions li {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--inner-line);
+  font-size: 12px;
+  line-height: 1.65;
+}
+.inner-wedding-copy > .inner-fine-print {
+  font-size: 11px !important;
+  margin: 0 0 26px;
+}
+.inner-other-work {
+  padding-top: 80px;
+  padding-bottom: 105px;
+  border-top: 1px solid var(--inner-line);
+}
+.inner-service-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 1fr 100px;
+  gap: 28px;
+  align-items: center;
+  padding: 34px 0;
+  border-top: 1px solid var(--inner-line);
+}
+.inner-service-row:last-child {
+  border-bottom: 1px solid var(--inner-line);
+}
+.inner-service-row h3 {
+  margin: 0;
+  font-size: clamp(1.8rem, 2.6vw, 2.4rem);
+  line-height: 1.1;
+}
+.inner-service-row p {
+  margin: 0;
+  max-width: 345px;
+  font-size: 12px;
+  color: var(--inner-muted);
+}
+.inner-service-row > a {
+  justify-self: end;
+  font-size: 11px;
+}
+
+/* The person behind the photographs. */
+.inner-about-hero {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  align-items: center;
+  gap: clamp(50px, 8vw, 120px);
+  padding-top: 80px;
+  padding-bottom: 100px;
+}
+.inner-profile img {
+  aspect-ratio: 4/5;
+  object-position: 52% center;
+}
+.inner-profile figcaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding-top: 16px;
+  font-size: 11px;
+}
+.inner-profile figcaption span {
+  color: var(--inner-muted);
+}
+.inner-about-copy h1 {
+  margin: 0 0 30px;
+  font-size: clamp(3.3rem, 5.4vw, 5.7rem);
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+}
+.inner-about-copy > p:not(.eyebrow) {
+  max-width: 450px;
+}
+.inner-about-copy .inner-lead {
+  margin-bottom: 25px;
+}
+.inner-about-copy > p:not(.eyebrow):not(.inner-lead) {
+  font-size: 14px;
+  color: var(--inner-muted);
+}
+.inner-about-location {
+  padding-top: 10px;
+  margin-bottom: 30px;
+}
+.inner-about-copy > .text-link {
+  font-size: 11px;
+}
+.inner-approach {
+  border-top: 1px solid var(--inner-line);
+  padding-top: 92px;
+  padding-bottom: 100px;
+}
+.inner-approach-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 65px;
+}
+.inner-approach-item {
+  padding-top: 24px;
+  border-top: 1px solid var(--inner-line);
+}
+.inner-approach-item h3 {
+  margin: 26px 0 16px;
+  font-size: 30px;
+  line-height: 1.1;
+}
+.inner-approach-item p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--inner-muted);
+}
+.inner-about-statement {
+  padding: 108px 0;
+  background: #eaece4;
+  text-align: center;
+}
+.inner-about-statement h2 {
+  margin: 0 0 24px;
+  font-size: clamp(3.4rem, 6vw, 6rem);
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+.inner-about-statement p:not(.eyebrow) {
+  margin: 0 0 26px;
+  font-size: 14px;
+}
+
+/* Useful planning notes, at your own pace. */
+.inner-journal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 75px 55px;
+  padding-bottom: 105px;
+}
+.inner-note > img {
+  aspect-ratio: 10/7;
+}
+.inner-note-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 24px 0 18px;
+}
+.inner-note-meta > .eyebrow {
+  margin: 0;
+}
+.inner-note-meta > span:last-child {
+  font-size: 11px;
+  color: var(--inner-muted);
+}
+.inner-note > h2 {
+  margin: 0 0 16px;
+  font-size: clamp(2.3rem, 3.2vw, 3.1rem);
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+}
+.inner-note > p {
+  margin: 0 0 24px;
+  max-width: 470px;
+  font-size: 13px;
+  color: var(--inner-muted);
+}
+.inner-note-details {
+  border-top: 1px solid var(--inner-line);
+  border-bottom: 1px solid var(--inner-line);
+}
+.inner-note-details > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 0;
+  list-style: none;
+  cursor: pointer;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.inner-note-details > summary::-webkit-details-marker {
+  display: none;
+}
+.inner-note-details > summary > span {
+  font-size: 22px;
+  line-height: 1;
+  transition: transform 0.2s;
+}
+.inner-note-details[open] > summary > span {
+  transform: rotate(45deg);
+}
+.inner-note-details > summary:focus-visible {
+  outline: 2px solid #6b705c;
+  outline-offset: 4px;
+}
+.inner-note-body {
+  padding-bottom: 22px;
+}
+.inner-note-body > div {
+  margin-top: 18px;
+}
+.inner-note-body h3 {
+  margin: 0 0 9px;
+  font-family: "Manrope", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+}
+.inner-note-body p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--inner-muted);
+}
+
+@media (min-width: 1500px) {
+  .inner-intro {
+    padding-top: 112px;
+  }
+}
+@media (max-width: 1000px) {
+  .inner-intro-split {
+    gap: 50px;
+  }
+  .inner-contact-layout {
+    grid-template-columns: 0.8fr 1.2fr;
+    gap: 42px;
+  }
+  .inner-inquiry-form {
+    grid-template-columns: 1fr;
+  }
+  .inner-service-row {
+    grid-template-columns: 28px 1fr 1fr;
+    gap: 24px;
+  }
+  .inner-service-row > a {
+    grid-column: 3;
+    justify-self: start;
+  }
+  .inner-about-hero,
+  .inner-wedding {
+    gap: 45px;
+  }
+  .inner-approach-grid {
+    gap: 32px;
+  }
+}
+@media (max-width: 700px) {
+  .inner-intro {
+    padding-top: 55px;
+    padding-bottom: 44px;
+  }
+  .inner-intro h1 {
+    font-size: clamp(3.2rem, 11vw, 4.6rem);
+  }
+  .inner-intro-split {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .inner-intro-split > .inner-lead {
+    max-width: 430px;
+  }
+  .inner-page .inner-lead {
+    font-size: 15px;
+  }
+  .inner-page .eyebrow {
+    font-size: 10px;
+    margin-bottom: 20px;
+  }
+  .inner-contact-layout {
+    grid-template-columns: 1fr;
+    gap: 50px;
+    padding-bottom: 64px;
+  }
+  .inner-contact-aside > .inner-lead {
+    max-width: 100%;
+  }
+  .inner-contact-info p {
+    margin-bottom: 24px;
+  }
+  .inner-contact-photo {
+    aspect-ratio: 5/3;
+    max-height: 280px;
+    object-position: center 40%;
+  }
+  .inner-inquiry {
+    padding-top: 28px;
+  }
+  .inner-inquiry h2 {
+    font-size: 2.5rem;
+  }
+  .inner-required-note {
+    margin-bottom: 25px;
+  }
+  .inner-inquiry-form {
+    gap: 26px;
+  }
+  .inner-field input,
+  .inner-field textarea {
+    font-size: 16px;
+  }
+  .inner-form-actions .button {
+    width: 100%;
+  }
+  .inner-wedding {
+    grid-template-columns: 1fr;
+    gap: 35px;
+    padding-bottom: 64px;
+  }
+  .inner-wedding-photo img {
+    max-height: 570px;
+  }
+  .inner-wedding-copy h2 {
+    font-size: 3.4rem;
+  }
+  .inner-wedding-copy > p:not(.eyebrow):not(.inner-price) {
+    max-width: none;
+  }
+  .inner-other-work {
+    padding-top: 55px;
+    padding-bottom: 65px;
+  }
+  .inner-section-heading {
+    margin-bottom: 35px;
+  }
+  .inner-section-heading h2 {
+    font-size: 2.8rem;
+  }
+  .inner-service-row {
+    grid-template-columns: 26px 1fr;
+    gap: 16px;
+    padding: 28px 0;
+  }
+  .inner-service-row .inner-index {
+    align-self: start;
+    padding-top: 8px;
+  }
+  .inner-service-row h3 {
+    font-size: 1.9rem;
+  }
+  .inner-service-row p,
+  .inner-service-row > a {
+    grid-column: 2;
+  }
+  .inner-cta {
+    padding-top: 65px;
+    padding-bottom: 65px;
+  }
+  .inner-cta h2 {
+    font-size: 3rem;
+  }
+  .inner-cta > p:not(.eyebrow) {
+    font-size: 13px;
+  }
+  .inner-about-hero {
+    grid-template-columns: 1fr;
+    gap: 38px;
+    padding-top: 45px;
+    padding-bottom: 62px;
+  }
+  .inner-profile img {
+    aspect-ratio: 1;
+    max-height: 600px;
+  }
+  .inner-about-copy h1 {
+    font-size: clamp(3.3rem, 10vw, 4.4rem);
+    margin-bottom: 25px;
+  }
+  .inner-approach {
+    padding-top: 58px;
+    padding-bottom: 64px;
+  }
+  .inner-approach-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .inner-approach-item h3 {
+    margin-top: 18px;
+  }
+  .inner-about-statement {
+    padding: 70px 0;
+  }
+  .inner-about-statement h2 {
+    font-size: 3.5rem;
+  }
+  .inner-about-statement p:not(.eyebrow) {
+    font-size: 13px;
+  }
+  .inner-journal-grid {
+    grid-template-columns: 1fr;
+    gap: 52px;
+    padding-bottom: 65px;
+  }
+  .inner-note > h2 {
+    font-size: 2.6rem;
+  }
+  .inner-note-meta > .eyebrow {
+    margin-bottom: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .inner-page *,
+  .inner-page *::before,
+  .inner-page *::after {
+    transition: none !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .inner-field input,
+  .inner-field textarea {
+    font-size: 16px;
+  }
+}
