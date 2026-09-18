@@ -11,3 +11,5 @@ vite.config.d.ts
 *.local
 *.mp4
 public/assets/images/Portfolio
+output
+.playwright-cli

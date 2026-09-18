@@ -27,5 +27,6 @@ vite.config.d.ts
 *.mp4
 
 dist-server
-data/
+/data/
 .playwright-cli/
+output/

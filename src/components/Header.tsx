@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 
 const links = [
-  { to: "/Portfolio", label: "The work" },
+  { to: "/Portfolio", label: "Portfolio" },
   { to: "/howdy", label: "Meet Nikki" },
-  { to: "/pricing", label: "The experience" },
+  { to: "/pricing", label: "Experience & pricing" },
 ];
 
 export default function Header() {
@@ -66,7 +66,7 @@ export default function Header() {
             className="nav-inquire"
             to="/Contact"
           >
-            Let’s make something <span aria-hidden="true">↗</span>
+            Inquire <span aria-hidden="true">↗</span>
           </NavLink>
         </nav>
       </div>

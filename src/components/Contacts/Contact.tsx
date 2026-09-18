@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSiteSettings } from "../../site/SiteSettingsContext";
 
 interface InquiryFormData {
@@ -22,14 +22,24 @@ const initialFormData: InquiryFormData = {
 const requiredFields: Array<keyof InquiryFormData> = ["name", "email", "telephone", "message"];
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const Contact: React.FC = () => {
+const Contact: React.FC<{ initialSubject?: string }> = ({ initialSubject = "" }) => {
     const { siteSettings } = useSiteSettings();
-    const [formData, setFormData] = useState<InquiryFormData>(initialFormData);
+    const [formData, setFormData] = useState<InquiryFormData>(() => ({ ...initialFormData, subject: initialSubject }));
+    const previousInitialSubject = useRef(initialSubject);
     const [formErrors, setFormErrors] = useState<InquiryFormErrors>({});
     const [submitState, setSubmitState] = useState<"idle" | "submitting" | "success" | "error">("idle");
     const [submitMessage, setSubmitMessage] = useState("");
     const fieldRefs = useRef<Partial<Record<keyof InquiryFormData, HTMLInputElement | HTMLTextAreaElement>>>({});
     const statusRef = useRef<HTMLParagraphElement>(null);
+
+    useEffect(() => {
+        const previousSubject = previousInitialSubject.current;
+        previousInitialSubject.current = initialSubject;
+        if (previousSubject === initialSubject) return;
+        setFormData((current) => current.subject === previousSubject || current.subject === ""
+            ? { ...current, subject: initialSubject }
+            : current);
+    }, [initialSubject]);
 
     const setFieldRef = (field: keyof InquiryFormData) => (node: HTMLInputElement | HTMLTextAreaElement | null) => {
         if (node) {

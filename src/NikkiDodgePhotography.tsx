@@ -17,6 +17,8 @@ import Contact, { CONTACT } from "./pages/Contact";
 import Howdy, { HOWDY } from "./pages/Howdy";
 import Blog, { BLOG } from "./pages/Blog";
 import Gallery, { GALLERY } from "./pages/Gallery";
+import mediaLibrary from "./components/MediaLibrary/MediaLibrary";
+import { formatSessionName } from "./pages/Portfolio";
 const Admin = lazy(() => import("./pages/Admin"));
 import { SiteSettingsProvider } from "./site/SiteSettingsContext";
 
@@ -81,7 +83,17 @@ const AppLayout = () => {
       "/blog": "Field Notes",
     };
     const titleKey = location.pathname.toLowerCase();
-    document.title = `${titles[titleKey] || (titleKey.startsWith("/gallery") ? "A Photo Story" : "The Portfolio")} | Nikki Dodge Photography`;
+    const routeParts = location.pathname.split("/");
+    const galleryCategory = Object.values(mediaLibrary).find((category) =>
+      category.category.toLowerCase() === routeParts[2]?.toLowerCase(),
+    );
+    const galleryStory = titleKey.startsWith("/gallery/")
+      ? galleryCategory?.sessions.find((session) => encodeURIComponent(session.name).toLowerCase() === routeParts[3]?.toLowerCase())
+      : undefined;
+    const pageTitle = galleryStory
+      ? galleryStory.title || formatSessionName(galleryStory.name)
+      : titles[titleKey] || "The Portfolio";
+    document.title = `${pageTitle} | Nikki Dodge Photography`;
     if (location.hash) {
       window.requestAnimationFrame(() =>
         document.getElementById(location.hash.slice(1))?.scrollIntoView(),

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import mediaLibrary from "../components/MediaLibrary/MediaLibrary";
 import { getCategoryCopy } from "../data/categoryCopy";
-import { portfolioPreview } from "../functions/portfolioPreview";
+import { portfolioPreview, portfolioSrcSet, portfolioAlt } from "../functions/portfolioPreview";
 
 export const PORTFOLIO = "/Portfolio";
 const order = [
@@ -58,10 +58,11 @@ export default function Portfolio() {
     .filter(
       ({ category, session }) =>
         !query ||
-        `${session.name} ${formatSessionName(session.name)} ${category.name} ${labels[category.category] || ""}`
+        `${session.name} ${session.title || ""} ${formatSessionName(session.name)} ${category.name} ${labels[category.category] || ""}`
           .toLowerCase()
           .includes(query),
-    );
+    )
+    .sort((a, b) => Number(Boolean(b.session.curated)) - Number(Boolean(a.session.curated)));
   return (
     <div className="site-container">
       <section className="page-intro portfolio-intro">
@@ -84,11 +85,14 @@ export default function Portfolio() {
             )}
           </h1>
         </div>
-        <p>
+        <div className="portfolio-intro-copy"><p>
           {selected
             ? getCategoryCopy(selected.category).description
             : "Big days. Everyday beauty. The moments in between. Explore the stories, and find a little of yourself in them."}
         </p>
+        <Link className="text-link" to={selected ? `/Contact?session=${selected.category}` : "/pricing"}>
+          {selected ? "Plan your session" : "Explore pricing & the experience"} <span aria-hidden="true">↗</span>
+        </Link></div>
       </section>
       <div className="portfolio-tools">
         <nav
@@ -162,7 +166,9 @@ export default function Portfolio() {
                   <div className="portfolio-card-image">
                     <img
                       src={portfolioPreview(original)}
-                      alt={`${formatSessionName(session.name)} — ${labels[category.category] || category.category} photography`}
+                      srcSet={portfolioSrcSet(original)}
+                      sizes="(max-width: 600px) calc(50vw - 27px), (max-width: 1000px) 45vw, 32vw"
+                      alt={portfolioAlt(original) || `${formatSessionName(session.name)} — ${labels[category.category] || category.category} photography`}
                       loading={index < 3 ? "eager" : "lazy"}
                       decoding="async"
                       width="800"
@@ -170,12 +176,11 @@ export default function Portfolio() {
                     />
                   </div>
                   <div className="portfolio-card-caption">
-                    <h2>{formatSessionName(session.name)}</h2>
+                    <h2>{session.title || formatSessionName(session.name)}</h2>
                     <span aria-hidden="true">↗</span>
                   </div>
                   <p>
-                    {labels[category.category] || category.category} / View the
-                    story
+                    {session.curated ? "New to the portfolio · " : ""}{labels[category.category] || category.category}
                   </p>
                 </Link>
               );
