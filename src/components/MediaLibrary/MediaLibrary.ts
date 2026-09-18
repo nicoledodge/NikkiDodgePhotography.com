@@ -11,6 +11,7 @@ import {Sports} from "./Sports";
 import {Videos} from "./Videos";
 import {Weddings} from "./Weddings";
 import {Featured} from "./Featured";
+import {curatedStories} from "../../data/curatedPortfolio";
 
 export const mediaLibrary: Record<Categories, Category> = {
     Engagements,
@@ -27,6 +28,25 @@ export const mediaLibrary: Record<Categories, Category> = {
     Weddings
 }
 
+// Only reviewed, explicitly selected exports belong in the public portfolio.
+// New bucket uploads are never published automatically.
+for (const story of curatedStories) {
+    const category = mediaLibrary[story.category];
+    const cover = story.photos[story.cover].file;
+    category.sessions = [
+        ...category.sessions.filter((session) => session.name !== story.name),
+        {
+            name: story.name,
+            title: story.title,
+            description: story.description,
+            curated: true,
+            featuredHorizontal: cover,
+            featuredVertical: cover,
+            mediaFiles: story.photos.map((photo) => photo.file),
+        },
+    ];
+}
+
 export const Sessions = Object.values(mediaLibrary)
     .flatMap((category) => {
         if (category.name === "Videos") return [];
@@ -41,5 +61,4 @@ export const Sessions = Object.values(mediaLibrary)
 export const Photos: string[] = Sessions.flatMap((session) => session.mediaFiles);
 
 export default mediaLibrary;
-
 

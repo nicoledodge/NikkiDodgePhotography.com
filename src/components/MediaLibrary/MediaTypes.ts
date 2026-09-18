@@ -43,6 +43,9 @@ interface FeaturedMedia {
 export interface Session extends FeaturedMedia {
     name: string;
     mediaFiles: string[];
+    title?: string;
+    description?: string;
+    curated?: boolean;
 }
 
 export interface Category extends FeaturedMedia {

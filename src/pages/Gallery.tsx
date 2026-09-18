@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import mediaLibrary from "../components/MediaLibrary/MediaLibrary";
-import photoDimensions from "../data/photoDimensions.json";
 import {
-  portfolioAssetKey,
+  portfolioDimensions,
   portfolioPreview,
+  portfolioSrcSet,
+  portfolioAlt,
 } from "../functions/portfolioPreview";
 import { formatSessionName } from "./Portfolio";
 
@@ -18,17 +19,18 @@ export default function Gallery() {
   const session = category?.sessions.find((item) => item.name === sessionName);
   const [active, setActive] = useState<number | null>(null);
   const [visibleCount, setVisibleCount] = useState(24);
-  const dimensions = photoDimensions as Record<string, number[]>;
   const dialogRef = useRef<HTMLDialogElement>(null);
   const images =
     session?.mediaFiles
       .filter((file) => /\.(jpe?g|png|webp|avif)$/i.test(file))
       .map((file) => `${category!.path}/${session.name}/${file}`)
-      .filter((src) => Boolean(dimensions[portfolioAssetKey(src)])) || [];
-  const title = formatSessionName(sessionName || "");
-  const next = category?.sessions.find(
-    (item) => item.name !== sessionName && item.featuredHorizontal,
-  );
+      .filter((src) => Boolean(portfolioDimensions(src))) || [];
+  const title = session?.title || formatSessionName(sessionName || "");
+  const availableStories = category?.sessions.filter((item) => item.featuredHorizontal) || [];
+  const currentStory = availableStories.findIndex((item) => item.name === sessionName);
+  const next = availableStories.length > 1
+    ? availableStories[(currentStory + 1) % availableStories.length]
+    : undefined;
 
   useEffect(() => {
     dialogRef.current?.close();
@@ -37,7 +39,11 @@ export default function Gallery() {
   }, [categoryName, sessionName]);
   useEffect(() => {
     const dialog = dialogRef.current;
-    if (active === null || !dialog) return;
+    if (!dialog) return;
+    if (active === null || !images[active]) {
+      if (dialog.open) dialog.close();
+      return;
+    }
     if (!dialog.open) dialog.showModal();
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -85,7 +91,11 @@ export default function Gallery() {
         </Link>
         <p className="eyebrow">{category.category} / A photo story</p>
         <h1>{title}</h1>
+        {session.description && <p className="gallery-description">{session.description}</p>}
         <p>{images.length} photographs. A moment worth keeping.</p>
+        <Link className="text-link gallery-inquire" to={`/Contact?session=${category.category}`}>
+          Plan a session with Nikki <span aria-hidden="true">↗</span>
+        </Link>
       </section>
       <section
         className="gallery-masonry site-container"
@@ -97,7 +107,7 @@ export default function Gallery() {
             <div className="gallery-batch" key={batch}>
               {images.slice(batch * 24, (batch + 1) * 24).map((src, offset) => {
                 const index = batch * 24 + offset;
-                const [width, height] = dimensions[portfolioAssetKey(src)];
+                const [width, height] = portfolioDimensions(src)!;
                 return (
                   <button
                     className="gallery-photo"
@@ -108,7 +118,9 @@ export default function Gallery() {
                   >
                     <img
                       src={portfolioPreview(src)}
-                      alt={`${title}, photograph ${index + 1}`}
+                      srcSet={portfolioSrcSet(src)}
+                      sizes="(max-width: 600px) calc(50vw - 27px), (max-width: 1000px) calc(50vw - 45px), 32vw"
+                      alt={portfolioAlt(src) || `${title}, photograph ${index + 1}`}
                       width={width}
                       height={height}
                       loading={index < 3 ? "eager" : "lazy"}
@@ -137,7 +149,7 @@ export default function Gallery() {
         )}
       </section>
       <div className="gallery-next site-container">
-        <Link className="text-link" to="/Contact">
+        <Link className="text-link" to={`/Contact?session=${category.category}`}>
           Let’s tell your story ↗
         </Link>
         {next && (
@@ -145,7 +157,7 @@ export default function Gallery() {
             className="text-link"
             to={`/gallery/${category.category}/${encodeURIComponent(next.name)}`}
           >
-            Next story: {formatSessionName(next.name)} ↗
+            Next story: {next.title || formatSessionName(next.name)} ↗
           </Link>
         )}
       </div>
@@ -156,7 +168,7 @@ export default function Gallery() {
         onCancel={close}
         onClose={() => setActive(null)}
       >
-        {active !== null && (
+        {active !== null && images[active] && (
           <div className="lightbox-content">
             <div className="lightbox-top">
               <span>{title}</span>
@@ -171,7 +183,7 @@ export default function Gallery() {
             <div className="lightbox-image">
               <img
                 src={images[active]}
-                alt={`${title}, photograph ${active + 1}`}
+                alt={portfolioAlt(images[active]) || `${title}, photograph ${active + 1}`}
               />
             </div>
             <div className="lightbox-bottom">

@@ -32,6 +32,38 @@ Marketing site for Nikki Dodge Photography, built with React, TypeScript, and Vi
   - `export PORTFOLIO_BUCKET=<bucket-name>`
   - `scripts/sync-portfolio-images.sh`
 
+## Reviewed S3 portfolio curation
+
+Keep a private selection JSON outside the repository. Only include photographs reviewed for public portfolio use; an archive upload does not automatically publish a gallery. Each story uses an existing photography category, a unique path-safe `name` (letters, numbers, hyphens, underscores), public `title` and `description`, a zero-based `cover` index, and `photos` with an exact bucket-relative `sourceKey` and descriptive `alt` text. A photo may also provide `localPath` (absolute or relative to the selection JSON) to use an already downloaded original.
+
+```json
+{
+  "stories": [{
+    "category": "Weddings",
+    "name": "reviewed-story",
+    "title": "Public gallery title",
+    "description": "A reviewed description of this session.",
+    "cover": 0,
+    "photos": [{
+      "sourceKey": "private/archive/exact-object.jpg",
+      "alt": "A specific description of the selected photograph."
+    }]
+  }]
+}
+```
+
+Generate locally with the pinned Node version and installed dependencies:
+
+```sh
+AWS_PROFILE=miles-production node scripts/prepare-portfolio.mjs /absolute/path/to/private-selection.json
+```
+
+The command only reads selected S3 objects and writes local output. `PORTFOLIO_BUCKET` defaults to `nikkidodgephotography-images-891377212071`; `AWS_PROFILE` defaults to `miles-production`. It rotates images correctly, strips metadata, and creates 640-, 960-, and 1920-pixel WebP variants (quality 82, without enlarging smaller originals). Content-hashed files land in `output/curated-assets/Portfolio/{category}/{name}/`; the public `src/data/curatedPortfolio.json` contains filenames, actual dimensions, alt text, and story copy, never private source keys. The selection JSON is the complete curated collection, so keep existing reviewed stories in it when adding more.
+
+Review the derivatives before separately publishing them under the matching public `Portfolio/` prefix, then deploy the manifest and verify live images. Regeneration is deterministic and leaves existing derivatives in place. Do not pass the curated output to `sync-portfolio-images.sh`: that older helper uses `--delete` and could remove other published portfolio images. Never commit the private selection, downloaded originals, or local `output/` artifacts.
+
+For local development with published curated galleries, use `VITE_PORTFOLIO_IMAGE_BASE_URL=https://images.nikkidodgephotography.com/Portfolio npm run dev`. Their web copies live in S3 and are not committed as repository binaries.
+
 ## Admin media uploads
 
 - The `/admin` media tab requests short-lived signed upload URLs from the Node API, then uploads files directly to S3 from the browser.
