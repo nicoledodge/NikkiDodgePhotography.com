@@ -1,0 +1,29 @@
+/* These controls exist only inside the authenticated editor preview. */
+.website-section.website-section-preview { cursor: default; outline: 1px solid transparent; outline-offset: -1px; }
+.website-section.website-section-preview:hover { outline-color: #b8a6b1; }
+.website-section.website-section-highlight { outline: 2px solid #6b4d63; outline-offset: -2px; }
+.website-section.website-section-preview [data-website-field] { cursor: pointer; }
+.website-section.website-section-preview [data-website-kind=text] { cursor: text; }
+.website-section.website-section-preview [data-website-field]:hover { outline: 1px dashed #99798e; outline-offset: 5px; }
+.website-section.website-section-preview [data-website-editing=true] { outline: 2px solid #6b4d63 !important; outline-offset: 6px; cursor: text; min-width: 1ch; white-space: pre-wrap; caret-color: #6b4d63; }
+.website-section.website-section-preview [data-website-placeholder=true] { opacity: .52; }
+.website-section.website-section-preview [data-website-placeholder=true][data-website-editing=true] { opacity: 1; }
+.website-canvas-overlays { position: fixed; inset: 0; pointer-events: none; z-index: 2147483000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12px; line-height: 1.4; text-align: left; color: #fbf8fa; }
+.website-canvas-toolbar, .website-canvas-hover-label { position: fixed; transform-origin: top left; border-radius: 8px; background: #6b4d63; color: #fff; box-shadow: 0 4px 18px #3927332b; }
+.website-canvas-toolbar { display: flex; align-items: center; pointer-events: auto; padding: 4px; gap: 5px; white-space: nowrap; min-height: 36px; }
+.website-canvas-section-name { padding: 0 6px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; font-weight: 600; font-size: 11px; }
+.website-canvas-toolbar button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 5px; padding: 7px; min-width: 29px; min-height: 29px; background: transparent; color: #fff; cursor: pointer; font: inherit; font-size: 11px; line-height: 1; text-transform: none; letter-spacing: 0; }
+.website-canvas-toolbar button:hover { background: #ffffff1a; }
+.website-canvas-toolbar button:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+.website-canvas-toolbar button:disabled { opacity: .3; cursor: default; }
+.website-canvas-toolbar button.website-canvas-edit { background: #fcf8fa; color: #6b4d63; font-weight: 600; }
+.website-canvas-toolbar button.website-canvas-edit:hover { background: #f0e5ed; }
+.website-canvas-toolbar svg { width: 15px; height: 15px; flex-shrink: 0; }
+.website-canvas-arrange { display: flex; gap: 1px; padding-left: 3px; border-left: 1px solid #ffffff30; }
+.website-canvas-edit-hint { padding-inline: 7px; color: #eadde6; font-size: 11px; }
+.website-canvas-hover-label { padding: 5px 9px; background: #fff; border: 1px solid #b9a6b3; color: #6b4d63; font-size: 11px; font-weight: 600; }
+.website-canvas-photo-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 100%; min-height: 310px; padding: 36px; background: #f3edf1; border: 1px dashed #b9a6b3; border-radius: 4px; color: #76576d; font-family: inherit; cursor: pointer; }
+.website-canvas-photo-placeholder svg { width: 42px; height: 42px; opacity: .75; }
+.website-canvas-photo-placeholder span { font-size: 20px; }
+.website-canvas-photo-placeholder small { font-size: 13px; color: #826e7b; }
+@media (prefers-reduced-motion: reduce) { .website-section-preview { scroll-behavior: auto; } }

@@ -1,7 +1,7 @@
 import WebsiteEditor from "../site/WebsiteEditor";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import "../styles/admin.css";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
     CalendarDisplayEvent,
     CalendarEvent,
@@ -200,9 +200,25 @@ export default function Admin() {
     const [username, setUsername] = useState("");
     const [loginForm, setLoginForm] = useState({ username: "admin", password: "" });
     const [loginError, setLoginError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<AdminTab>(() => new URLSearchParams(window.location.search).get("workspace") === "website" ? "website" : "leads");
+    const [activeTab, setActiveTab] = useState<AdminTab>(() => {
+        const workspace = new URLSearchParams(window.location.search).get("workspace");
+        return workspace && Object.prototype.hasOwnProperty.call(tabLabels, workspace) ? workspace as AdminTab : "leads";
+    });
     const [websiteOpened, setWebsiteOpened] = useState(activeTab === "website");
     const [websiteDirty, setWebsiteDirty] = useState(false);
+    const [confirmSignOut, setConfirmSignOut] = useState(false);
+    const [signingOut, setSigningOut] = useState(false);
+    const signOutDialog = useRef<HTMLDialogElement>(null);
+    useEffect(() => {
+        if (confirmSignOut) signOutDialog.current?.showModal();
+        else signOutDialog.current?.close();
+    }, [confirmSignOut]);
+    const switchWorkspace = (tab: AdminTab) => {
+        setActiveTab(tab);
+        const url = new URL(window.location.href);
+        url.searchParams.set("workspace", tab);
+        window.history.replaceState(window.history.state, "", url);
+    };
     useEffect(() => { if (activeTab === "website") setWebsiteOpened(true); }, [activeTab]);
     const [notice, setNotice] = useState<string | null>(null);
     const [dashboardError, setDashboardError] = useState<string | null>(null);
@@ -327,18 +343,29 @@ export default function Admin() {
     };
 
     const handleLogout = async () => {
-        if (websiteDirty && !window.confirm("Sign out and discard unsaved website changes? Save your draft first to keep them.")) return;
-        await request<SessionResponse>("/api/auth/logout", {
-            method: "POST",
-        });
-
-        setAuthenticated(false);
-        setUsername("");
-        setLeads([]);
-        setCalendarEvents([]);
-        setImportedCalendarEvents([]);
-        setCalendarFeeds([]);
-        setNotice("Signed out.");
+        setSigningOut(true);
+        try {
+            await request<SessionResponse>("/api/auth/logout", { method: "POST" });
+            setConfirmSignOut(false);
+            setAuthenticated(false);
+            setUsername("");
+            setLeads([]);
+            setCalendarEvents([]);
+            setImportedCalendarEvents([]);
+            setCalendarFeeds([]);
+            setWebsiteDirty(false);
+            setWebsiteOpened(activeTab === "website");
+            setNotice("Signed out.");
+        } catch (error) {
+            setConfirmSignOut(false);
+            setDashboardError(error instanceof Error ? error.message : "Unable to sign out. Please try again.");
+        } finally {
+            setSigningOut(false);
+        }
+    };
+    const requestSignOut = () => {
+        if (websiteDirty) setConfirmSignOut(true);
+        else void handleLogout();
     };
 
     const handleLeadFieldChange = (leadId: string, field: "status" | "notes", value: string) => {
@@ -543,7 +570,7 @@ export default function Admin() {
         return (
             <main className="admin-shell">
                 <div className="admin-card admin-login-card">
-                    <p className="admin-muted">Loading the CRM...</p>
+                    <p className="admin-muted">Opening your studio…</p>
                 </div>
             </main>
         );
@@ -555,7 +582,7 @@ export default function Admin() {
                 <form className="admin-card admin-login-card" onSubmit={handleLogin}>
                     <div className="admin-header-copy">
                         <p className="admin-kicker">Nikki Dodge Photography</p>
-                        <h1>CRM Login</h1>
+                        <h1>Studio sign in</h1>
                         <p className="admin-muted">Sign in to manage inquiries, your calendar, and website content.</p>
                     </div>
                     <label>
@@ -590,34 +617,57 @@ export default function Admin() {
         );
     }
 
+    const workspaceNavigation = (
+        <nav className="admin-tab-row" aria-label="Business workspace">
+            {(Object.keys(tabLabels) as AdminTab[]).map((tab) => (
+                <button
+                    key={tab}
+                    className={tab === activeTab ? "admin-tab-button is-active" : "admin-tab-button"}
+                    type="button"
+                    aria-current={tab === activeTab ? "page" : undefined}
+                    onClick={() => switchWorkspace(tab)}
+                >
+                    {tabLabels[tab]}
+                    {tab === "website" && websiteDirty && <span className="admin-unsaved-dot" role="img" aria-label="Unsaved changes" />}
+                </button>
+            ))}
+        </nav>
+    );
+
     return (
-        <main className="admin-shell">
+        <main className={activeTab === "website" ? "admin-shell is-website-workspace" : "admin-shell"}>
             <div className="admin-app">
-                <div className="admin-topbar">
-                    <div>
-                        <p className="admin-kicker">Signed in as {username}</p>
-                        <h1>CRM Dashboard</h1>
-                    </div>
-                    <button className="admin-secondary-button" type="button" onClick={() => void handleLogout()}>
-                        Sign Out
-                    </button>
-                </div>
+                {activeTab === "website" ? (
+                    <header className="admin-website-header">
+                        <div className="admin-studio-brand" aria-label="Nikki Dodge Photography studio">
+                            <span className="admin-studio-mark" aria-hidden="true">ND</span>
+                            <span>Nikki Dodge<span className="admin-studio-subtitle">PHOTOGRAPHY STUDIO</span></span>
+                        </div>
+                        {workspaceNavigation}
+                        <div className="admin-website-account">
+                            <a href="/" target="_blank" rel="noreferrer" className="admin-visit-site">Visit site <span aria-hidden="true">↗</span></a>
+                            <button className="admin-signout-button" type="button" onClick={requestSignOut} disabled={signingOut} aria-label={`Sign out of ${username}`}>
+                                <i className="fa-solid fa-arrow-right-from-bracket" aria-hidden="true" /><span>Sign out</span>
+                            </button>
+                        </div>
+                    </header>
+                ) : (
+                    <>
+                        <div className="admin-topbar">
+                            <div>
+                                <p className="admin-kicker">Signed in as {username}</p>
+                                <h1>CRM Dashboard</h1>
+                            </div>
+                            <button className="admin-secondary-button" type="button" onClick={requestSignOut} disabled={signingOut}>
+                                {signingOut ? "Signing out…" : "Sign Out"}
+                            </button>
+                        </div>
+                        {workspaceNavigation}
+                    </>
+                )}
 
-                <div className="admin-tab-row">
-                    {(Object.keys(tabLabels) as AdminTab[]).map((tab) => (
-                        <button
-                            key={tab}
-                            className={tab === activeTab ? "admin-tab-button is-active" : "admin-tab-button"}
-                            type="button"
-                            onClick={() => setActiveTab(tab)}
-                        >
-                            {tabLabels[tab]}
-                        </button>
-                    ))}
-                </div>
-
-                {notice && <p className="admin-alert admin-alert-success">{notice}</p>}
-                {dashboardError && <p className="admin-alert admin-alert-error">{dashboardError}</p>}
+                {notice && activeTab !== "website" && <p className="admin-alert admin-alert-success">{notice}</p>}
+                {dashboardError && <p className="admin-alert admin-alert-error" role="alert">{dashboardError}</p>}
 
                 {loadingDashboard ? (
                     <div className="admin-card">
@@ -989,7 +1039,7 @@ export default function Admin() {
                             </section>
                         )}
 
-                        {websiteOpened && <div hidden={activeTab !== "website"}><WebsiteEditor onDirtyChange={setWebsiteDirty} /></div>}
+                        {websiteOpened && <div className="admin-website-workspace" hidden={activeTab !== "website"}><WebsiteEditor onDirtyChange={setWebsiteDirty} /></div>}
 
                         {activeTab === "settings" && (
                             <form className="admin-card admin-settings-form" onSubmit={saveSettings}>
@@ -1059,6 +1109,15 @@ export default function Admin() {
                     </>
                 )}
             </div>
+            <dialog className="admin-signout-dialog" ref={signOutDialog} aria-labelledby="admin-signout-title" onCancel={(event) => { if (signingOut) event.preventDefault(); else setConfirmSignOut(false); }}>
+                <span className="admin-signout-symbol" aria-hidden="true"><i className="fa-regular fa-file-lines" /></span>
+                <h2 id="admin-signout-title">Keep your work before you go</h2>
+                <p>You have unsaved website changes. Return to the editor and save your draft to keep them.</p>
+                <div className="admin-signout-actions">
+                    <button type="button" className="admin-secondary-button" disabled={signingOut} onClick={() => void handleLogout()}>{signingOut ? "Signing out…" : "Discard and sign out"}</button>
+                    <button type="button" className="admin-primary-button" autoFocus disabled={signingOut} onClick={() => { setConfirmSignOut(false); switchWorkspace("website"); }}>Return to editor</button>
+                </div>
+            </dialog>
         </main>
     );
 }

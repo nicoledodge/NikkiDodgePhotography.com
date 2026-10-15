@@ -8,29 +8,29 @@
   background: var(--secondary-color);
 }
 
-.admin-shell h1,
-.admin-shell h2,
-.admin-shell h3,
-.admin-shell h4 {
+.admin-shell :where(h1),
+.admin-shell :where(h2),
+.admin-shell :where(h3),
+.admin-shell :where(h4) {
   font-family: inherit;
   font-weight: 600;
   line-height: 1.25;
   letter-spacing: -0.02em;
 }
 
-.admin-shell h1 {
+.admin-shell :where(h1) {
   font-size: clamp(26px, 3vw, 34px);
 }
-.admin-shell h2 {
+.admin-shell :where(h2) {
   font-size: 22px;
 }
-.admin-shell h3 {
+.admin-shell :where(h3) {
   font-size: 18px;
 }
-.admin-shell h4 {
+.admin-shell :where(h4) {
   font-size: 16px;
 }
-.admin-shell p {
+:where(.admin-shell) p {
   font-size: 14px;
   line-height: 1.6;
 }
@@ -460,4 +460,187 @@
   .admin-calendar-day {
     min-height: 96px;
   }
+}
+
+/* The website workspace gives the canvas the full window; CRM views keep their existing layout. */
+.admin-shell.is-website-workspace {
+  height: 100dvh;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #f4f3f0;
+  color: #252822;
+}
+
+.is-website-workspace > .admin-app {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-width: none;
+}
+
+.admin-website-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 62px;
+  padding: 10px 22px;
+  background: #faf9f6;
+  border-bottom: 1px solid #e6e5df;
+}
+
+.admin-studio-brand {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -.015em;
+  line-height: 1.3;
+}
+
+.admin-studio-mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #cecec5;
+  border-radius: 50%;
+  font-family: Georgia, serif;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: -.09em;
+}
+
+.admin-studio-subtitle {
+  display: block;
+  margin-top: 3px;
+  color: #7b7e74;
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: .12em;
+}
+
+.admin-website-header .admin-tab-row {
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 4px;
+  margin: 0;
+}
+
+.admin-website-header .admin-tab-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border-radius: 7px;
+  background: transparent;
+  color: #71756a;
+  font-size: 12px;
+  font-weight: 550;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.admin-website-header .admin-tab-button:hover {
+  background: #eeeee7;
+  color: #252822;
+}
+
+.admin-website-header .admin-tab-button.is-active {
+  background: #e9e6f6;
+  color: #5444a0;
+}
+
+.admin-unsaved-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-left: 5px;
+  border-radius: 50%;
+  background: #b8772d;
+  vertical-align: middle;
+}
+
+.admin-website-header .admin-unsaved-dot { margin-left: 0; }
+
+.admin-website-account {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.admin-visit-site,
+.admin-signout-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  padding: 6px 0;
+  background: transparent;
+  color: #676d60;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1.5;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.admin-visit-site:hover,
+.admin-signout-button:hover { color: #252822; }
+.admin-signout-button:disabled { opacity: .5; cursor: wait; }
+.admin-website-header :focus-visible { outline: 2px solid #7863cc; outline-offset: 3px; }
+
+.admin-website-workspace {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.admin-website-workspace[hidden] { display: none; }
+.admin-website-workspace > .website-editor { flex: 1; min-width: 0; min-height: 0; }
+.is-website-workspace > .admin-app > .admin-alert { margin: 0; flex-shrink: 0; border-radius: 0; }
+
+.admin-signout-dialog {
+  width: min(470px, calc(100% - 32px));
+  padding: 32px;
+  border: 1px solid #e2e2da;
+  border-radius: 18px;
+  background: #fffefa;
+  color: #252822;
+  box-shadow: 0 24px 80px #222a2733;
+}
+
+.admin-signout-dialog::backdrop { background: #20251e70; backdrop-filter: blur(3px); }
+.admin-signout-symbol { display: inline-grid; place-items: center; width: 42px; height: 42px; margin-bottom: 16px; border-radius: 12px; color: #685997; background: #eeebf6; font-size: 19px; }
+.admin-signout-dialog h2 { margin: 0 0 12px; font-size: 23px; }
+.admin-signout-dialog p { margin: 0 0 26px; color: #73766c; }
+.admin-signout-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.admin-signout-actions button { padding: 10px 14px; font-size: 12px; }
+
+@media (max-width: 1000px) {
+  .admin-website-header { gap: 12px; padding-inline: 14px; }
+  .admin-website-header .admin-tab-button { padding-inline: 9px; }
+  .admin-studio-subtitle { display: none; }
+  .admin-signout-button span { display: none; }
+  .admin-signout-button { padding: 8px; }
+  .admin-website-account { gap: 8px; }
+}
+
+@media (max-width: 700px) {
+  .admin-website-header { flex-wrap: wrap; gap: 8px; padding: 8px 12px; }
+  .admin-studio-brand { font-size: 12px; gap: 7px; }
+  .admin-studio-mark { width: 29px; height: 29px; font-size: 11px; }
+  .admin-website-header .admin-tab-row { order: 3; width: 100%; justify-content: stretch; }
+  .admin-website-header .admin-tab-button { flex: 1; justify-content: center; font-size: 11px; padding: 6px 5px; }
+  .admin-signout-dialog { padding: 24px; }
+  .admin-signout-actions { flex-direction: column-reverse; }
 }
