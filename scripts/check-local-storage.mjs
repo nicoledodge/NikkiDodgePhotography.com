@@ -51,20 +51,44 @@ try {
     assert.equal((await fetch(`${base}/api/admin/website`)).status, 401);
     const originalWebsite = await (await request("/api/admin/website")).json();
     assert.equal(originalWebsite.revision, 0);
-    const websiteContent = { pages: { home: [{ id: "custom-storage-check", name: "Verification", kind: "text", fields: { title: "Draft-only heading", body: "Isolated verification" } }] } };
+    const websiteStyles = {
+        title: { size: "display", color: "#6b4d63", align: "center", weight: "bold" },
+        photo: { fit: "cover", position: "top", ratio: "portrait" },
+    };
+    const websiteContent = { pages: { home: [{ id: "custom-storage-check", name: "Verification", kind: "split", fields: { title: "Draft-only heading", body: "Isolated verification", photo: "/assets/editorial/nikki.webp" }, fieldStyles: { ...websiteStyles, body: {} } }] } };
     const savedWebsite = await (await request("/api/admin/website", "PUT", { revision: 0, action: "draft", content: websiteContent })).json();
     assert.equal(savedWebsite.revision, 1);
+    assert.deepEqual(savedWebsite.draft.pages.home[0].fieldStyles, websiteStyles);
     assert.deepEqual((await (await request("/api/public/website")).json()).pages, {});
     const conflict = await fetch(`${base}/api/admin/website`, { method: "PUT", headers: { cookie, "Content-Type": "application/json" }, body: JSON.stringify({ revision: 0, action: "draft", content: websiteContent }) });
     assert.equal(conflict.status, 409);
     await request("/api/admin/website", "PUT", { revision: 1, action: "publish", content: websiteContent });
-    assert.equal((await (await request("/api/public/website")).json()).pages.home[0].fields.title, "Draft-only heading");
+    const publishedWebsite = await (await request("/api/public/website")).json();
+    assert.equal(publishedWebsite.pages.home[0].fields.title, "Draft-only heading");
+    assert.deepEqual(publishedWebsite.pages.home[0].fieldStyles, websiteStyles);
     const racingSaves = await Promise.all([0, 1].map(() => fetch(`${base}/api/admin/website`, { method: "PUT", headers: { cookie, "Content-Type": "application/json" }, body: JSON.stringify({ revision: 2, action: "draft", content: websiteContent }) })));
     assert.deepEqual(racingSaves.map(response => response.status).sort(), [200, 409]);
     await request("/api/admin/website", "PUT", { revision: 3, action: "restore" });
     assert.deepEqual((await (await request("/api/public/website")).json()).pages, {});
     const unsafe = await fetch(`${base}/api/admin/website`, { method: "PUT", headers: { cookie, "Content-Type": "application/json" }, body: JSON.stringify({ revision: 4, action: "draft", content: { pages: { home: [{ id: "custom-unsafe", kind: "photo", fields: { photo: "javascript:alert(1)" } }] } } }) });
     assert.equal(unsafe.status, 400);
+    // Styling remains a bounded set of choices, including across save and publish.
+    const invalidStyles = [
+        null, [], { title: [] }, { title: null }, { "invalid_field": { size: "small" } },
+        { ["x".repeat(161)]: { size: "small" } }, { title: { size: "huge" } },
+        { title: { color: "red" } }, { title: { color: "#fff" } }, { title: { align: "justify" } },
+        { title: { weight: 900 } }, { photo: { fit: "stretch" } },
+        { photo: { position: "100% 0%" } }, { photo: { ratio: "10000 / 1" } },
+        { title: { fontSize: "500px" } }, { photo: { backgroundImage: "url(https://example.invalid)" } },
+        Object.fromEntries(Array.from({ length: 1001 }, (_, index) => [`field-${index}`, { size: "small" }])),
+    ];
+    for (const fieldStyles of invalidStyles) {
+        const response = await fetch(`${base}/api/admin/website`, { method: "PUT", headers: { cookie, "Content-Type": "application/json" }, body: JSON.stringify({ revision: 4, action: "draft", content: { pages: { home: [{ ...websiteContent.pages.home[0], fieldStyles }] } } }) });
+        assert.equal(response.status, 400, `Invalid field style accepted: ${JSON.stringify(fieldStyles).slice(0, 100)}`);
+    }
+    const afterRejectedStyles = await (await request("/api/admin/website")).json();
+    assert.equal(afterRejectedStyles.revision, 4);
+    assert.deepEqual(afterRejectedStyles.draft.pages, {});
     const settings = await (await request("/api/admin/settings")).json();
     const marker = `Storage check ${randomUUID()}`;
     await request("/api/admin/settings", "PUT", { ...settings, heroTitle: marker });
@@ -112,7 +136,9 @@ try {
     assert.deepEqual(await readdir(join(root, "upload-staging")), []);
     await stop();
     await start();
-    assert.equal((await (await request("/api/admin/website")).json()).revision, 4);
+    const restoredWebsite = await (await request("/api/admin/website")).json();
+    assert.equal(restoredWebsite.revision, 4);
+    assert.deepEqual(restoredWebsite.previousPublished.pages.home[0].fieldStyles, websiteStyles);
     assert.equal((await (await request("/api/public/settings")).json()).heroTitle, marker);
     assert.equal((await (await request("/api/admin/leads")).json()).length, 1);
     assert.equal(JSON.parse(await readFile(join(root, "app-data/settings.json"), "utf8")).heroTitle, marker);
@@ -125,7 +151,7 @@ try {
     assert.equal(blocked.status, 503);
     assert.equal(blocked.headers.get("retry-after"), "60");
     assert.equal((await request("/api/public/settings")).status, 200);
-    console.log("Local storage verified: auth, CRM writes, website draft/publish/rollback/conflict protection, restart persistence, media upload/move/delete, and maintenance write hold.");
+    console.log("Local storage verified: auth, CRM writes, website draft/publish/rollback/conflict protection, bounded text/photo styles, restart persistence, media upload/move/delete, and maintenance write hold.");
 } finally {
     await stop();
     await rm(root, { recursive: true, force: true });

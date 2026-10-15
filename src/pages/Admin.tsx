@@ -641,9 +641,21 @@ export default function Admin() {
                     <header className="admin-website-header">
                         <div className="admin-studio-brand" aria-label="Nikki Dodge Photography studio">
                             <span className="admin-studio-mark" aria-hidden="true">ND</span>
-                            <span>Nikki Dodge<span className="admin-studio-subtitle">PHOTOGRAPHY STUDIO</span></span>
+                            <span>Nikki Dodge</span>
                         </div>
-                        {workspaceNavigation}
+                        <details className="admin-business-switcher" onBlur={event => {
+                            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) event.currentTarget.open = false;
+                        }} onKeyDown={event => {
+                            if (event.key === "Escape") {
+                                event.currentTarget.open = false;
+                                event.currentTarget.querySelector("summary")?.focus();
+                            }
+                        }} onClick={event => {
+                            if ((event.target as Element).closest("button")) event.currentTarget.open = false;
+                        }}>
+                            <summary>Business<i className="fa-solid fa-chevron-down" aria-hidden="true" /></summary>
+                            <div className="admin-business-menu"><span className="admin-business-menu-label">YOUR WORKSPACE</span>{workspaceNavigation}</div>
+                        </details>
                         <div className="admin-website-account">
                             <a href="/" target="_blank" rel="noreferrer" className="admin-visit-site">Visit site <span aria-hidden="true">↗</span></a>
                             <button className="admin-signout-button" type="button" onClick={requestSignOut} disabled={signingOut} aria-label={`Sign out of ${username}`}>

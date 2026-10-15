@@ -1,0 +1,49 @@
+.website-field-design { display: grid; gap: 24px; margin: 0; padding: 0; border: 0; font-family: inherit; color: #6b4d63; }
+.website-field-design .field-design-group { position: relative; min-width: 0; padding: 0; margin: 0; border: 0; }
+.website-field-design .field-design-group > legend { float: none; width: auto; margin: 0 0 12px; padding: 0; font-family: inherit; font-size: 12px; line-height: 1.4; letter-spacing: 0; color: #74636e; font-weight: 600; }
+.website-field-design .field-design-inherit { position: absolute; right: 0; top: -29px; padding: 0; border: 0; background: transparent; color: #776a73; font-size: 11px; line-height: 1.4; }
+.website-field-design .field-design-inherit:not(:disabled):hover { text-decoration: underline; text-underline-offset: 3px; }
+.website-field-design .field-design-inherit:disabled { opacity: 1; color: #8d8089; }
+.field-design-size-options, .field-design-ratios { display: grid; gap: 6px; }
+.field-design-size-options { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.field-design-ratios { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.website-field-design .field-design-size-options > button, .website-field-design .field-design-ratios > button { display: flex; flex-direction: column; align-items: center; gap: 7px; min-width: 0; padding: 10px 3px 8px; border: 1px solid #e7dfe5; border-radius: 6px; background: white; color: #776a73; font-size: 11px; }
+.website-field-design .field-design-size-options > button:hover, .website-field-design .field-design-ratios > button:hover { background: #faf7fa; border-color: #cfbccb; }
+.website-field-design .field-design-size-options > button[aria-pressed=true], .website-field-design .field-design-ratios > button[aria-pressed=true] { background: #f7f0f6; border-color: #b69aad; color: #6b4d63; }
+.field-design-type-sample { display: flex; align-items: center; justify-content: center; width: 100%; height: 28px; font-family: Georgia, serif; letter-spacing: -.6px; }
+.field-design-type-sample.is-small { font-size: 16px; }.field-design-type-sample.is-medium { font-size: 20px; }.field-design-type-sample.is-large { font-size: 25px; }.field-design-type-sample.is-display { font-size: 30px; }
+.website-field-design .field-design-note { margin: 10px 0 0; color: #776a73; font-size: 11px; line-height: 1.65; font-weight: 400; }
+.field-design-segments { display: flex; gap: 3px; padding: 3px; background: #f6f2f5; border: 1px solid #e9e0e7; border-radius: 6px; }
+.website-field-design .field-design-segments > button { display: flex; align-items: center; justify-content: center; gap: 6px; flex: 1; min-width: 0; padding: 7px 4px; background: transparent; color: #776a73; border: 0; border-radius: 4px; font-size: 11px; line-height: 1.5; }
+.website-field-design .field-design-segments > button:hover { background: #eee6ed; }
+.website-field-design .field-design-segments > button[aria-pressed=true] { background: white; color: #6b4d63; box-shadow: 0 1px 3px #4932411c; }
+.field-design-segments svg { width: 15px; height: 15px; }
+.website-field-design .field-design-weight > button { font-size: 11px; padding-block: 8px; }
+.field-design-colors { display: flex; flex-wrap: wrap; gap: 7px; padding: 2px; }
+.website-field-design .field-design-color, .field-design-custom-color { display: grid; place-items: center; position: relative; width: 28px; height: 28px; border-radius: 50%; border: 1px solid #ddd2db; padding: 0; overflow: hidden; }
+.website-field-design .field-design-color[aria-pressed=true] { outline: 2px solid #a7869c; outline-offset: 2px; }
+.field-design-color svg { width: 17px; height: 17px; }
+.field-design-custom-color { background: conic-gradient(#edd0d5, #f7e5c6, #cddfce, #ccd8eb, #edd0d5); color: #705665; font-size: 16px; cursor: pointer; }
+.website-field-design .field-design-custom-color input { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; opacity: 0; cursor: pointer; }
+.field-design-custom-color:focus-within { outline: 3px solid #a98da3; outline-offset: 3px; }
+.field-design-custom-color > span { pointer-events: none; }
+.field-design-color-value { display: block; margin-top: 9px; color: #776a73; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 11px; }
+.field-design-ratio-preview { height: 32px; width: 100%; display: grid; place-items: center; }
+.field-design-ratio-preview > span { display: block; border: 1.5px solid currentColor; border-radius: 2px; background: linear-gradient(140deg, #c4b2be33 50%, #b89fae55 50%); }
+.field-design-ratio-preview > .is-square { width: 25px; height: 25px; }.field-design-ratio-preview > .is-portrait { width: 21px; height: 28px; }.field-design-ratio-preview > .is-landscape { width: 33px; height: 22px; }
+.website-field-design .field-design-fit > button { padding-block: 9px; }
+.field-design-fit-example { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 17px; border: 1px solid currentColor; border-radius: 2px; padding: 2px; }
+.field-design-fit-example > i { display: block; width: 100%; height: 100%; background: currentColor; opacity: .45; }
+.field-design-fit-example.is-contain > i { width: 52%; }
+.field-design-position { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.website-field-design .field-design-position > button { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 1px; min-width: 0; border: 1px solid transparent; border-radius: 5px; background: transparent; color: #776a73; font-size: 11px; }
+.field-design-position svg { width: 28px; height: 24px; }
+.website-field-design .field-design-position > button:hover { background: #f6f1f5; }
+.website-field-design .field-design-position > button[aria-pressed=true] { background: #f6eff5; border-color: #c8afbf; color: #6b4d63; }
+.website-field-design .field-design-reset { justify-self: start; padding: 0; margin: -2px 0 0; border: 0; background: transparent; color: #776a73; text-decoration: underline; text-underline-offset: 3px; font-size: 11px; }
+.website-field-design .field-design-reset:disabled { opacity: .45; cursor: default; }
+
+.website-field-design.field-design-metadata { gap: 12px; }
+.field-design-metadata > svg { width: 26px; height: 26px; color: #a88c9f; margin-bottom: 2px; }
+.website-field-design.field-design-metadata h4 { margin: 0; color: #74636e; font-family: inherit; font-size: 13px; line-height: 1.5; font-weight: 600; letter-spacing: 0; }
+.website-field-design.field-design-metadata p { margin: 0; color: #776a73; font-size: 11px; line-height: 1.75; }

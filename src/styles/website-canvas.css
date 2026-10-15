@@ -1,3 +1,8 @@
+/* Explicit text choices also apply to emphasis retained from the original page. */
+[data-website-field][data-website-style-weight] :is(em, strong, span) { font-weight: inherit; }
+[data-website-field][data-website-style-size] :is(em, strong, span) { font-size: inherit; }
+[data-website-field][data-website-style-color] :is(em, strong, span) { color: inherit; }
+
 /* These controls exist only inside the authenticated editor preview. */
 .website-section.website-section-preview { cursor: default; outline: 1px solid transparent; outline-offset: -1px; }
 .website-section.website-section-preview:hover { outline-color: #b8a6b1; }
@@ -5,13 +10,22 @@
 .website-section.website-section-preview [data-website-field] { cursor: pointer; }
 .website-section.website-section-preview [data-website-kind=text] { cursor: text; }
 .website-section.website-section-preview [data-website-field]:hover { outline: 1px dashed #99798e; outline-offset: 5px; }
+.website-section.website-section-preview [data-website-selected=true] { outline: 2px solid #6b4d63; outline-offset: 5px; }
+.website-section.website-section-preview img[data-website-field]:hover, .website-section.website-section-preview img[data-website-selected=true] { outline-offset: -3px; }
 .website-section.website-section-preview [data-website-editing=true] { outline: 2px solid #6b4d63 !important; outline-offset: 6px; cursor: text; min-width: 1ch; white-space: pre-wrap; caret-color: #6b4d63; }
 .website-section.website-section-preview [data-website-placeholder=true] { opacity: .52; }
 .website-section.website-section-preview [data-website-placeholder=true][data-website-editing=true] { opacity: 1; }
 .website-canvas-overlays { position: fixed; inset: 0; pointer-events: none; z-index: 2147483000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12px; line-height: 1.4; text-align: left; color: #fbf8fa; }
 .website-canvas-toolbar, .website-canvas-hover-label { position: fixed; transform-origin: top left; border-radius: 8px; background: #6b4d63; color: #fff; box-shadow: 0 4px 18px #3927332b; }
-.website-canvas-toolbar { display: flex; align-items: center; pointer-events: auto; padding: 4px; gap: 5px; white-space: nowrap; min-height: 36px; }
-.website-canvas-section-name { padding: 0 6px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; font-weight: 600; font-size: 11px; }
+.website-canvas-toolbar { display: flex; align-items: center; pointer-events: auto; padding: 5px; gap: 5px; white-space: nowrap; min-height: 42px; box-sizing: border-box; }
+.website-canvas-section-name { display: flex; flex-direction: column; gap: 1px; padding: 0 6px; min-width: 0; max-width: 150px; font-size: 11px; line-height: 1.25; }
+.website-canvas-section-name small, .website-canvas-section-name strong { overflow: hidden; text-overflow: ellipsis; }
+.website-canvas-section-name small { font-size: 9px; font-weight: 400; color: #eadde6; }
+.website-canvas-section-name strong { font-size: 11px; font-weight: 600; }
+.website-canvas-toolbar.is-compact { flex-wrap: wrap; }
+.website-canvas-toolbar.is-compact .website-canvas-section-name { flex: 1 0 100%; max-width: 100%; padding: 3px 6px; flex-direction: row; align-items: baseline; gap: 8px; box-sizing: border-box; }
+.website-canvas-toolbar.is-compact .website-canvas-section-name small { max-width: 55%; }
+.website-canvas-toolbar.is-compact .website-canvas-arrange { margin-left: auto; }
 .website-canvas-toolbar button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 5px; padding: 7px; min-width: 29px; min-height: 29px; background: transparent; color: #fff; cursor: pointer; font: inherit; font-size: 11px; line-height: 1; text-transform: none; letter-spacing: 0; }
 .website-canvas-toolbar button:hover { background: #ffffff1a; }
 .website-canvas-toolbar button:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
@@ -20,10 +34,20 @@
 .website-canvas-toolbar button.website-canvas-edit:hover { background: #f0e5ed; }
 .website-canvas-toolbar svg { width: 15px; height: 15px; flex-shrink: 0; }
 .website-canvas-arrange { display: flex; gap: 1px; padding-left: 3px; border-left: 1px solid #ffffff30; }
-.website-canvas-edit-hint { padding-inline: 7px; color: #eadde6; font-size: 11px; }
+.website-canvas-edit-hint { padding-inline: 7px; color: #eadde6; font-size: 11px; white-space: normal; max-width: 100%; }
 .website-canvas-hover-label { padding: 5px 9px; background: #fff; border: 1px solid #b9a6b3; color: #6b4d63; font-size: 11px; font-weight: 600; }
 .website-canvas-photo-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 100%; min-height: 310px; padding: 36px; background: #f3edf1; border: 1px dashed #b9a6b3; border-radius: 4px; color: #76576d; font-family: inherit; cursor: pointer; }
 .website-canvas-photo-placeholder svg { width: 42px; height: 42px; opacity: .75; }
 .website-canvas-photo-placeholder span { font-size: 20px; }
 .website-canvas-photo-placeholder small { font-size: 13px; color: #826e7b; }
 @media (prefers-reduced-motion: reduce) { .website-section-preview { scroll-behavior: auto; } }
+
+.website-canvas-insert { position: fixed; height: 0; border-top: 1px solid transparent; pointer-events: none; }
+.website-canvas-insert:has(button:hover), .website-canvas-insert:focus-within { border-color: #9c7c92; }
+.website-canvas-insert button { position: absolute; left: 50%; top: 0; transform-origin: center; display: flex; align-items: center; gap: 0; min-width: 28px; height: 28px; padding: 5px; border: 1px solid #c7b6c1; border-radius: 16px; background: #fcf8fa; color: #6b4d63; pointer-events: auto; cursor: pointer; font: 600 11px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; box-sizing: border-box; box-shadow: 0 2px 7px #39273312; }
+.website-canvas-insert button svg { width: 16px; height: 16px; flex: 0 0 16px; }
+.website-canvas-insert button span { max-width: 0; opacity: 0; overflow: hidden; white-space: nowrap; transition: max-width .15s, opacity .15s, margin .15s; }
+.website-canvas-insert button:hover, .website-canvas-insert button:focus-visible { background: #6b4d63; border-color: #6b4d63; color: #fff; padding-inline: 8px 11px; }
+.website-canvas-insert button:hover span, .website-canvas-insert button:focus-visible span { max-width: 120px; opacity: 1; margin-left: 5px; }
+.website-canvas-insert button:focus-visible { outline: 2px solid #6b4d63; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .website-canvas-insert button span { transition: none; } }
