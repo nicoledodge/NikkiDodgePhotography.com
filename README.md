@@ -34,9 +34,9 @@ Production uses the dedicated `default/nikki-website-data` 64 GiB Longhorn PVC. 
 - `scripts/sync-portfolio-images.sh` publishes local portfolio derivatives to the website PVC with SHA-256 verification and atomic replacement of each selected file. It retains unlisted website files and never writes to the SFTP masters.
 - `/assets` serves the copied static website assets on the PVC, with the application image supplying generated JavaScript and CSS.
 
-## Admin media uploads
+## Website editing and asset publishing
 
-The media manager browses only the dedicated website media directory. Browser uploads stream through the authenticated API into private staging on the website PVC, then publish by atomic rename after syncing the file. Four concurrent uploads do not require four entire files in server memory. `CRM_MAX_SERVER_UPLOAD_BYTES` controls their maximum size; production uses 200 MiB with a 210 MiB ingress limit to allow multipart form overhead. CRM JSON writes use a synced temporary file and atomic rename.
+Admin contains inquiries, calendar, and website content settings. The old photo file manager has been removed; Mountain Turtle manages the SFTP photo library. Website asset publishing remains separate from the original masters, using the dedicated NVMe PVC and the portfolio sync helper. The authenticated asset API stages uploads privately and publishes them by atomic rename. CRM JSON writes use a synced temporary file and atomic rename.
 
 Set `CRM_STORAGE_READ_ONLY=true` only during a storage cutover. API writes then return HTTP 503 with `Retry-After`; public reads remain available. Restore it to `false` after the final document snapshot has been verified.
 
