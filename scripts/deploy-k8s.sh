@@ -144,6 +144,17 @@ text += f"""          volumeMounts:
         - name: website-data
           persistentVolumeClaim:
             claimName: {claim}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - r610a.assessorly.com
+                      - r510c.assessorly.com
 """
 open(path, "w").write(text)
 PY
@@ -181,7 +192,7 @@ metadata:
   namespace: ${NAMESPACE}
   annotations:
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/proxy-body-size: "200m"
+    nginx.ingress.kubernetes.io/proxy-body-size: "210m"
 spec:
   ingressClassName: ${INGRESS_CLASS}
   rules:

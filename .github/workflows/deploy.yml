@@ -225,6 +225,9 @@ jobs:
           MEMORY_LIMIT: 1Gi
         run: |
           set -euo pipefail
+          if [[ -n "$WEBSITE_DATA_PVC" ]]; then
+            kubectl apply -f infra/website-storage.yaml
+          fi
           chmod +x scripts/deploy-k8s.sh
           ./scripts/deploy-k8s.sh
 
