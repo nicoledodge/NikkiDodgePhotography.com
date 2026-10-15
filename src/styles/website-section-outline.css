@@ -1,0 +1,52 @@
+.website-section-outline { min-width: 0; margin-bottom: 13px; color: #302930; }
+.section-outline-help { margin: 10px 5px 14px; font-size: 11px; line-height: 1.55; color: #776a73; }
+.section-outline-list { display: grid; gap: 9px; list-style: none; margin: 0; padding: 0; }
+.section-outline-card { position: relative; min-width: 0; border: 1px solid #e9e1e6; border-radius: 8px; background: #fff; transition: border-color .15s, background .15s, box-shadow .15s; }
+.section-outline-card:hover { border-color: #d3c4ce; background: #fcfafb; }
+.section-outline-card.is-selected { border-color: #bda7b6; background: #fbf7fa; box-shadow: 0 2px 7px #4a2f4009; }
+.section-outline-card.is-hidden { border-style: dashed; background: #faf9f9; }
+.section-outline-card.is-hidden.is-selected { border-color: #bda7b6; background: #f7f2f6; }
+.section-outline-card.is-dragging { opacity: .42; }
+.section-outline-card.is-drop-target::before { content: ''; position: absolute; height: 3px; inset: -7px 0 auto; border-radius: 2px; background: #6b4d63; box-shadow: -3px 0 0 1px #6b4d63; }
+.section-outline-row { display: grid; grid-template-columns: 20px minmax(0, 1fr) 28px; gap: 3px; align-items: center; min-height: 72px; padding: 8px 4px 8px 1px; }
+.section-outline-drag { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 20px; min-height: 48px; padding: 3px 0; background: transparent; border: 0; border-radius: 4px; color: #887984 !important; cursor: grab !important; }
+.section-outline-drag:active { cursor: grabbing !important; }
+.section-outline-drag:hover { background: #f0e8ee; color: #6b4d63 !important; }
+.section-outline-drag svg { width: 13px; height: 15px; }
+.section-outline-drag > span { font-size: 10px; font-variant-numeric: tabular-nums; }
+.section-outline-select { display: grid; grid-template-columns: 45px minmax(0, 1fr); align-items: center; gap: 8px; min-width: 0; width: 100%; text-align: left; padding: 0; border: 0; border-radius: 5px; background: transparent; }
+.section-outline-preview { display: grid; place-items: center; width: 45px; height: 51px; border-radius: 5px; overflow: hidden; background: #eee7e9; color: #816778; }
+.section-outline-preview > span { display: grid; place-items: center; width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden; }
+.section-outline-preview img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.section-outline-preview > span > svg { width: 18px; height: 18px; }
+.section-outline-preview.is-collection { grid-template-columns: 1.15fr 1fr; grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 2px; background: #fff; }
+.section-outline-preview.is-collection > span:first-child { grid-row: 1 / -1; }
+.section-outline-preview.is-collection > span:last-child:nth-child(2) { grid-row: 1 / -1; }
+.section-outline-preview.is-text { display: flex; flex-direction: column; justify-content: center; gap: 4px; background: linear-gradient(145deg, #f3eee9, #ece5e9); }
+.section-outline-preview.is-text > svg { width: 17px; height: 17px; margin-bottom: 2px; }
+.section-outline-preview.is-text > i { display: block; width: 23px; height: 2px; border-radius: 1px; background: #c7b7c0; }
+.section-outline-preview.is-text > i:last-child { width: 17px; }
+.section-outline-copy { display: grid; gap: 4px; min-width: 0; }
+.section-outline-copy > strong { display: -webkit-box; overflow: hidden; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 12px; line-height: 1.3; font-weight: 600; color: #3e333c; overflow-wrap: anywhere; }
+.section-outline-summary { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #776a73; font-size: 11px; line-height: 1.4; }
+.section-outline-card.is-selected .section-outline-copy > strong { color: #65445b; }
+.section-outline-card.is-hidden .section-outline-preview { opacity: .64; filter: saturate(.4); }
+.section-outline-hidden { display: flex; align-items: center; gap: 4px; color: #776a73; font-size: 11px; line-height: 1.3; }
+.section-outline-hidden > svg { width: 12px; height: 12px; }
+.section-outline-actions { align-self: start; margin-top: -1px; min-width: 0; display: flex; justify-content: center; }
+.section-outline-actions > .website-section-action-trigger { width: 28px; height: 28px; }
+.section-outline-selected { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 9px 0 25px; padding: 7px 0; border-top: 1px solid #eadde6; color: #776a73; }
+.section-outline-selected > span { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; }
+.section-outline-selected > span > i { width: 4px; height: 4px; background: #6b4d63; border-radius: 50%; }
+.section-outline-selected > button { display: inline-flex; align-items: center; gap: 5px; padding: 3px 0; border: 0; border-radius: 3px; background: transparent; color: #6b4d63 !important; font-size: 11px !important; font-weight: 600 !important; }
+.section-outline-selected > button > svg { width: 13px; height: 13px; }
+.section-outline-selected > button:hover { text-decoration: underline; text-underline-offset: 3px; }
+.section-outline-end { position: relative; display: flex; align-items: center; justify-content: center; min-height: 30px; margin-top: 7px; padding: 7px 4px; color: #82737e; font-size: 11px; line-height: 1.4; border: 1px solid transparent; border-radius: 5px; }
+.section-outline-end > span { display: flex; align-items: center; gap: 8px; }
+.section-outline-end > span::before, .section-outline-end > span::after { content: ''; width: 14px; height: 1px; background: #ddd3da; }
+.is-reordering .section-outline-end { min-height: 48px; border-color: #c2acba; border-style: dashed; background: #f8f3f6; color: #6b4d63; }
+.is-reordering .section-outline-end > span::before, .is-reordering .section-outline-end > span::after { display: none; }
+.section-outline-end.is-drop-target { background: #eee2ea; border-color: #6b4d63; border-style: solid; }
+.section-outline-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+@media (max-width: 800px) { .section-outline-select { grid-template-columns: 52px minmax(0, 1fr); gap: 10px; } .section-outline-preview { width: 52px; height: 56px; } .section-outline-row { min-height: 78px; grid-template-columns: 24px minmax(0, 1fr) 32px; padding-right: 6px; } .section-outline-drag { width: 24px; } .section-outline-selected { margin-left: 29px; } }
+@media (prefers-reduced-motion: reduce) { .section-outline-card { transition: none; } }

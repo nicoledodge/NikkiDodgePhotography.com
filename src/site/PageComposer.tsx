@@ -9,6 +9,8 @@ import "../styles/website-layout.css";
 import { isWebsiteColumnGrid, websiteLayoutProps } from "./websiteLayout";
 import { useWebsiteLayoutControls, type WebsiteCanvasGesture } from "./useWebsiteLayoutControls";
 import { useWebsitePhotoFraming } from "./useWebsitePhotoFraming";
+import WebsiteSectionActions, { type WebsiteSectionAction } from "./WebsiteSectionActions";
+import { observeWebsiteCanvasViewport, websiteCanvasViewport } from "./websiteCanvasViewport";
 
 type ElementProps = { children?: ReactNode; src?: string; alt?: string; className?: string; style?: React.CSSProperties; to?: string; href?: string; [key: string]: unknown };
 function textOf(node: ReactNode): string {
@@ -132,7 +134,8 @@ export default function PageComposer({ page, children, enabled = true }: { page:
     const [selectedBox, setSelectedBox] = useState<CanvasBox | null>(null);
     const [hoverBox, setHoverBox] = useState<CanvasBox | null>(null);
     const [selectedFieldBox, setSelectedFieldBox] = useState<CanvasBox | null>(null);
-    const [insertionPoints, setInsertionPoints] = useState<Array<{ after: string; top: number; left: number; width: number }>>([]);
+    const [insertionPoints, setInsertionPoints] = useState<Array<{ after: string | null; top: number; left: number; width: number }>>([]);
+    const [canvasViewport, setCanvasViewport] = useState(websiteCanvasViewport);
     const toolbarRef = useRef<HTMLDivElement>(null);
     const [toolbarSize, setToolbarSize] = useState({ width: 480, height: 44 });
     const [canvasScale, setCanvasScale] = useState(1);
@@ -356,6 +359,8 @@ export default function PageComposer({ page, children, enabled = true }: { page:
         const measure = () => {
             cancelAnimationFrame(frame);
             frame = requestAnimationFrame(() => {
+                const viewport = websiteCanvasViewport();
+                setCanvasViewport(viewport);
                 const box = (id: string | null): CanvasBox | null => {
                     const rect = sectionElement(id)?.getBoundingClientRect();
                     return rect && rect.bottom > 0 && rect.top < window.innerHeight ? { top: rect.top, left: rect.left, width: rect.width, height: rect.height } : null;
@@ -364,15 +369,20 @@ export default function PageComposer({ page, children, enabled = true }: { page:
                 const field = Array.from(sectionElement(selectedId)?.querySelectorAll<HTMLElement>("[data-website-field]") || []).find(element => element.dataset.websiteField === selectedField);
                 const fieldRect = field?.getBoundingClientRect();
                 setSelectedFieldBox(fieldRect && fieldRect.bottom > 0 && fieldRect.top < window.innerHeight ? { top: fieldRect.top, left: fieldRect.left, width: fieldRect.width, height: fieldRect.height } : null);
-                setInsertionPoints(Array.from(document.querySelectorAll<HTMLElement>("[data-website-section]")).map(element => {
+                const elements = Array.from(document.querySelectorAll<HTMLElement>("[data-website-section]"));
+                const points: Array<{ after: string | null; top: number; left: number; width: number }> = elements.map(element => {
                     const rect = element.getBoundingClientRect();
                     return { after: element.dataset.websiteSection!, top: rect.bottom, left: rect.left, width: rect.width };
-                }).filter(point => point.top > 20 / canvasScale && point.top < window.innerHeight - 20 / canvasScale));
+                });
+                const first = elements[0]?.getBoundingClientRect();
+                if (first && first.top >= viewport.top) points.unshift({ after: null, top: Math.max(first.top, viewport.top + 22 / canvasScale), left: first.left, width: first.width });
+                setInsertionPoints(points.filter(point => point.top >= viewport.top + 20 / canvasScale && point.top < viewport.top + viewport.height - 20 / canvasScale));
             });
         };
         const observer = new ResizeObserver(measure); observer.observe(document.body);
-        window.addEventListener("scroll", measure, true); window.addEventListener("resize", measure); document.addEventListener("load", measure, true); measure();
-        return () => { cancelAnimationFrame(frame); observer.disconnect(); window.removeEventListener("scroll", measure, true); window.removeEventListener("resize", measure); document.removeEventListener("load", measure, true); };
+        const stopObservingViewport = observeWebsiteCanvasViewport(measure);
+        document.addEventListener("load", measure, true); measure();
+        return () => { cancelAnimationFrame(frame); observer.disconnect(); stopObservingViewport(); document.removeEventListener("load", measure, true); };
     }, [content, editing, hoveredId, sectionElement, selectedId, selectedField, canvasScale]);
     useEffect(() => {
         const toolbar = toolbarRef.current;
@@ -388,14 +398,14 @@ export default function PageComposer({ page, children, enabled = true }: { page:
     const anchorBox = selectedFieldBox || selectedBox;
     const margin = 10 * scale;
     const toolbarHeight = toolbarSize.height * scale;
-    const toolbarWidth = Math.min(toolbarSize.width * scale, window.innerWidth - margin * 2);
-    const toolbarTop = anchorBox ? anchorBox.top > toolbarHeight + margin * 2
+    const toolbarWidth = Math.min(toolbarSize.width * scale, canvasViewport.width - margin * 2);
+    const toolbarTop = anchorBox ? anchorBox.top > canvasViewport.top + toolbarHeight + margin * 2
         ? anchorBox.top - toolbarHeight - margin
-        : anchorBox.top + anchorBox.height + toolbarHeight + margin * 2 < window.innerHeight ? anchorBox.top + anchorBox.height + margin : margin : margin;
+        : anchorBox.top + anchorBox.height + toolbarHeight + margin * 2 < canvasViewport.top + canvasViewport.height ? anchorBox.top + anchorBox.height + margin : canvasViewport.top + margin : canvasViewport.top + margin;
     const toolbarPosition = anchorBox ? {
-        left: Math.max(margin, Math.min(anchorBox.left, window.innerWidth - toolbarWidth - margin)),
-        top: Math.max(margin, Math.min(toolbarTop, window.innerHeight - toolbarHeight - margin)),
-        transform: `scale(${scale})`, maxWidth: `calc(${window.innerWidth * canvasScale}px - 20px)`,
+        left: Math.max(canvasViewport.left + margin, Math.min(anchorBox.left, canvasViewport.left + canvasViewport.width - toolbarWidth - margin)),
+        top: Math.max(canvasViewport.top + margin, Math.min(toolbarTop, canvasViewport.top + canvasViewport.height - toolbarHeight - margin)),
+        transform: `scale(${scale})`, maxWidth: `${Math.max(0, canvasViewport.width * canvasScale - 20)}px`,
     } : undefined;
     const editSelectedField = () => {
         if (!activeField || !selectedId) return;
@@ -405,12 +415,20 @@ export default function PageComposer({ page, children, enabled = true }: { page:
             if (element) beginTextEdit(element); else send({ type: "website-select", section: selectedId, field: activeField.id, intent: "edit" });
         }
     };
+    const sectionAction = (action: WebsiteSectionAction) => {
+        gestureRef.current?.finish(true); editRef.current?.end(true);
+        send({ type: "website-section-action", section: selectedId, action });
+    };
+    const insertSection = (after: string | null) => {
+        gestureRef.current?.finish(true); editRef.current?.end(true);
+        send({ type: "website-insert", after });
+    };
     return <>{enabled ? rendered : children}{layoutControls.overlays}{photoFraming.overlays}{editing && !photoFraming.active && <div className="website-canvas-overlays" data-website-overlay="true">
         {hoverBox && hoveredId !== selectedId && <div className="website-canvas-hover-label" style={{ left: Math.max(10 * scale, hoverBox.left + 10 * scale), top: Math.max(10 * scale, hoverBox.top + 10 * scale), transform: `scale(${scale})` }}>{stableCatalog.find(section => section.id === hoveredId)?.name}</div>}
-        {!editingText && !layoutControls.active && insertionPoints.map(point => <div key={point.after} className={`website-canvas-insert ${point.after === selectedId ? "is-adjacent" : ""}`} style={{ top: point.top, left: point.left, width: point.width }}>
-            <button type="button" aria-label="Add section here" title="Add section here" style={{ transform: `translate(-50%, -50%) scale(${scale})` }} onClick={() => send({ type: "website-insert", after: point.after })}><CanvasIcon name="add" /><span>Add section here</span></button>
+        {!editingText && !layoutControls.active && sections.length < 40 && insertionPoints.map(point => <div key={point.after || "page-start"} className={`website-canvas-insert ${point.after === selectedId ? "is-adjacent" : ""}`} style={{ top: point.top, left: point.left, width: point.width }}>
+            <button type="button" aria-label={point.after === null ? "Add section at top" : "Add section here"} title={point.after === null ? "Add section at top" : "Add section here"} style={{ left: Math.max(canvasViewport.left + 80 * scale, Math.min(point.left + point.width / 2, canvasViewport.left + canvasViewport.width - 80 * scale)) - point.left, transform: `translate(-50%, -50%) scale(${scale})` }} onClick={() => insertSection(point.after)}><CanvasIcon name="add" /><span>{point.after === null ? "Add section at top" : "Add section here"}</span></button>
         </div>)}
-        {selectedBox && selectedCatalog && <div ref={toolbarRef} className={`website-canvas-toolbar${window.innerWidth * canvasScale < 680 ? " is-compact" : ""}`} role="toolbar" aria-label={`${selectedField && activeField ? activeField.label : selectedCatalog.name} controls`} style={toolbarPosition}>
+        {selectedBox && selectedCatalog && <div ref={toolbarRef} className={`website-canvas-toolbar${canvasViewport.width * canvasScale < 600 ? " is-compact" : ""}`} role="toolbar" aria-label={`${selectedField && activeField ? activeField.label : selectedCatalog.name} controls`} style={toolbarPosition}>
             {!editingText && <button className="website-canvas-reorder-grip" type="button" aria-label="Move section" title="Drag to move this section. Arrow keys move up or down." {...layoutControls.gripProps}><CanvasIcon name="grip" /></button>}
             <span className="website-canvas-section-name" title={selectedCatalog.name}><small>{selectedCatalog.name}</small><strong>{selectedField && activeField ? activeField.label : "Section"}</strong></span>
             {!editingText && activeField && <button className="website-canvas-edit" type="button" onClick={editSelectedField}><CanvasIcon name={activeField.kind === "image" ? "photo" : "edit"} /><span>{activeField.kind === "image" ? "Change photo" : "Edit text"}</span></button>}
@@ -418,13 +436,8 @@ export default function PageComposer({ page, children, enabled = true }: { page:
                 {selectedId && activeField?.kind === "image" && photoFraming.canFrame(selectedId, activeField.id) && <button type="button" title="Reposition photo" aria-label="Reposition photo" onClick={() => beginPhotoFraming(selectedId, activeField.id)}><CanvasIcon name="frame" /><span>Reposition</span></button>}
                 {activeField?.link && <button type="button" title="Edit link" aria-label="Edit link" onClick={() => send({ type: "website-select", section: selectedId, field: activeField.id, intent: "link" })}><CanvasIcon name="link" /><span>Link</span></button>}
                 <button className="website-canvas-design" type="button" onClick={() => send({ type: "website-select", section: selectedId, field: selectedField || activeField?.id, intent: "design" })}><CanvasIcon name="design" /><span>Design</span></button>
-                <button type="button" title="Add section below" aria-label="Add section below" onClick={() => send({ type: "website-insert", after: selectedId })}><CanvasIcon name="add" /></button>
             </>}
-            {!editingText && <div className="website-canvas-arrange">
-                <button type="button" title="Move section up" aria-label="Move section up" disabled={selectedIndex <= 0} onClick={() => send({ type: "website-section-action", section: selectedId, action: "up" })}><CanvasIcon name="up" /></button>
-                <button type="button" title="Move section down" aria-label="Move section down" disabled={selectedIndex >= sections.length - 1} onClick={() => send({ type: "website-section-action", section: selectedId, action: "down" })}><CanvasIcon name="down" /></button>
-                <button type="button" title="Hide section" aria-label="Hide section" onClick={() => send({ type: "website-section-action", section: selectedId, action: "hide" })}><CanvasIcon name="hide" /></button>
-            </div>}
+            {!editingText && <WebsiteSectionActions key={selectedId} name={selectedCatalog.name} hidden={!!sections[selectedIndex]?.hidden} portable={!!sections[selectedIndex]?.kind} first={selectedIndex <= 0} last={selectedIndex >= sections.length - 1} canAdd={sections.length < 40} onAction={sectionAction} scale={scale} />}
             {editingText && <span className="website-canvas-edit-hint">Enter to finish · Esc to cancel</span>}
         </div>}
     </div>}</>;

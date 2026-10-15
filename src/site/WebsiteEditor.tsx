@@ -8,8 +8,12 @@ import WebsitePublishReview from "./WebsitePublishReview";
 import WebsiteLinkEditor from "./WebsiteLinkEditor";
 import WebsiteFieldDesign from "./WebsiteFieldDesign";
 import WebsitePhotoPicker from "./WebsitePhotoPicker";
+import WebsiteSectionOutline from "./WebsiteSectionOutline";
+import type { WebsiteSectionAction } from "./WebsiteSectionActions";
+import { copyWebsiteSection, duplicateWebsiteSection, effectiveWebsiteSections, getChangedWebsitePages, insertWebsiteSection, removeWebsiteSection } from "../shared/websiteSections.js";
 import Icon from "./WebsiteIcon";
 import "../styles/website-editor.css";
+import "../styles/website-section-dialogs.css";
 
 class WebsiteApiError extends Error { constructor(message: string, public status: number) { super(message); } }
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
@@ -24,7 +28,7 @@ function Modal({ title, onClose, children, className = "" }: { title: string; on
     const close = useRef(onClose); close.current = onClose;
     useEffect(() => {
         const previous = window.document.activeElement;
-        element.current?.querySelector<HTMLElement>("button")?.focus();
+        (element.current?.querySelector<HTMLElement>("[data-autofocus]") || element.current?.querySelector<HTMLElement>("button"))?.focus();
         const key = (event: KeyboardEvent) => {
             if (event.key === "Escape") { event.preventDefault(); close.current(); }
             if (event.key !== "Tab") return;
@@ -56,7 +60,11 @@ export default function WebsiteEditor({ onDirtyChange }: { onDirtyChange: (dirty
     const [inspectorTab, setInspectorTab] = useState<"content" | "design">("content");
     const [inspectorOpen, setInspectorOpen] = useState(false);
     const [leftPanel, setLeftPanel] = useState<"pages" | "sections" | null>(null);
-    const [insertAfter, setInsertAfter] = useState<string>();
+    const [insertAfter, setInsertAfter] = useState<string | null>();
+    const selections = useRef<Partial<Record<WebsitePage, { section: string; field?: string }>>>({});
+    const revealOnReady = useRef<{ page: WebsitePage; section: string; field?: string } | null>(null);
+    const focusOnReady = useRef<{ page: WebsitePage; section: string } | null>(null);
+    const [sectionDialog, setSectionDialog] = useState<{ page: WebsitePage; id: string; name: string; target: WebsitePage } | null>(null);
     const [zoom, setZoom] = useState<"fit" | "actual">("fit");
     const [mobile, setMobile] = useState(false);
     const [preview, setPreview] = useState(false);
@@ -65,7 +73,7 @@ export default function WebsiteEditor({ onDirtyChange }: { onDirtyChange: (dirty
     const busyRef = useRef(false);
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
-    const [modal, setModal] = useState<"add" | "publish" | "restore" | "reset" | "reload" | "versions" | null>(null);
+    const [modal, setModal] = useState<"add" | "publish" | "restore" | "reset" | "reload" | "versions" | "rename" | "copy" | null>(null);
     const [undo, setUndo] = useState<WebsiteContent[]>([]);
     const [redo, setRedo] = useState<WebsiteContent[]>([]);
     const undoRef = useRef<WebsiteContent[]>([]), redoRef = useRef<WebsiteContent[]>([]);
@@ -73,8 +81,6 @@ export default function WebsiteEditor({ onDirtyChange }: { onDirtyChange: (dirty
     const writeRedo = (next: WebsiteContent[]) => { redoRef.current = next; setRedo(next); };
     const editGroup = useRef({ key: "", time: 0 });
     const [photoField, setPhotoField] = useState<string>();
-    const [dragged, setDragged] = useState<string>();
-    const [dropTarget, setDropTarget] = useState<string>();
     const [previewWidth, setPreviewWidth] = useState(800);
     const [frameReady, setFrameReady] = useState(false);
     const frameContainer = useRef<HTMLDivElement>(null);
@@ -110,6 +116,26 @@ export default function WebsiteEditor({ onDirtyChange }: { onDirtyChange: (dirty
     const sendPreview = () => { send({ type: "website-draft", content: draftRef.current }); send({ type: "website-preview-mode", preview }); send({ type: "website-highlight", section: selectedId, field: focusedField ?? null, scroll: false }); send({ type: "website-canvas-scale", scale: zoom === "actual" ? 1 : Math.min(1, previewWidth / (mobile ? 390 : 1280)) }); };
     useEffect(() => { sendPreview(); }, [draft, page, preview, frameReady, previewWidth, mobile, selectedId, focusedField, zoom]);
     useEffect(() => {
+        const pending = revealOnReady.current;
+        if (!frameReady || !pending || pending.page !== page || !catalog[page]?.some(section => section.id === pending.section)) return;
+        const request = window.requestAnimationFrame(() => {
+            send({ type: "website-highlight", section: pending.section, field: pending.field ?? null, scroll: true });
+            revealOnReady.current = null;
+        });
+        return () => window.cancelAnimationFrame(request);
+    }, [frameReady, page, catalog]);
+    useEffect(() => {
+        const pending = focusOnReady.current;
+        if (modal || !frameReady || !pending || pending.page !== page || pending.section !== selectedId) return;
+        const request = window.requestAnimationFrame(() => {
+            const button = root.current?.querySelector<HTMLButtonElement>(`[data-studio-section-select="${CSS.escape(pending.section)}"]`);
+            if (button?.getClientRects().length) button.focus({ preventScroll: true });
+            else frame.current?.focus({ preventScroll: true });
+            focusOnReady.current = null;
+        });
+        return () => window.cancelAnimationFrame(request);
+    }, [frameReady, page, selectedId, modal, catalog]);
+    useEffect(() => {
         const warn = (event: BeforeUnloadEvent) => { if (dirty) event.preventDefault(); };
         window.addEventListener("beforeunload", warn);
         return () => window.removeEventListener("beforeunload", warn);
@@ -126,6 +152,7 @@ export default function WebsiteEditor({ onDirtyChange }: { onDirtyChange: (dirty
     const sections: WebsiteSection[] = [...configured, ...defaults.filter(section => !configured.some(s => s.id === section.id))];
     const selected = sections.find(section => section.id === selectedId) || sections[0];
     useEffect(() => { if (selected && selected.id !== selectedId) setSelectedId(selected.id); }, [selected?.id, selectedId]);
+    useEffect(() => { selections.current[page] = { section: selectedId, field: focusedField }; }, [page, selectedId, focusedField]);
     const selectedCatalog = catalog[page]?.find(section => section.id === selected?.id);
     const fields = selected?.kind ? customSectionFields(selected) : selectedCatalog?.fields || [];
     const activeField = fields.find(field => field.id === focusedField);
@@ -150,12 +177,31 @@ export default function WebsiteEditor({ onDirtyChange }: { onDirtyChange: (dirty
             return { ...section, fields };
         }), `${page}:${sectionId}:${field}`);
     };
-    const selectSection = (id: string, scroll = true) => { setSelectedId(id); setFocusedField(undefined); setInspectorOpen(true); setLeftPanel(null); setInspectorTab("content"); setPanel("settings"); send({ type: "website-highlight", section: id, field: null, scroll }); };
+    const selectSection = async (id: string) => {
+        if (!await flushCanvas()) return;
+        setSelectedId(id); setFocusedField(undefined); setInspectorOpen(false); setPanel("canvas");
+        send({ type: "website-highlight", section: id, field: null, scroll: true });
+    };
+    const revealSection = (next: WebsitePage, id?: string, field?: string, focus = false) => {
+        const available = effectiveWebsiteSections(draftRef.current, next);
+        const remembered = selections.current[next];
+        const preferred = id || remembered?.section;
+        const section = available.find(item => item.id === preferred) || available[0];
+        if (focus) focusOnReady.current = { page: next, section: section.id };
+        const nextField = section.id === preferred ? field ?? (id ? undefined : remembered?.field) : undefined;
+        if (next !== page) { revealOnReady.current = { page: next, section: section.id, field: nextField }; setPage(next); setFrameReady(false); }
+        setSelectedId(section.id); setFocusedField(nextField);
+        setInspectorOpen(false); setPanel("canvas"); editGroup.current.key = "";
+        if (next === page) {
+            revealOnReady.current = catalog[page]?.some(item => item.id === section.id) ? null : { page: next, section: section.id, field: nextField };
+            send({ type: "website-highlight", section: section.id, field: nextField ?? null, scroll: true });
+        }
+    };
     const changePage = async (next: WebsitePage) => {
         if (next === page || !await flushCanvas()) return;
-        setPage(next); setSelectedId("original-0"); setFocusedField(undefined); setFrameReady(false); setInspectorOpen(false); editGroup.current.key = "";
+        revealSection(next);
     };
-    const openAdd = async (after = selected?.id) => { if (!await flushCanvas()) return; setInsertAfter(after); setModal("add"); };
+    const openAdd = async (after: string | null = selected?.id || null) => { if (!await flushCanvas()) return; setInsertAfter(after); setModal("add"); };
     const updateFieldStyle = (value: WebsiteFieldStyle) => {
         if (!selected || !activeField) return;
         const fieldStyles = { ...currentSections().find(section => section.id === selected.id)?.fieldStyles };
@@ -197,9 +243,12 @@ export default function WebsiteEditor({ onDirtyChange }: { onDirtyChange: (dirty
     const addSection = (template: Omit<WebsiteSection, "id">) => {
         const id = `custom-${crypto.randomUUID()}`;
         const section: WebsiteSection = { ...template, id };
-        const next = currentSections(); next.splice(next.findIndex(s => s.id === (insertAfter || selected?.id)) + 1, 0, section);
-        setSections(next); setSelectedId(id); setInspectorTab("content"); setModal(null); setPanel("canvas"); setInspectorOpen(false); setLeftPanel(null); setFocusedField(undefined);
-        setTimeout(() => send({ type: "website-highlight", section: id, scroll: true }), 100);
+        try {
+            change(insertWebsiteSection(draftRef.current, page, section, insertAfter === undefined ? selected?.id || null : insertAfter));
+            revealOnReady.current = { page, section: id };
+            focusOnReady.current = { page, section: id };
+            setSelectedId(id); setInspectorTab("content"); setModal(null); setPanel("canvas"); setInspectorOpen(false); setFocusedField(undefined);
+        } catch (error) { setError(error instanceof Error ? error.message : "Unable to add this section."); }
     };
     const setLayout = (id: string, settings: WebsiteLayoutSettings, group = "") => {
         const limits = { paddingTop: [0, 240], paddingBottom: [0, 240], columnSplit: [25, 75], gap: [0, 96] };
@@ -218,13 +267,69 @@ export default function WebsiteEditor({ onDirtyChange }: { onDirtyChange: (dirty
         next.splice(before === null ? next.length : next.findIndex(section => section.id === before), 0, item);
         setSections(next); setSelectedId(id);
     };
+    const sectionAction = async (id: string, action: WebsiteSectionAction) => {
+        if (busy || !await flushCanvas()) return;
+        const current = currentSections(), section = current.find(item => item.id === id);
+        if (!section) return;
+        setSelectedId(id);
+        try {
+            if (action === "edit") {
+                setFocusedField(undefined); setInspectorTab("content"); setInspectorOpen(true); setLeftPanel(null); setPanel("settings");
+                send({ type: "website-highlight", section: id, field: null, scroll: true });
+            } else if (action === "add-before" || action === "add-after") {
+                if (current.length >= 40) throw new Error("This page already has 40 sections. Remove an added section before adding another.");
+                setInsertAfter(action === "add-after" ? id : current[current.findIndex(item => item.id === id) - 1]?.id || null); setModal("add");
+            } else if (action === "up" || action === "down") move(id, action === "up" ? -1 : 1);
+            else if (action === "hide") toggle(id);
+            else if (action === "rename" || action === "copy") {
+                if (action === "copy" && !section.kind) return;
+                const others = (Object.keys(websitePages) as WebsitePage[]).filter(key => key !== page);
+                setSectionDialog({ page, id, name: nameOf(section), target: others.find(key => effectiveWebsiteSections(draftRef.current, key).length < 40) || others[0] });
+                setModal(action);
+            } else if (action === "duplicate") {
+                const copyId = `custom-${crypto.randomUUID()}`;
+                change(duplicateWebsiteSection(draftRef.current, page, id, copyId));
+                revealSection(page, copyId, undefined, true); setNotice("Section duplicated. Make the new copy your own.");
+            } else if (action === "remove") {
+                const index = current.findIndex(item => item.id === id), neighbor = current[index + 1] || current[index - 1];
+                change(removeWebsiteSection(draftRef.current, page, id));
+                revealSection(page, neighbor?.id, undefined, true); setNotice("Section removed from your draft. Undo brings it back.");
+            }
+        } catch (error) { setError(error instanceof Error ? error.message : "Unable to update this section."); }
+    };
+    const applySectionDialog = () => {
+        if (!sectionDialog) return;
+        try {
+            if (modal === "rename") {
+                const name = sectionDialog.name.trim();
+                if (!name) return;
+                change({ ...draftRef.current, pages: { ...draftRef.current.pages, [sectionDialog.page]: effectiveWebsiteSections(draftRef.current, sectionDialog.page).map(section => section.id === sectionDialog.id ? { ...section, name } : section) } });
+                setNotice("Section renamed in your editor.");
+            } else if (modal === "copy") {
+                const id = `custom-${crypto.randomUUID()}`;
+                change(copyWebsiteSection(draftRef.current, sectionDialog.page, sectionDialog.id, sectionDialog.target, id));
+                revealSection(sectionDialog.target, id, undefined, true); setLeftPanel("sections");
+                setNotice(`Copied to ${websitePages[sectionDialog.target].name}. You can edit this copy independently.`);
+            }
+            setModal(null); setSectionDialog(null);
+        } catch (error) { setError(error instanceof Error ? error.message : "Unable to update this section."); }
+    };
     const history = async (direction: "undo" | "redo") => {
         if (busy || !await flushCanvas()) return;
         const source = direction === "undo" ? undoRef.current : redoRef.current;
         if (!source.length) return;
         if (direction === "undo") { writeRedo([...redoRef.current, draftRef.current]); writeUndo(source.slice(0, -1)); }
         else { writeUndo([...undoRef.current, draftRef.current]); writeRedo(source.slice(0, -1)); }
-        draftRef.current = source[source.length - 1]; setDraft(source[source.length - 1]); editGroup.current.key = ""; setNotice("");
+        const previous = draftRef.current, restored = source[source.length - 1];
+        const affected = getChangedWebsitePages(previous, restored);
+        draftRef.current = restored; setDraft(restored); editGroup.current.key = "";
+        const target = affected.includes(page) ? page : affected[0];
+        if (target) {
+            const before = effectiveWebsiteSections(previous, target), after = effectiveWebsiteSections(restored, target);
+            const changedSection = after.find(section => !equal(section, before.find(item => item.id === section.id)));
+            revealSection(target, changedSection?.id || selections.current[target]?.section, undefined, true);
+        }
+        setNotice(target && target !== page ? `${direction === "undo" ? "Undid" : "Redid"} a change on ${websitePages[target].name}.` : "");
     };
     const persistDraft = (manual = false): Promise<boolean> => {
         if (draftSave.current) return draftSave.current;
@@ -299,7 +404,7 @@ export default function WebsiteEditor({ onDirtyChange }: { onDirtyChange: (dirty
             if (data.type === "website-catalog") { setCatalog(current => ({ ...current, [page]: data.sections })); setFrameReady(true); }
             if (busy || preview) return;
             if (data.type === "website-shortcut") { if (data.shortcut === "save" && document && !equal(document.draft, draftRef.current)) void save("draft"); else if (data.shortcut === "undo" || data.shortcut === "redo") history(data.shortcut); return; }
-            if (data.type === "website-insert" && sections.some(s => s.id === data.after) && sections.length < 40) { void openAdd(data.after); return; }
+            if (data.type === "website-insert" && (data.after === null || sections.some(s => s.id === data.after)) && sections.length < 40) { void openAdd(data.after); return; }
             if (!sections.some(s => s.id === data.section)) return;
             if (data.type === "website-select") {
                 if (data.intent === "inline") inlineBase.current = { draft: draftRef.current, undo: undoRef.current, redo: redoRef.current };
@@ -322,9 +427,7 @@ export default function WebsiteEditor({ onDirtyChange }: { onDirtyChange: (dirty
             }
             if (data.type === "website-reorder" && (data.before === null || typeof data.before === "string")) reorder(data.section, data.before);
             if (data.type === "website-section-action") {
-                setSelectedId(data.section);
-                if (data.action === "up" || data.action === "down") move(data.section, data.action === "up" ? -1 : 1);
-                if (data.action === "hide") toggle(data.section);
+                void sectionAction(data.section, data.action);
             }
             if (data.type === "website-field-change" && typeof data.field === "string" && typeof data.value === "string") {
                 if (data.cancelled && inlineBase.current) {
@@ -374,11 +477,8 @@ export default function WebsiteEditor({ onDirtyChange }: { onDirtyChange: (dirty
             <aside className="website-editor-pages" data-panel={leftPanel || "pages"} aria-label="Pages and sections">
                 <header className="studio-drawer-heading"><h3>{leftPanel === "sections" ? "Page sections" : "Your pages"}</h3><button className="studio-icon-button" aria-label="Close pages and sections" onClick={() => { setLeftPanel(null); setPanel("canvas"); }}><Icon name="close" /></button></header>
                 <div className="studio-pages-block"><div className="studio-panel-heading"><span>Site pages</span><small>{Object.keys(websitePages).length}</small></div><nav className="studio-page-list" aria-label="Website pages">{(Object.entries(websitePages) as [WebsitePage, typeof websitePages[WebsitePage]][]).map(([key, value]) => <button key={key} aria-current={page === key ? "page" : undefined} onClick={() => void changePage(key)}><Icon name="pages" /><span>{value.name}</span>{changedPages.includes(key) && <i title="Unpublished changes" aria-label="Unpublished changes" />}{page === key && <Icon name="arrow" />}</button>)}</nav></div>
-                <div className="studio-sections-block"><div className="studio-panel-heading"><span>{websitePages[page].name} sections</span><small>{sections.length}</small></div><p className="studio-muted">Drag to reorder. Click to edit.</p>
-                    <ol className="website-section-list">{sections.map((section, index) => <li key={section.id} className={`${section.id === selected?.id ? "is-selected" : ""} ${section.hidden ? "is-hidden" : ""} ${dropTarget === section.id ? "is-drop-target" : ""}`} onDragOver={event => { if (dragged && dragged !== section.id) { event.preventDefault(); setDropTarget(section.id); } }} onDrop={event => { event.preventDefault(); const current = currentSections(); const source = current.find(s => s.id === dragged); if (source && source.id !== section.id) { const next = current.filter(s => s.id !== dragged); next.splice(next.findIndex(s => s.id === section.id), 0, source); setSections(next); } setDragged(undefined); setDropTarget(undefined); }}>
-                        <div className="studio-section-row"><button className="studio-drag-handle" title={`Drag ${nameOf(section)} to reorder`} aria-label={`Drag ${nameOf(section)} to reorder`} draggable onDragStart={event => { setDragged(section.id); event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", section.id); }} onDragEnd={() => { setDragged(undefined); setDropTarget(undefined); }}><Icon name="grip" /></button><button className="website-section-select" aria-pressed={section.id === selected?.id} onClick={() => selectSection(section.id)}><span className="studio-section-thumbnail">{(() => { const photo = catalog[page]?.find(s => s.id === section.id)?.fields.find(f => f.kind === "image"); const src = photo && (section.fields[photo.id] || photo.value); return src ? <img src={src} alt="" loading="lazy" /> : <Icon name={section.kind === "photo" ? "photo" : "text"} />; })()}</span><span>{nameOf(section)}</span>{section.hidden && <small>Hidden from visitors</small>}</button><button className="studio-section-visibility studio-icon-button" aria-label={`${section.hidden ? "Show" : "Hide"} ${nameOf(section)}`} onClick={() => toggle(section.id)}><Icon name={section.hidden ? "hide" : "eye"} /></button></div>
-                        {section.id === selected?.id && <div className="studio-section-tools"><span>{String(index + 1).padStart(2, "0")} / {String(sections.length).padStart(2, "0")}</span><button aria-label={`Move ${nameOf(section)} up`} disabled={!index} onClick={() => move(section.id, -1)}><Icon name="up" /></button><button aria-label={`Move ${nameOf(section)} down`} disabled={index === sections.length - 1} onClick={() => move(section.id, 1)}><Icon name="down" /></button></div>}
-                    </li>)}</ol>
+                <div className="studio-sections-block"><div className="studio-panel-heading"><span>{websitePages[page].name} sections</span><small>{sections.length}</small></div>
+                    <WebsiteSectionOutline sections={sections} catalog={catalog[page] || []} selectedId={selected?.id} onSelect={id => void selectSection(id)} onAction={(id, action) => void sectionAction(id, action)} onReorder={async (id, before) => { if (!await flushCanvas()) return false; reorder(id, before); return true; }} />
                     <button className="studio-add-section" disabled={sections.length >= 40} onClick={() => void openAdd()}><Icon name="plus" />Add a section</button>
                 </div>
                 <div className="studio-library-note"><Icon name="photo" /><p>Originals live in Mountain Turtle.<br /><span>Choose their website photos here.</span></p></div>
@@ -393,7 +493,7 @@ export default function WebsiteEditor({ onDirtyChange }: { onDirtyChange: (dirty
                 <div className="studio-inspector-tabs" role="tablist" aria-label="Section settings tabs"><button role="tab" aria-selected={inspectorTab === "content"} aria-controls="studio-content-panel" onClick={() => setInspectorTab("content")}>Content</button><button role="tab" aria-selected={inspectorTab === "design"} aria-controls="studio-design-panel" onClick={() => setInspectorTab("design")}>Design</button></div>
                 {selected.hidden && <div className="studio-hidden-note"><Icon name="hide" /><p>This section is hidden.<button onClick={() => toggle(selected.id)}>Show on website</button></p></div>}
                 {inspectorTab === "content" ? <div id="studio-content-panel" role="tabpanel" className="website-field-list">{visibleFields.map((field, index) => <div className={`website-edit-field ${focusedField === field.id ? "is-focused" : ""}`} key={field.id}>{field.kind === "image" ? <>
-                    <div className="studio-field-caption"><span>Photograph{fields.filter(f => f.kind === "image").length > 1 ? ` ${fields.slice(0, index + 1).filter(f => f.kind === "image").length}` : ""}</span></div>
+                    <div className="studio-field-caption"><span>Photograph{fields.filter(f => f.kind === "image").length > 1 ? ` ${(fields.filter(f => f.kind === "image").findIndex(f => f.id === field.id) + 1)}` : ""}</span></div>
                     <button className="studio-photo-card" id={`website-field-${field.id}`} onClick={() => setPhotoField(field.id)}>{(selected.fields[field.id] || field.value) ? <img src={selected.fields[field.id] || field.value} alt={selected.fields[`${field.id}.alt`] || field.alt || "Selected photograph"} loading="lazy" /> : <div className="studio-empty-photo"><Icon name="photo" /><span>Find the right photograph</span></div>}<span className="studio-photo-change"><Icon name="photo" />{selected.fields[field.id] || field.value ? "Replace photo" : "Choose photo"}</span></button>
                     {!selected.kind && <details className="studio-photo-description"><summary>Photo description</summary><label><span className="studio-sr-only">Photo description {index + 1}</span><textarea value={selected.fields[`${field.id}.alt`] ?? field.alt ?? ""} rows={2} placeholder="Describe this image for visitors who use a screen reader." onChange={event => setField(`${field.id}.alt`, event.target.value)} /></label></details>}
                 </> : <label><span className="studio-field-caption">{field.label}{fields.filter(f => f.label === field.label).length > 1 ? ` ${fields.slice(0, index + 1).filter(f => f.label === field.label).length}` : ""}</span><textarea id={`website-field-${field.id}`} value={selected.fields[field.id] ?? field.value} maxLength={12000} rows={field.label === "Heading" || field.id === "title" ? 3 : Math.min(7, Math.max(2, Math.ceil((selected.fields[field.id] ?? field.value).length / 55)))} placeholder={field.id === "title" ? "A heading in your own words…" : field.id === "body" ? "Tell your story…" : field.id === "eyebrow" ? "Optional introduction" : "Write here…"} onFocus={() => send({ type: "website-highlight", section: selected.id, field: field.id, scroll: false })} onChange={event => setField(field.id, event.target.value)} onBlur={() => { editGroup.current.key = ""; }} /></label>}{field.link && (activeField || visibleFields.findIndex(item => item.link?.id === field.link?.id) === index) && <WebsiteLinkEditor key={`${selected.id}:${field.link.id}`} original={field.link} value={selected.links?.[field.link.id] || field.link} customized={!!selected.links?.[field.link.id]} onChange={value => updateLink(field.link!.id, value)} />}</div>)}{!fields.length && <p className="studio-muted">{frameReady ? "Select a section with text or photos to start editing." : "Finding this section’s content…"}</p>}<p className="studio-inspector-tip">Your words, your photographs.<br />Changes stay in your draft until you publish.</p></div> : <div id="studio-design-panel" role="tabpanel" className="studio-design-fields">
@@ -404,14 +504,19 @@ export default function WebsiteEditor({ onDirtyChange }: { onDirtyChange: (dirty
                     <fieldset><legend>Breathing room</legend><div className="studio-segment-control">{([["compact", "Close"], ["original", "Original"], ["generous", "Airy"]] as const).map(([value, label]) => <button key={value} aria-pressed={(selected.spacing || "original") === value} onClick={() => { const settings = { ...selected.layoutSettings }; delete settings.paddingTop; delete settings.paddingBottom; updateSection({ spacing: value, layoutSettings: Object.keys(settings).length ? settings : undefined }); }}>{label}</button>)}</div></fieldset>
                     <fieldset className="studio-layout-sliders"><legend>Fine-tune your layout</legend><p>Drag the handles on your page, or use these controls.</p>{([ ["paddingTop", "Space above", 0, 240, 8, "px"], ["paddingBottom", "Space below", 0, 240, 8, "px"], ...(selectedCatalog?.supportsColumns || selected.kind === "split" ? [["columnSplit", "First column", 25, 75, 1, "%"], ["gap", "Space between", 0, 96, 8, "px"]] : []) ] as [keyof WebsiteLayoutSettings, string, number, number, number, string][]).map(([key,label,min,max,step,unit]) => <label key={key}><span>{label}<output>{selected.layoutSettings?.[key] ?? selectedCatalog?.layoutDefaults?.[key] ?? (key === "columnSplit" ? 50 : 0)}{unit}</output></span><input type="range" min={min} max={max} step={step} aria-label={label} value={selected.layoutSettings?.[key] ?? selectedCatalog?.layoutDefaults?.[key] ?? (key === "columnSplit" ? 50 : 0)} onChange={event => setLayout(selected.id, { [key]: Number(event.target.value) }, `${page}:${selected.id}:layout:${key}`)} /></label>)}{selected.layoutSettings && <button className="studio-text-button" onClick={() => updateSection({ layoutSettings: undefined })}>Use original spacing and proportions</button>}</fieldset>
                     <fieldset><legend>Background</legend><div className="studio-color-swatches">{["#ffffff", "#f5f1eb", "#e9e0d7", "#e7e9e2", "#ebe2e8"].map(color => <button key={color} aria-label={`Background ${color}`} aria-pressed={selected.background === color} style={{ background: color }} onClick={() => updateSection({ background: color })}>{selected.background === color && <Icon name="check" />}</button>)}<label className="studio-custom-color" title="Custom background color"><span className="studio-sr-only">Custom background color</span><input type="color" value={selected.background || "#ffffff"} onChange={event => updateSection({ background: event.target.value }, `${page}:${selected.id}:background`)} /><Icon name="plus" /></label></div>{selected.background && <button className="studio-text-button" onClick={() => updateSection({ background: undefined })}>Use original background</button>}</fieldset>
-                    <div className="studio-section-maintenance">{selected.kind && <button className="studio-button" disabled={sections.length >= 40} onClick={() => { setInsertAfter(selected.id); const next = currentSections(); const copy = { ...selected, id: `custom-${crypto.randomUUID()}`, name: `${nameOf(selected)} copy` }; next.splice(next.findIndex(s => s.id === selected.id) + 1, 0, copy); setSections(next); selectSection(copy.id); }}>Duplicate section</button>}<button className="studio-button" onClick={() => setModal("reset")}>Reset section design</button>{selected.kind && <button className="studio-text-button is-danger" onClick={() => { setSections(currentSections().filter(s => s.id !== selected.id)); setSelectedId("original-0"); }}>Remove section</button>}</div>
+                    <div className="studio-section-maintenance">{selected.kind && <button className="studio-button" disabled={sections.length >= 40} onClick={() => void sectionAction(selected.id, "duplicate")}>Duplicate section</button>}{selected.kind && <button className="studio-button" onClick={() => void sectionAction(selected.id, "copy")}>Copy to another page</button>}<button className="studio-button" onClick={async () => { if (await flushCanvas()) setModal("reset"); }}>Reset section design</button>{selected.kind && <button className="studio-text-button is-danger" onClick={() => void sectionAction(selected.id, "remove")}>Remove section</button>}</div>
                     </div></details>
                 </div>}
             </>}</aside>
         </div>
         {busy === "load" && <div className="studio-initial-loading" role="status"><span className="studio-spinner" /><h3>Opening your studio</h3><p>A little space for your next idea.</p></div>}
         {photoField && <WebsitePhotoPicker currentUrl={selected?.fields[photoField] || fields.find(f => f.id === photoField)?.value} onChoose={(url, description) => replacePhoto(photoField, url, description)} onClose={() => setPhotoField(undefined)} />}
-        {modal === "add" && <Modal title="Make it your own." onClose={() => setModal(null)} className="studio-section-library-dialog"><p>Add after <strong>{nameOf(sections.find(section => section.id === insertAfter) || selected)}</strong>. Start with a layout, then choose your photographs and words.</p><WebsiteSectionLibrary onChoose={addSection} /></Modal>}
+        {modal === "rename" && sectionDialog && <Modal title="Give this section a name." onClose={() => setModal(null)} className="studio-section-dialog"><form onSubmit={event => { event.preventDefault(); applySectionDialog(); }}><p>A name that helps you find it. Only shown in your editor.</p><label className="studio-section-dialog-label">Section name<input data-autofocus value={sectionDialog.name} maxLength={100} required onChange={event => setSectionDialog({ ...sectionDialog, name: event.target.value })} /></label><footer><button type="button" className="studio-button" onClick={() => setModal(null)}>Cancel</button><button type="submit" className="studio-button studio-button-primary" disabled={!sectionDialog.name.trim()}>Save name<Icon name="check" /></button></footer></form></Modal>}
+        {modal === "copy" && sectionDialog && <Modal title="Give it another home." onClose={() => setModal(null)} className="studio-section-dialog"><form onSubmit={event => { event.preventDefault(); applySectionDialog(); }}><p>Copy <strong>{sectionDialog.name}</strong> to another page with its photographs, words, links, and design.</p><fieldset className="studio-copy-pages"><legend>Choose a page</legend>{(Object.keys(websitePages) as WebsitePage[]).filter(key => key !== sectionDialog.page).map(key => {
+            const count = effectiveWebsiteSections(draft, key).length, full = count >= 40;
+            return <label key={key} className={`${sectionDialog.target === key ? "is-selected" : ""}${full ? " is-full" : ""}`}><input type="radio" name="copy-page" value={key} checked={sectionDialog.target === key} disabled={full} onChange={() => setSectionDialog({ ...sectionDialog, target: key })} /><Icon name="pages" /><span><strong>{websitePages[key].name}</strong><small>{full ? "This page has 40 sections" : `Add after its ${count} sections`}</small></span>{sectionDialog.target === key && <Icon name="check" />}</label>;
+        })}</fieldset><p className="studio-copy-note">The original stays on {websitePages[sectionDialog.page].name}. You can edit each copy independently. Changes stay in your draft until you publish.</p><footer><button type="button" className="studio-button" onClick={() => setModal(null)}>Cancel</button><button type="submit" className="studio-button studio-button-primary" disabled={effectiveWebsiteSections(draft, sectionDialog.target).length >= 40}>Copy to {websitePages[sectionDialog.target].name}<Icon name="arrow" /></button></footer></form></Modal>}
+        {modal === "add" && <Modal title="Make it your own." onClose={() => setModal(null)} className="studio-section-library-dialog"><p>{insertAfter === null ? <>Add at the top of <strong>{websitePages[page].name}</strong>.</> : <>Add after <strong>{nameOf(sections.find(section => section.id === insertAfter) || selected)}</strong>.</>} Start with a layout, then choose your photographs and words.</p><WebsiteSectionLibrary onChoose={addSection} /></Modal>}
         {modal === "versions" && <Modal title="Your website, over time." onClose={() => { if (!busy) setModal(null); }} className="studio-versions-dialog"><WebsiteVersionHistory versions={document?.history || []} page={page} busy={!!busy} onRecover={(versionId, restorePage) => void save("recover", { versionId, page: restorePage })} /></Modal>}
         {modal === "publish" && document && <Modal title="Choose what goes live." onClose={() => { if (!busy) setModal(null); }} className="studio-publish-dialog"><WebsitePublishReview draft={draft} published={document.published} busy={!!busy} onCancel={() => setModal(null)} onPublish={pages => void save("publish", { pages })} /></Modal>}
         {(modal === "restore" || modal === "reset" || modal === "reload") && <Modal title={modal === "restore" ? "Restore your previous publication?" : modal === "reset" ? "Return to the original design?" : "Reload the saved draft?"} onClose={() => setModal(null)}><p>{modal === "restore" ? "This replaces your current draft and live website with the previous published version." : modal === "reset" ? "This resets the selected section’s text, photos, links, spacing, and background. You can undo this while you’re editing." : "Your unsaved edits will be replaced with the latest saved draft."}</p><footer><button className="studio-button" onClick={() => setModal(null)}>Keep editing</button><button className="studio-button studio-button-primary" onClick={() => { const action = modal; setModal(null); if (action === "restore") void save("restore"); else if (action === "reload") void load(); else updateSection({ fields: {}, fieldStyles: undefined, layoutSettings: undefined, links: undefined, layout: "original", spacing: "original", background: undefined }); }}>{modal === "restore" ? "Restore publication" : modal === "reset" ? "Reset section" : "Reload draft"}</button></footer></Modal>}

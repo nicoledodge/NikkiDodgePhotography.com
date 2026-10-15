@@ -1,0 +1,15 @@
+.website-section-action-trigger { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; padding: 5px; border: 0; border-radius: 6px; background: transparent; color: #74546b; cursor: pointer; flex: 0 0 auto; }
+.website-section-action-trigger svg { width: 18px; height: 18px; flex: 0 0 auto; }
+.website-section-action-trigger:hover, .website-section-action-trigger[aria-expanded=true] { background: #eee5eb; }
+.website-section-action-trigger:focus-visible { outline: 2px solid #6b4d63; outline-offset: 2px; }
+.website-canvas-toolbar .website-section-action-trigger { color: white; }
+.website-canvas-toolbar .website-section-action-trigger:hover, .website-canvas-toolbar .website-section-action-trigger[aria-expanded=true] { background: #ffffff25; }
+.website-section-action-menu { position: fixed; z-index: 2147483200; transform-origin: left top; box-sizing: border-box; overflow-y: auto; overscroll-behavior: contain; padding: 5px; border: 1px solid #ddd0d8; border-radius: 10px; background: #fffdfd; color: #473440; box-shadow: 0 9px 35px #372a3333; font: 12px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-align: left; pointer-events: auto; }
+.website-section-action-title { padding: 7px 9px 8px; color: #9a8291; font-size: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.website-section-action-menu > button { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 31px; padding: 8px 9px; border: 0; border-radius: 5px; background: transparent; color: #57434f; font: inherit; text-align: left; text-transform: none; letter-spacing: 0; cursor: pointer; }
+.website-section-action-menu > button:hover, .website-section-action-menu > button:focus-visible { background: #f0e7ed; color: #65475b; outline: none; }
+.website-section-action-menu > button:disabled { color: #b6a8b1; cursor: default; background: transparent; }
+.website-section-action-menu > button small { font-size: 9px; line-height: 1.2; text-align: right; }
+.website-section-action-menu > button.is-danger { color: #a64a59; }
+.website-section-action-menu > button.is-danger:hover, .website-section-action-menu > button.is-danger:focus-visible { background: #f9e9ed; color: #98394b; }
+.website-section-action-divider { height: 1px; margin: 4px 5px; background: #eee6eb; }
