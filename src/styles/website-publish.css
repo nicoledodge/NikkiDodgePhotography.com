@@ -1,0 +1,28 @@
+.studio-modal.studio-publish-dialog { width:min(720px,100%); }
+.studio-publish-intro { color:#736670; font-size:13px; line-height:1.7; margin:0 0 24px; }
+.studio-publish-selection { min-width:0; border:0; padding:0; margin:0; }
+.studio-publish-selection legend { float:none; width:auto; margin:0 0 12px; padding:0; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:#665660; }
+.studio-publish-selection-tools { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; font-size:11px; color:#7c6c77; }
+.studio-publish-review-list { list-style:none; padding:0; margin:0; display:grid; gap:10px; }
+.studio-publish-review-list > li { border:1px solid #e6dfe4; border-radius:10px; overflow:hidden; background:#fff; transition:background .15s,border-color .15s; }
+.studio-publish-review-list > li.is-selected { border-color:#c6afbf; background:#fcf9fb; }
+.studio-publish-page-choice { display:flex; align-items:center; gap:12px; padding:17px 16px; margin:0; cursor:pointer; }
+.studio-publish-page-choice input { width:16px; height:16px; flex:none; margin:0; accent-color:#6b4d63; }
+.studio-publish-page-choice > span:nth-of-type(2) { flex:1; min-width:0; }
+.studio-publish-page-choice strong { display:block; font-size:14px; font-weight:600; color:#49333f; }
+.studio-publish-page-choice small { display:block; margin-top:5px; font-size:11px; line-height:1.5; color:#7c6c77; }
+.studio-publish-page-icon { display:grid; place-items:center; color:#92788a; background:#f2eaf0; width:32px; height:38px; border-radius:5px; flex:none; }
+.studio-publish-page-state { color:#8a7c86; font-size:10px; white-space:nowrap; }.is-selected .studio-publish-page-state { color:#6b4d63; }
+.studio-publish-section-review { border-top:1px solid #ece5ea; margin:0 16px 0 44px; }
+.studio-publish-section-review summary { padding:10px 0; color:#7e6676; font-size:11px; cursor:pointer; }
+.studio-publish-section-review summary:focus-visible { outline:3px solid #a98da3; outline-offset:3px; }
+.studio-publish-section-review > ul { list-style:none; padding:0 0 12px; margin:0; display:grid; gap:12px; }
+.studio-publish-section-review > ul > li { display:flex; gap:10px; align-items:flex-start; }.studio-publish-section-review svg { width:14px; height:14px; color:#967e8d; flex:none; margin-top:2px; }
+.studio-publish-section-review strong { display:block; font-size:11px; font-weight:500; color:#59434f; }.studio-publish-section-review small { display:block; font-size:10px; line-height:1.5; color:#82717b; margin-top:3px; }
+.studio-publish-section-review > p { font-size:11px; line-height:1.6; color:#82717b; margin:0 0 13px; }
+.studio-publish-outcome { display:flex; align-items:flex-start; gap:10px; padding:16px; background:#f4f5f0; border-radius:8px; margin-top:22px; color:#5f715f; }.studio-publish-outcome svg { flex:none; margin-top:1px; }
+.studio-publish-outcome p { margin:0; font-size:12px; line-height:1.6; }.studio-publish-outcome strong { font-weight:600; }.studio-publish-outcome span { display:block; font-size:11px; margin-top:3px; color:#748074; }
+.studio-publish-recovery-note { margin:12px 0 0; text-align:center; font-size:10px; color:#8a7984; }
+.studio-publish-empty { display:grid; justify-items:center; gap:12px; padding:30px 10px; color:#6b4d63; }.studio-publish-empty p { margin:0; font-size:12px; color:#82717b; }
+.studio-publish-review button:disabled { cursor:default; opacity:.55; }
+@media(max-width:550px) { .studio-publish-page-choice { padding:14px 12px; gap:10px; }.studio-publish-page-icon { display:none; }.studio-publish-page-state { display:none; }.studio-publish-section-review { margin-left:38px; margin-right:12px; }.studio-publish-review footer { flex-wrap:wrap; }.studio-publish-review footer > button { flex:1; justify-content:center; }.studio-publish-selection legend { font-size:10px; } }

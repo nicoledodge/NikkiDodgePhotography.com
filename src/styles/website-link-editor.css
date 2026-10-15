@@ -1,0 +1,31 @@
+.website-link-editor { display: grid; gap: 22px; color: #6b4d63; font-family: inherit; font-size: 12px; }
+.website-link-current { display: flex; align-items: center; gap: 10px; padding: 13px 12px; background: #f7f2f6; border: 1px solid #e8dce5; border-radius: 7px; min-width: 0; }
+.website-link-current-icon { width: 29px; height: 29px; display: grid; place-items: center; flex-shrink: 0; border-radius: 6px; color: #95768c; background: #eee3eb; }
+.website-link-current-icon svg { width: 17px; height: 17px; }
+.website-link-current > div { min-width: 0; flex: 1; }
+.website-link-current > div > span { display: block; font-size: 9px; letter-spacing: .8px; color: #8d7988; margin-bottom: 3px; }
+.website-link-current strong { display: block; font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.website-link-current-tab { font-size: 15px; color: #94778b; }
+.website-link-editor .website-link-destinations { border: 0; padding: 0; margin: 0; min-width: 0; }
+.website-link-editor .website-link-destinations legend { width: auto; float: none; font-size: 12px; font-weight: 600; margin: 0 0 11px; padding: 0; color: #74636e; }
+.website-link-destinations > div { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.website-link-editor .website-link-destinations button { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 10px 8px; border: 1px solid #e5dce2; border-radius: 6px; color: #776a73; background: white; font-size: 11px; line-height: 1.5; text-align: left; }
+.website-link-destinations button svg { width: 17px; height: 17px; flex-shrink: 0; color: #9d8295; }
+.website-link-editor .website-link-destinations button:hover { background: #fbf8fa; border-color: #c5aebe; }
+.website-link-editor .website-link-destinations button[aria-pressed=true] { color: #6b4d63; border-color: #b69bad; background: #f7f0f5; }
+.website-link-editor .website-link-destinations button[aria-pressed=true] svg { color: #6b4d63; }
+.website-link-input { display: grid; gap: 9px; color: #74636e; font-size: 12px; font-weight: 600; }
+.website-link-editor .website-link-input input, .website-link-editor .website-link-input select { width: 100%; font-size: 12px; font-weight: 400; line-height: 1.5; padding: 11px; border: 1px solid #dfd3dc; border-radius: 6px; color: #5a4554; background: white; min-width: 0; }
+.website-link-editor .website-link-input input::placeholder { font-size: 11px; color: #9a8994; }
+.website-link-editor .website-link-input input[aria-invalid=true] { border-color: #b97165; }
+.website-link-editor .website-link-new-tab { display: flex; align-items: center; gap: 9px; margin-top: -6px; font-size: 11px; color: #776a73; font-weight: 400; cursor: pointer; }
+.website-link-editor .website-link-new-tab input { width: 15px; min-width: 15px; height: 15px; padding: 0; margin: 0; accent-color: #6b4d63; cursor: pointer; }
+.website-link-editor .website-link-hint, .website-link-editor .website-link-error { margin: -12px 0 0; font-size: 11px; color: #776a73; line-height: 1.65; }
+.website-link-editor .website-link-error { color: #9a5147; }
+.website-link-actions { display: flex; flex-direction: column; gap: 13px; }
+.website-link-editor .website-link-apply { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 10px 13px; background: #6b4d63; color: white; border: 1px solid #6b4d63; border-radius: 6px; font-size: 12px; font-weight: 600; }
+.website-link-apply svg { width: 17px; height: 17px; }
+.website-link-editor .website-link-apply:hover:not(:disabled) { background: #54394d; }
+.website-link-editor .website-link-apply:disabled { opacity: .4; cursor: default; }
+.website-link-editor .website-link-reset { align-self: center; background: transparent; border: 0; padding: 0; color: #776a73; text-decoration: underline; text-underline-offset: 3px; font-size: 11px; }
+.website-link-editor .website-link-draft-note { padding-top: 17px; border-top: 1px solid #e9e0e7; margin: -2px 0 0; color: #8d8089; font-size: 11px; line-height: 1.65; }

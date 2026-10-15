@@ -1,9 +1,11 @@
 import { createPortal } from "react-dom";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { normalizeWebsiteContent, websitePages, type WebsiteLayoutSettings, type WebsiteFieldStyle, type WebsiteContent, type WebsiteDocument, type WebsitePage, type WebsiteSection, type WebsiteSectionCatalog } from "../shared/website.js";
+import { normalizeWebsiteContent, safeWebsiteLink, websitePages, type WebsiteLink, type WebsiteLayoutSettings, type WebsiteFieldStyle, type WebsiteContent, type WebsiteDocument, type WebsitePage, type WebsiteSection, type WebsiteSectionCatalog } from "../shared/website.js";
 import { customSectionFields } from "./WebsiteSections";
 import WebsiteSectionLibrary from "./WebsiteSectionLibrary";
 import WebsiteVersionHistory from "./WebsiteVersionHistory";
+import WebsitePublishReview from "./WebsitePublishReview";
+import WebsiteLinkEditor from "./WebsiteLinkEditor";
 import WebsiteFieldDesign from "./WebsiteFieldDesign";
 import WebsitePhotoPicker from "./WebsitePhotoPicker";
 import Icon from "./WebsiteIcon";
@@ -161,6 +163,31 @@ export default function WebsiteEditor({ onDirtyChange }: { onDirtyChange: (dirty
         else delete fieldStyles[activeField.id];
         updateSection({ fieldStyles: Object.keys(fieldStyles).length ? fieldStyles : undefined }, `${page}:${selected.id}:${activeField.id}:style`);
     };
+    const updateLink = (id: string, value: WebsiteLink | undefined) => {
+        if (!selected || (value && !safeWebsiteLink(value.href))) return;
+        const links = { ...currentSections().find(section => section.id === selected.id)?.links };
+        if (value) links[id] = value; else delete links[id];
+        updateSection({ links: Object.keys(links).length ? links : undefined });
+    };
+    const repositionPhoto = async () => {
+        if (!selected || activeField?.kind !== "image" || !await flushCanvas()) return;
+        setInspectorOpen(false); setPanel("canvas");
+        send({ type: "website-photo-reposition", section: selected.id, field: activeField.id });
+    };
+    const replacePhoto = (field: string, url: string, description: string) => {
+        const current = currentSections().find(section => section.id === selected?.id);
+        const currentUrl = current?.fields[field] || fields.find(item => item.id === field)?.value;
+        if (url === currentUrl) { setPhotoField(undefined); return; }
+        setSections(currentSections().map(section => {
+            if (section.id !== selected?.id) return section;
+            const fieldStyles = { ...section.fieldStyles }, style = { ...fieldStyles[field] };
+            delete style.focalX; delete style.focalY; delete style.position;
+            if (Object.keys(style).length) fieldStyles[field] = style; else delete fieldStyles[field];
+            const altField = section.kind && field === "photo" ? "alt" : `${field}.alt`;
+            return { ...section, fields: { ...section.fields, [field]: url, [altField]: description }, fieldStyles: Object.keys(fieldStyles).length ? fieldStyles : undefined };
+        }));
+        setPhotoField(undefined);
+    };
     const move = (id: string, direction: number) => {
         const next = currentSections(), index = next.findIndex(s => s.id === id), other = index + direction;
         if (index < 0 || other < 0 || other >= next.length) return;
@@ -237,7 +264,7 @@ export default function WebsiteEditor({ onDirtyChange }: { onDirtyChange: (dirty
         const timer = window.setTimeout(() => { void autosave.current(); }, 1200);
         return () => window.clearTimeout(timer);
     }, [document, draft, dirty, busy, saving, autosavePaused]);
-    const save = async (action: "draft" | "publish" | "restore" | "recover", recovery?: { versionId: string; page?: WebsitePage }) => {
+    const save = async (action: "draft" | "publish" | "restore" | "recover", options?: { versionId?: string; page?: WebsitePage; pages?: WebsitePage[] }) => {
         if (!documentRef.current || busyRef.current || busy) return;
         busyRef.current = true;
         try {
@@ -250,11 +277,11 @@ export default function WebsiteEditor({ onDirtyChange }: { onDirtyChange: (dirty
             if (draftSave.current && !await draftSave.current) return;
             // Recovery checkpoints this draft atomically before restoring the selected version.
             if (action !== "recover" && !await persistDraft(true)) return;
-            const next = await api<WebsiteDocument>("/api/admin/website", { method: "PUT", body: JSON.stringify({ revision: documentRef.current.revision, action, content: draftRef.current, ...recovery }) });
+            const next = await api<WebsiteDocument>("/api/admin/website", { method: "PUT", body: JSON.stringify({ revision: documentRef.current.revision, action, content: draftRef.current, ...options }) });
             documentRef.current = next; setDocument(next); draftRef.current = next.draft; setDraft(next.draft); editGroup.current.key = "";
             if (action === "restore" || action === "recover") { writeUndo([]); writeRedo([]); setFocusedField(undefined); }
             setModal(null); setAutosavePaused(false); setSaveConflict(false); setError("");
-            setNotice(action === "publish" ? "Your website changes are live." : action === "recover" ? "Version restored to your private draft. Review it, then publish when you’re ready." : "Your previous published website is restored.");
+            setNotice(action === "publish" ? "Your selected pages are live." : action === "recover" ? "Version restored to your private draft. Review it, then publish when you’re ready." : "Your previous published website is restored.");
         } catch (error) { setError(error instanceof Error ? error.message : "Unable to save website changes."); }
         finally { busyRef.current = false; setBusy(null); }
     };
@@ -284,6 +311,15 @@ export default function WebsiteEditor({ onDirtyChange }: { onDirtyChange: (dirty
                 if (data.intent === "edit") { setPanel("settings"); setTimeout(() => window.document.getElementById(`website-field-${data.field}`)?.focus(), 50); }
             }
             if (data.type === "website-layout-change" && data.settings && typeof data.settings === "object") setLayout(data.section, data.settings, String(data.gestureId || ""));
+            if (data.type === "website-photo-frame" && typeof data.field === "string" && /^[a-zA-Z0-9.-]{1,160}$/.test(data.field)
+                && [data.focalX, data.focalY].every(value => typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100)) {
+                setSections(currentSections().map(section => {
+                    if (section.id !== data.section) return section;
+                    const style = { ...section.fieldStyles?.[data.field], focalX: data.focalX, focalY: data.focalY };
+                    delete style.position;
+                    return { ...section, fieldStyles: { ...section.fieldStyles, [data.field]: style } };
+                }));
+            }
             if (data.type === "website-reorder" && (data.before === null || typeof data.before === "string")) reorder(data.section, data.before);
             if (data.type === "website-section-action") {
                 setSelectedId(data.section);
@@ -360,8 +396,8 @@ export default function WebsiteEditor({ onDirtyChange }: { onDirtyChange: (dirty
                     <div className="studio-field-caption"><span>Photograph{fields.filter(f => f.kind === "image").length > 1 ? ` ${fields.slice(0, index + 1).filter(f => f.kind === "image").length}` : ""}</span></div>
                     <button className="studio-photo-card" id={`website-field-${field.id}`} onClick={() => setPhotoField(field.id)}>{(selected.fields[field.id] || field.value) ? <img src={selected.fields[field.id] || field.value} alt={selected.fields[`${field.id}.alt`] || field.alt || "Selected photograph"} loading="lazy" /> : <div className="studio-empty-photo"><Icon name="photo" /><span>Find the right photograph</span></div>}<span className="studio-photo-change"><Icon name="photo" />{selected.fields[field.id] || field.value ? "Replace photo" : "Choose photo"}</span></button>
                     {!selected.kind && <details className="studio-photo-description"><summary>Photo description</summary><label><span className="studio-sr-only">Photo description {index + 1}</span><textarea value={selected.fields[`${field.id}.alt`] ?? field.alt ?? ""} rows={2} placeholder="Describe this image for visitors who use a screen reader." onChange={event => setField(`${field.id}.alt`, event.target.value)} /></label></details>}
-                </> : <label><span className="studio-field-caption">{field.label}{fields.filter(f => f.label === field.label).length > 1 ? ` ${fields.slice(0, index + 1).filter(f => f.label === field.label).length}` : ""}</span><textarea id={`website-field-${field.id}`} value={selected.fields[field.id] ?? field.value} maxLength={12000} rows={field.label === "Heading" || field.id === "title" ? 3 : Math.min(7, Math.max(2, Math.ceil((selected.fields[field.id] ?? field.value).length / 55)))} placeholder={field.id === "title" ? "A heading in your own words…" : field.id === "body" ? "Tell your story…" : field.id === "eyebrow" ? "Optional introduction" : "Write here…"} onFocus={() => send({ type: "website-highlight", section: selected.id, field: field.id, scroll: false })} onChange={event => setField(field.id, event.target.value)} onBlur={() => { editGroup.current.key = ""; }} /></label>}</div>)}{!fields.length && <p className="studio-muted">{frameReady ? "Select a section with text or photos to start editing." : "Finding this section’s content…"}</p>}<p className="studio-inspector-tip">Your words, your photographs.<br />Changes stay in your draft until you publish.</p></div> : <div id="studio-design-panel" role="tabpanel" className="studio-design-fields">
-                    {activeField && <WebsiteFieldDesign field={activeField} value={selected.fieldStyles?.[activeField.id] || {}} onChange={updateFieldStyle} />}
+                </> : <label><span className="studio-field-caption">{field.label}{fields.filter(f => f.label === field.label).length > 1 ? ` ${fields.slice(0, index + 1).filter(f => f.label === field.label).length}` : ""}</span><textarea id={`website-field-${field.id}`} value={selected.fields[field.id] ?? field.value} maxLength={12000} rows={field.label === "Heading" || field.id === "title" ? 3 : Math.min(7, Math.max(2, Math.ceil((selected.fields[field.id] ?? field.value).length / 55)))} placeholder={field.id === "title" ? "A heading in your own words…" : field.id === "body" ? "Tell your story…" : field.id === "eyebrow" ? "Optional introduction" : "Write here…"} onFocus={() => send({ type: "website-highlight", section: selected.id, field: field.id, scroll: false })} onChange={event => setField(field.id, event.target.value)} onBlur={() => { editGroup.current.key = ""; }} /></label>}{field.link && (activeField || visibleFields.findIndex(item => item.link?.id === field.link?.id) === index) && <WebsiteLinkEditor key={`${selected.id}:${field.link.id}`} original={field.link} value={selected.links?.[field.link.id] || field.link} customized={!!selected.links?.[field.link.id]} onChange={value => updateLink(field.link!.id, value)} />}</div>)}{!fields.length && <p className="studio-muted">{frameReady ? "Select a section with text or photos to start editing." : "Finding this section’s content…"}</p>}<p className="studio-inspector-tip">Your words, your photographs.<br />Changes stay in your draft until you publish.</p></div> : <div id="studio-design-panel" role="tabpanel" className="studio-design-fields">
+                    {activeField && <WebsiteFieldDesign field={activeField} value={selected.fieldStyles?.[activeField.id] || {}} onChange={updateFieldStyle} onReposition={() => void repositionPhoto()} />}
                     <details className="studio-section-design-group" open={!activeField}><summary>Section layout</summary><div>
                     <label>Section name<input value={selected.name || selectedCatalog?.name || ""} maxLength={100} onChange={event => updateSection({ name: event.target.value }, `${page}:${selected.id}:name`)} /><small>Only shown in your editor.</small></label>
                     <fieldset><legend>Layout</legend><div className="studio-layout-options">{([["original", "Original", "layers"], ["centered", "Centered", "text"], ["wide", "Full width", "desktop"], ["reversed", "Swap sides", "split"]] as const).map(([value, label, icon]) => <button key={value} aria-pressed={(selected.layout || "original") === value} onClick={() => updateSection({ layout: value })}><span className={`studio-layout-diagram is-${value}`}><i /><i /><i /></span><span>{label}</span><Icon name={icon} /></button>)}</div></fieldset>
@@ -374,10 +410,10 @@ export default function WebsiteEditor({ onDirtyChange }: { onDirtyChange: (dirty
             </>}</aside>
         </div>
         {busy === "load" && <div className="studio-initial-loading" role="status"><span className="studio-spinner" /><h3>Opening your studio</h3><p>A little space for your next idea.</p></div>}
-        {photoField && <WebsitePhotoPicker currentUrl={selected?.fields[photoField] || fields.find(f => f.id === photoField)?.value} onChoose={url => { setField(photoField, url); setPhotoField(undefined); }} onClose={() => setPhotoField(undefined)} />}
+        {photoField && <WebsitePhotoPicker currentUrl={selected?.fields[photoField] || fields.find(f => f.id === photoField)?.value} onChoose={(url, description) => replacePhoto(photoField, url, description)} onClose={() => setPhotoField(undefined)} />}
         {modal === "add" && <Modal title="Make it your own." onClose={() => setModal(null)} className="studio-section-library-dialog"><p>Add after <strong>{nameOf(sections.find(section => section.id === insertAfter) || selected)}</strong>. Start with a layout, then choose your photographs and words.</p><WebsiteSectionLibrary onChoose={addSection} /></Modal>}
         {modal === "versions" && <Modal title="Your website, over time." onClose={() => { if (!busy) setModal(null); }} className="studio-versions-dialog"><WebsiteVersionHistory versions={document?.history || []} page={page} busy={!!busy} onRecover={(versionId, restorePage) => void save("recover", { versionId, page: restorePage })} /></Modal>}
-        {modal === "publish" && <Modal title="Ready to share your changes?" onClose={() => setModal(null)}><p>Your draft will become the live website. Here are the pages with changes.</p><ul className="studio-publish-pages">{changedPages.map(key => <li key={key}><Icon name="pages" /><span>{websitePages[key].name}</span><span className="studio-draft-tag">Updated</span></li>)}</ul><div className="studio-publication-note"><Icon name="check" /><p>You can restore the previous publication from this editor.</p></div><footer><button className="studio-button" onClick={() => setModal(null)}>Keep editing</button><button className="studio-button studio-button-primary" onClick={() => void save("publish")}>Publish website<Icon name="arrow" /></button></footer></Modal>}
-        {(modal === "restore" || modal === "reset" || modal === "reload") && <Modal title={modal === "restore" ? "Restore your previous publication?" : modal === "reset" ? "Return to the original design?" : "Reload the saved draft?"} onClose={() => setModal(null)}><p>{modal === "restore" ? "This replaces your current draft and live website with the previous published version." : modal === "reset" ? "This resets the selected section’s text, photos, spacing, and background. You can undo this while you’re editing." : "Your unsaved edits will be replaced with the latest saved draft."}</p><footer><button className="studio-button" onClick={() => setModal(null)}>Keep editing</button><button className="studio-button studio-button-primary" onClick={() => { const action = modal; setModal(null); if (action === "restore") void save("restore"); else if (action === "reload") void load(); else updateSection({ fields: {}, fieldStyles: undefined, layoutSettings: undefined, layout: "original", spacing: "original", background: undefined }); }}>{modal === "restore" ? "Restore publication" : modal === "reset" ? "Reset section" : "Reload draft"}</button></footer></Modal>}
+        {modal === "publish" && document && <Modal title="Choose what goes live." onClose={() => { if (!busy) setModal(null); }} className="studio-publish-dialog"><WebsitePublishReview draft={draft} published={document.published} busy={!!busy} onCancel={() => setModal(null)} onPublish={pages => void save("publish", { pages })} /></Modal>}
+        {(modal === "restore" || modal === "reset" || modal === "reload") && <Modal title={modal === "restore" ? "Restore your previous publication?" : modal === "reset" ? "Return to the original design?" : "Reload the saved draft?"} onClose={() => setModal(null)}><p>{modal === "restore" ? "This replaces your current draft and live website with the previous published version." : modal === "reset" ? "This resets the selected section’s text, photos, links, spacing, and background. You can undo this while you’re editing." : "Your unsaved edits will be replaced with the latest saved draft."}</p><footer><button className="studio-button" onClick={() => setModal(null)}>Keep editing</button><button className="studio-button studio-button-primary" onClick={() => { const action = modal; setModal(null); if (action === "restore") void save("restore"); else if (action === "reload") void load(); else updateSection({ fields: {}, fieldStyles: undefined, layoutSettings: undefined, links: undefined, layout: "original", spacing: "original", background: undefined }); }}>{modal === "restore" ? "Restore publication" : modal === "reset" ? "Reset section" : "Reload draft"}</button></footer></Modal>}
     </section>;
 }

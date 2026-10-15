@@ -445,9 +445,24 @@ app.put("/api/admin/website", requireAdmin, asyncHandler(async (req, res) => {
                 if (action === "restore" && !document.previousPublished) { res.status(400).json({ error: "There is no previous published version." }); return; }
                 content = normalizeWebsiteContent(action === "restore" ? document.previousPublished : req.body.content);
             }
+            let publication = content;
+            if (action === "publish" && req.body.pages !== undefined) {
+                const selectedPages: unknown = req.body.pages;
+                if (!Array.isArray(selectedPages) || !selectedPages.length || selectedPages.length > Object.keys(websitePages).length
+                    || selectedPages.some(page => typeof page !== "string" || !Object.prototype.hasOwnProperty.call(websitePages, page))
+                    || new Set(selectedPages).size !== selectedPages.length) {
+                    res.status(400).json({ error: "Choose one or more different website pages to publish." }); return;
+                }
+                const pages = { ...document.published.pages };
+                for (const page of selectedPages as WebsitePage[]) {
+                    if (content.pages[page] === undefined) delete pages[page];
+                    else pages[page] = content.pages[page];
+                }
+                publication = normalizeWebsiteContent({ pages });
+            }
             const next = { ...document, revision: document.revision + 1, draft: content,
-                history: nextWebsiteHistory(checkpointDocument, action, content),
-                ...(action === "publish" || action === "restore" ? { previousPublished: document.published, published: content, publishedAt: new Date().toISOString() } : {}) };
+                history: nextWebsiteHistory(checkpointDocument, action, action === "publish" ? publication : content),
+                ...(action === "publish" || action === "restore" ? { previousPublished: document.published, published: publication, publishedAt: new Date().toISOString() } : {}) };
             await storage.saveWebsite(next);
             res.json(next);
         } catch (error) {

@@ -1,5 +1,5 @@
 import React, { Children, cloneElement, isValidElement, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { normalizeWebsiteContent, websitePages, type WebsiteContent, type WebsiteField, type WebsitePage, type WebsiteSection, type WebsiteSectionCatalog } from "../shared/website.js";
+import { normalizeWebsiteContent, safeWebsiteLink, websitePages, type WebsiteContent, type WebsiteField, type WebsitePage, type WebsiteSection, type WebsiteSectionCatalog } from "../shared/website.js";
 import { websiteFieldStyle } from "./websiteFieldStyle";
 import { renderWebsiteSection, customSectionFields } from "./WebsiteSections";
 export { customSectionFields } from "./WebsiteSections";
@@ -8,6 +8,7 @@ import "../styles/website-canvas.css";
 import "../styles/website-layout.css";
 import { isWebsiteColumnGrid, websiteLayoutProps } from "./websiteLayout";
 import { useWebsiteLayoutControls, type WebsiteCanvasGesture } from "./useWebsiteLayoutControls";
+import { useWebsitePhotoFraming } from "./useWebsitePhotoFraming";
 
 type ElementProps = { children?: ReactNode; src?: string; alt?: string; className?: string; style?: React.CSSProperties; to?: string; href?: string; [key: string]: unknown };
 function textOf(node: ReactNode): string {
@@ -32,17 +33,31 @@ function textFieldLabel(tag: string, className: string, contextClass: string): s
     return "Short text";
 }
 const photoFrameClasses = new Set(["new-story-photo", "portfolio-card-image", "story-hero-main", "story-hero-side", "closing-image"]);
-function transform(node: ReactNode, section: WebsiteSection, fields: WebsiteField[], path = "root", insideText = false, contextClass = "", selectedField: string | null = null): ReactNode {
+function transform(node: ReactNode, section: WebsiteSection, fields: WebsiteField[], path = "root", insideText = false, contextClass = "", selectedField: string | null = null, inheritedLink?: WebsiteField["link"]): ReactNode {
     return Children.map(node, (child, index) => {
         if (!isValidElement<ElementProps>(child)) return child;
         const id = `${path}.${child.key == null ? index : `k${elementKey(String(child.key))}`}`;
         const props: ElementProps = {};
         const className = child.props.className || "";
         const descendantContext = `${contextClass} ${className}`;
+        const originalHref = child.type === "a" ? child.props.href : child.props.to;
+        const ownLink = typeof originalHref === "string" && safeWebsiteLink(originalHref)
+            ? { id: `${id}.link`, href: originalHref, ...(child.props.target === "_blank" ? { newTab: true } : {}) } : undefined;
+        const link = ownLink || inheritedLink;
+        if (ownLink) {
+            props["data-website-link"] = ownLink.id;
+            const replacement = section.links?.[ownLink.id];
+            if (replacement && safeWebsiteLink(replacement.href)) {
+                props[child.type === "a" ? "href" : "to"] = replacement.href;
+                const newTab = replacement.newTab === true && /^https:\/\//i.test(replacement.href);
+                props.target = newTab ? "_blank" : undefined;
+                props.rel = newTab ? "noopener noreferrer" : undefined;
+            }
+        }
         if (isWebsiteColumnGrid(className)) props["data-website-layout-grid"] = "true";
         if (child.type === "img" && typeof child.props.src === "string") {
             const key = `${id}.image`;
-            fields.push({ id: key, kind: "image", label: child.props.alt || "Photograph", value: child.props.src, alt: child.props.alt });
+            fields.push({ id: key, kind: "image", label: child.props.alt || "Photograph", value: child.props.src, alt: child.props.alt, ...(link ? { link } : {}) });
             props["data-website-field"] = key;
             props["data-website-kind"] = "image";
             props["data-website-selected"] = key === selectedField ? "true" : undefined;
@@ -58,7 +73,7 @@ function transform(node: ReactNode, section: WebsiteSection, fields: WebsiteFiel
         if (editable) {
             const key = `${id}.text`;
             const text = textOf(child.props.children);
-            fields.push({ id: key, kind: "text", label: textFieldLabel(tag, className, contextClass), value: text });
+            fields.push({ id: key, kind: "text", label: textFieldLabel(tag, className, contextClass), value: text, ...(link ? { link } : {}) });
             props["data-website-field"] = key;
             props["data-website-kind"] = "text";
             props["data-website-selected"] = key === selectedField ? "true" : undefined;
@@ -69,8 +84,8 @@ function transform(node: ReactNode, section: WebsiteSection, fields: WebsiteFiel
                 props["data-website-style-size"] = style.size ? "true" : undefined;
                 props["data-website-style-color"] = style.color ? "true" : undefined;
             }
-            props.children = section.fields[key] !== undefined ? section.fields[key] : transform(child.props.children, section, fields, id, true, descendantContext, selectedField);
-        } else if (child.props.children) props.children = transform(child.props.children, section, fields, id, insideText, descendantContext, selectedField);
+            props.children = section.fields[key] !== undefined ? section.fields[key] : transform(child.props.children, section, fields, id, true, descendantContext, selectedField, link);
+        } else if (child.props.children) props.children = transform(child.props.children, section, fields, id, insideText, descendantContext, selectedField, link);
         const transformedChildren = Children.toArray(props.children ?? child.props.children).filter(isValidElement<ElementProps>);
         if (className.split(/\s+/).some(name => photoFrameClasses.has(name))) {
             // These wrappers crop one direct image. Change both boundaries together only
@@ -90,7 +105,7 @@ function transform(node: ReactNode, section: WebsiteSection, fields: WebsiteFiel
         return cloneElement(child, props);
     });
 }
-function CanvasIcon({ name }: { name: "up" | "down" | "hide" | "edit" | "photo" | "design" | "add" | "grip" }) {
+function CanvasIcon({ name }: { name: "up" | "down" | "hide" | "edit" | "photo" | "design" | "add" | "grip" | "frame" | "link" }) {
     return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         {name === "up" && <path d="m6 14 6-6 6 6" />}{name === "down" && <path d="m6 10 6 6 6-6" />}
         {name === "hide" && <><path d="m3 3 18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.4 5.3A12 12 0 0 1 12 5c6 0 10 7 10 7a20 20 0 0 1-3.1 3.6M6.1 6.1A21 21 0 0 0 2 12s4 7 10 7a12 12 0 0 0 5.1-1.2" /></>}
@@ -99,6 +114,8 @@ function CanvasIcon({ name }: { name: "up" | "down" | "hide" | "edit" | "photo" 
         {name === "add" && <path d="M12 5v14M5 12h14" />}
         {name === "design" && <><path d="M4 7h16M4 17h16" /><circle cx="9" cy="7" r="3" fill="currentColor" stroke="none" /><circle cx="15" cy="17" r="3" fill="currentColor" stroke="none" /></>}
         {name === "photo" && <><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8" cy="8" r="1.5" /><path d="m21 16-6-6-12 10" /></>}
+        {name === "frame" && <><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5M12 6v12M6 12h12m-8-4 2-2 2 2m-6 2-2 2 2 2m6 2-2 2-2-2m6-6 2 2-2 2" /></>}
+        {name === "link" && <><path d="m10 13 4-4M8 15l-1 1a4 4 0 0 1-6-6l5-5a4 4 0 0 1 6 0m0 4 1-1a4 4 0 0 1 6 6l-5 5a4 4 0 0 1-6 0" /></>}
     </svg>;
 }
 type CanvasBox = { top: number; left: number; width: number; height: number };
@@ -215,17 +232,25 @@ export default function PageComposer({ page, children, enabled = true }: { page:
         const selection = window.getSelection(); selection?.removeAllRanges(); selection?.addRange(range);
     }, [page, send, selectCanvasSection]);
     const finishInlineEdit = useCallback(() => { editRef.current?.end(true); }, []);
-    const layoutControls = useWebsiteLayoutControls({ page, editing: editing && !editingText, selectedId, canvasScale, content, latestContentRef, setContent, gestureRef, beforeStart: finishInlineEdit, sectionElement, send });
+    const photoFraming = useWebsitePhotoFraming({ page, editing, canvasScale, latestContentRef, setContent, gestureRef, beforeStart: finishInlineEdit, sectionElement, send });
+    const beginPhotoFraming = photoFraming.begin, finishPhotoSelection = photoFraming.finishSelection, reconcilePhotoDraft = photoFraming.reconcileDraft;
+    const layoutControls = useWebsiteLayoutControls({ page, editing: editing && !editingText && !photoFraming.active, selectedId, canvasScale, content, latestContentRef, setContent, gestureRef, beforeStart: finishInlineEdit, sectionElement, send });
     useEffect(() => {
         let active = true;
         if (!preview) void fetch("/api/public/website").then(r => { if (!r.ok) throw Error(); return r.json(); }).then(value => { if (active) setContent(normalizeWebsiteContent(value)); }).catch(() => {});
         const receive = (event: MessageEvent) => {
             if (!preview || event.origin !== window.location.origin || event.source !== window.parent) return;
             if (event.data?.type === "website-highlight" && typeof event.data.section === "string") {
+                finishPhotoSelection(event.data.section, Object.prototype.hasOwnProperty.call(event.data, "field") ? event.data.field : undefined);
                 if (selectedIdRef.current !== event.data.section && !Object.prototype.hasOwnProperty.call(event.data, "field")) setSelectedField(null);
                 selectCanvasSection(event.data.section);
                 if (Object.prototype.hasOwnProperty.call(event.data, "field")) setSelectedField(typeof event.data.field === "string" ? event.data.field : null);
                 if (event.data.scroll !== false) sectionElement(event.data.section)?.scrollIntoView({ block: "center", behavior: "smooth" });
+                return;
+            }
+            if (event.data?.type === "website-photo-reposition" && typeof event.data.section === "string" && typeof event.data.field === "string") {
+                selectCanvasSection(event.data.section); setSelectedField(event.data.field);
+                beginPhotoFraming(event.data.section, event.data.field);
                 return;
             }
             if (event.data?.type === "website-preview-mode") {
@@ -244,12 +269,13 @@ export default function PageComposer({ page, children, enabled = true }: { page:
             try {
                 const normalized = normalizeWebsiteContent(event.data.content);
                 latestContentRef.current = normalized;
+                reconcilePhotoDraft();
                 if (!editRef.current && !gestureRef.current) setContent(normalized);
             } catch { /* Ignore invalid preview messages. */ }
         };
         window.addEventListener("message", receive);
         return () => { active = false; gestureRef.current?.finish(false); editRef.current?.end(false); window.removeEventListener("message", receive); };
-    }, [page, preview, sectionElement, send, selectCanvasSection]);
+    }, [page, preview, sectionElement, send, selectCanvasSection, beginPhotoFraming, finishPhotoSelection, reconcilePhotoDraft]);
     useEffect(() => {
         if (!preview) return;
         const blockPreviewAction = (event: Event) => {
@@ -354,7 +380,7 @@ export default function PageComposer({ page, children, enabled = true }: { page:
         const measure = () => setToolbarSize({ width: toolbar.offsetWidth, height: toolbar.offsetHeight });
         const observer = new ResizeObserver(measure); observer.observe(toolbar); measure();
         return () => observer.disconnect();
-    }, [editing, !!selectedBox, editingText, canvasScale]);
+    }, [editing, !!selectedBox, editingText, canvasScale, photoFraming.active]);
     const selectedCatalog = stableCatalog.find(section => section.id === selectedId);
     const activeField = selectedCatalog?.fields.find(field => field.id === selectedField) || selectedCatalog?.fields.find(field => field.kind === "text") || selectedCatalog?.fields[0];
     const selectedIndex = sections.findIndex(section => section.id === selectedId);
@@ -379,16 +405,18 @@ export default function PageComposer({ page, children, enabled = true }: { page:
             if (element) beginTextEdit(element); else send({ type: "website-select", section: selectedId, field: activeField.id, intent: "edit" });
         }
     };
-    return <>{enabled ? rendered : children}{layoutControls.overlays}{editing && <div className="website-canvas-overlays" data-website-overlay="true">
+    return <>{enabled ? rendered : children}{layoutControls.overlays}{photoFraming.overlays}{editing && !photoFraming.active && <div className="website-canvas-overlays" data-website-overlay="true">
         {hoverBox && hoveredId !== selectedId && <div className="website-canvas-hover-label" style={{ left: Math.max(10 * scale, hoverBox.left + 10 * scale), top: Math.max(10 * scale, hoverBox.top + 10 * scale), transform: `scale(${scale})` }}>{stableCatalog.find(section => section.id === hoveredId)?.name}</div>}
         {!editingText && !layoutControls.active && insertionPoints.map(point => <div key={point.after} className={`website-canvas-insert ${point.after === selectedId ? "is-adjacent" : ""}`} style={{ top: point.top, left: point.left, width: point.width }}>
             <button type="button" aria-label="Add section here" title="Add section here" style={{ transform: `translate(-50%, -50%) scale(${scale})` }} onClick={() => send({ type: "website-insert", after: point.after })}><CanvasIcon name="add" /><span>Add section here</span></button>
         </div>)}
-        {selectedBox && selectedCatalog && <div ref={toolbarRef} className={`website-canvas-toolbar${window.innerWidth * canvasScale < 480 ? " is-compact" : ""}`} role="toolbar" aria-label={`${selectedField && activeField ? activeField.label : selectedCatalog.name} controls`} style={toolbarPosition}>
+        {selectedBox && selectedCatalog && <div ref={toolbarRef} className={`website-canvas-toolbar${window.innerWidth * canvasScale < 680 ? " is-compact" : ""}`} role="toolbar" aria-label={`${selectedField && activeField ? activeField.label : selectedCatalog.name} controls`} style={toolbarPosition}>
             {!editingText && <button className="website-canvas-reorder-grip" type="button" aria-label="Move section" title="Drag to move this section. Arrow keys move up or down." {...layoutControls.gripProps}><CanvasIcon name="grip" /></button>}
             <span className="website-canvas-section-name" title={selectedCatalog.name}><small>{selectedCatalog.name}</small><strong>{selectedField && activeField ? activeField.label : "Section"}</strong></span>
             {!editingText && activeField && <button className="website-canvas-edit" type="button" onClick={editSelectedField}><CanvasIcon name={activeField.kind === "image" ? "photo" : "edit"} /><span>{activeField.kind === "image" ? "Change photo" : "Edit text"}</span></button>}
             {!editingText && <>
+                {selectedId && activeField?.kind === "image" && photoFraming.canFrame(selectedId, activeField.id) && <button type="button" title="Reposition photo" aria-label="Reposition photo" onClick={() => beginPhotoFraming(selectedId, activeField.id)}><CanvasIcon name="frame" /><span>Reposition</span></button>}
+                {activeField?.link && <button type="button" title="Edit link" aria-label="Edit link" onClick={() => send({ type: "website-select", section: selectedId, field: activeField.id, intent: "link" })}><CanvasIcon name="link" /><span>Link</span></button>}
                 <button className="website-canvas-design" type="button" onClick={() => send({ type: "website-select", section: selectedId, field: selectedField || activeField?.id, intent: "design" })}><CanvasIcon name="design" /><span>Design</span></button>
                 <button type="button" title="Add section below" aria-label="Add section below" onClick={() => send({ type: "website-insert", after: selectedId })}><CanvasIcon name="add" /></button>
             </>}

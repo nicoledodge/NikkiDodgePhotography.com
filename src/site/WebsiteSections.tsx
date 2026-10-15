@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import type { CSSProperties } from "react";
-import type { WebsiteField, WebsiteSection } from "../shared/website.js";
+import { safeWebsiteLink, type WebsiteField, type WebsiteSection } from "../shared/website.js";
 import { websiteFieldStyle } from "./websiteFieldStyle";
 import "../styles/website-sections.css";
 
@@ -20,7 +20,7 @@ export function customSectionFields(section: WebsiteSection): WebsiteField[] {
             || (id.startsWith("photo-") ? `Photograph ${index}${id.endsWith(".alt") ? " description" : ""}` : "")
             || (id.startsWith("question-") ? `Question ${index}` : id.startsWith("answer-") ? `Answer ${index}` : "")
             || (id.startsWith("package-title-") ? `Collection ${index} name` : id.startsWith("package-body-") ? `Collection ${index} details` : `Collection ${index} price`);
-        return { id, kind: image ? "image" : "text", label, value: section.fields[id] || "", ...(image ? { alt: section.fields[id === "photo" ? "alt" : `${id}.alt`] || "" } : {}) };
+        return { id, kind: image ? "image" : "text", label, value: section.fields[id] || "", ...(id === "button" ? { link: { id: "button", href: "/Contact" } } : {}), ...(image ? { alt: section.fields[id === "photo" ? "alt" : `${id}.alt`] || "" } : {}) };
     });
 }
 
@@ -53,7 +53,12 @@ export function renderWebsiteSection(section: WebsiteSection, editing: boolean, 
         const label = fields.button ?? (legacyDefault ? "Start your inquiry" : "");
         if (!label && !editing) return null;
         const props = textProps("button", "Write your invitation");
-        return <Link className="text-link website-section-inquiry" to="/Contact"><span {...props} data-website-placeholder={editing && !label ? "true" : undefined}>{label || (editing ? "Write your invitation" : "")}</span><span aria-hidden="true">↗</span></Link>;
+        const override = section.links?.button;
+        const link = override && safeWebsiteLink(override.href) ? override : { href: "/Contact" };
+        const newTab = link.newTab === true && /^https:\/\//i.test(link.href);
+        const linkProps = { className: "text-link website-section-inquiry", "data-website-link": "button", target: newTab ? "_blank" : undefined, rel: newTab ? "noopener noreferrer" : undefined };
+        const content = <><span {...props} data-website-link="button" data-website-placeholder={editing && !label ? "true" : undefined}>{label || (editing ? "Write your invitation" : "")}</span><span aria-hidden="true">↗</span></>;
+        return link.href.startsWith("/") || link.href.startsWith("#") ? <Link {...linkProps} to={link.href}>{content}</Link> : <a {...linkProps} href={link.href}>{content}</a>;
     };
     const className = `website-custom website-custom-${section.kind} site-container`;
     if (section.kind === "hero") {

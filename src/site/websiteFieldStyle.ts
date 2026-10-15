@@ -19,7 +19,10 @@ export function websiteFieldStyle(style?: WebsiteFieldStyle, kind: WebsiteField[
     const result: CSSProperties = {};
     if (kind === "image") {
         if (style.fit) result.objectFit = style.fit;
-        if (style.position) result.objectPosition = style.position;
+        if (style.focalX !== undefined || style.focalY !== undefined) {
+            const bounded = (value = 50) => Math.round(Math.min(100, Math.max(0, Number.isFinite(value) ? value : 50)) * 100) / 100;
+            result.objectPosition = `${bounded(style.focalX)}% ${bounded(style.focalY)}%`;
+        } else if (style.position) result.objectPosition = style.position;
         if (style.ratio) {
             result.aspectRatio = photoRatios[style.ratio];
             result.width = "100%";

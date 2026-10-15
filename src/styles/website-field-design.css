@@ -47,3 +47,14 @@
 .field-design-metadata > svg { width: 26px; height: 26px; color: #a88c9f; margin-bottom: 2px; }
 .website-field-design.field-design-metadata h4 { margin: 0; color: #74636e; font-family: inherit; font-size: 13px; line-height: 1.5; font-weight: 600; letter-spacing: 0; }
 .website-field-design.field-design-metadata p { margin: 0; color: #776a73; font-size: 11px; line-height: 1.75; }
+.website-field-design .field-design-reposition { display: flex; align-items: center; gap: 9px; width: 100%; padding: 11px 12px; border: 1px solid #c5afbf; border-radius: 7px; background: #f6eff4; color: #6b4d63; font-size: 12px; font-weight: 600; }
+.field-design-reposition > svg { width: 17px; height: 17px; flex-shrink: 0; }
+.field-design-reposition > span:last-child { margin-left: auto; }
+.website-field-design .field-design-reposition:hover:not(:disabled) { background: #eee2eb; border-color: #aa8a9f; }
+.field-design-focal { margin-top: 16px; border-top: 1px solid #e9e0e7; padding-top: 13px; }
+.field-design-focal > summary { cursor: pointer; color: #776a73; font-size: 11px; line-height: 1.5; list-style-position: inside; }
+.field-design-focal > summary > span { display: inline-block; margin-left: 8px; padding: 1px 6px; border-radius: 3px; color: #6b4d63; background: #f1e7ef; font-size: 10px; }
+.field-design-focal > label { display: flex; align-items: center; justify-content: space-between; margin: 17px 0 7px; color: #776a73; font-size: 11px; }
+.field-design-focal > label > output { color: #6b4d63; font-variant-numeric: tabular-nums; }
+.website-field-design .field-design-focal > input[type=range] { appearance: auto; accent-color: #6b4d63; width: 100%; min-height: 20px; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; cursor: pointer; }
+.field-design-focal-ends { display: flex; justify-content: space-between; color: #8d8089; font-size: 10px; line-height: 1.5; }

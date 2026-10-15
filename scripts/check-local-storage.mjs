@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { normalizeWebsiteContent } from "../dist-server/shared/website.js";
 import { nextWebsiteHistory, readWebsiteHistory, WEBSITE_HISTORY_BYTES, WEBSITE_HISTORY_LIMIT } from "../dist-server/shared/websiteHistory.js";
+import { websiteChanges } from "../dist-server/shared/websiteChanges.js";
 
 const root = await mkdtemp(join(tmpdir(), "nikki-storage-check-"));
 const port = 18000 + Math.floor(Math.random() * 10000);
@@ -80,6 +81,15 @@ function verifyHistoryCheckpoints() {
 }
 try {
     verifyHistoryCheckpoints();
+    const review = websiteChanges({ pages: { home: [{ id: "original-0", fields: { title: "New title", "0.image": "/assets/editorial/nikki.webp" }, links: { "0.link": { href: "/Contact" } }, layoutSettings: { paddingTop: 40 } }, { id: "custom-new", kind: "text", fields: { title: "New section" } }] } }, { pages: { home: [{ id: "custom-removed", kind: "text", fields: { title: "Removed section" } }] } });
+    assert.equal(review.length, 1);
+    assert.equal(review[0].page, "home");
+    assert.equal(review[0].reordered, false, "Adding or removing a section does not imply that unchanged sections were moved");
+    assert.equal(review[0].sections.length, 3, "Implicit original sections must not be counted as new sections");
+    assert.deepEqual(review[0].sections.find(section => section.id === "original-0"), { id: "original-0", name: "Introduction", added: false, removed: false, text: 1, photos: 1, links: 1, design: true, renamed: false, moved: false });
+    assert.equal(review[0].sections.find(section => section.id === "custom-new").added, true);
+    assert.equal(review[0].sections.find(section => section.id === "custom-removed").removed, true);
+    assert.deepEqual(websiteChanges({ pages: {} }, { pages: {} }), []);
     await start();
     assert.equal((await (await request("/api/health")).json()).storage, "local");
     const login = await request("/api/auth/login", "POST", { username: "storage-check", password: "storage-check" });
@@ -92,15 +102,17 @@ try {
     await assert.rejects(stat(join(root, "app-data/website.json")), { code: "ENOENT" });
     const websiteStyles = {
         title: { size: "display", color: "#6b4d63", align: "center", weight: "bold" },
-        photo: { fit: "cover", position: "top", ratio: "portrait" },
+        photo: { fit: "cover", position: "top", ratio: "portrait", focalX: 12.35, focalY: 0 },
     };
-    const websiteContent = { pages: { home: [{ id: "custom-storage-check", name: "Verification", kind: "split", fields: { title: "Draft-only heading", body: "Isolated verification", photo: "/assets/editorial/nikki.webp" }, fieldStyles: { ...websiteStyles, body: {} } }] } };
+    const websiteLinks = { primary: { href: "/Contact" }, fragment: { href: "#inquiry" }, external: { href: "https://example.com/portfolio", newTab: true }, email: { href: "mailto:studio@example.com" }, phone: { href: "tel:+13035550100" } };
+    const websiteContent = { pages: { home: [{ id: "custom-storage-check", name: "Verification", kind: "split", fields: { title: "Draft-only heading", body: "Isolated verification", photo: "/assets/editorial/nikki.webp" }, fieldStyles: { ...websiteStyles, photo: { ...websiteStyles.photo, focalX: 12.345 }, body: {} }, links: websiteLinks }] } };
     const savedWebsite = await (await request("/api/admin/website", "PUT", { revision: 0, action: "draft", content: websiteContent })).json();
     assert.equal(savedWebsite.revision, 1);
     assert.equal(savedWebsite.history.length, 1);
     assert.deepEqual(savedWebsite.history[0].content.pages, {});
     const baselineVersionId = savedWebsite.history[0].id;
     assert.deepEqual(savedWebsite.draft.pages.home[0].fieldStyles, websiteStyles);
+    assert.deepEqual(savedWebsite.draft.pages.home[0].links, websiteLinks);
     assert.deepEqual((await (await request("/api/public/website")).json()).pages, {});
     const conflict = await fetch(`${base}/api/admin/website`, { method: "PUT", headers: { cookie, "Content-Type": "application/json" }, body: JSON.stringify({ revision: 0, action: "draft", content: websiteContent }) });
     assert.equal(conflict.status, 409);
@@ -108,6 +120,7 @@ try {
     const publishedWebsite = await (await request("/api/public/website")).json();
     assert.equal(publishedWebsite.pages.home[0].fields.title, "Draft-only heading");
     assert.deepEqual(publishedWebsite.pages.home[0].fieldStyles, websiteStyles);
+    assert.deepEqual(publishedWebsite.pages.home[0].links, websiteLinks);
     const racingSaves = await Promise.all([0, 1].map(() => fetch(`${base}/api/admin/website`, { method: "PUT", headers: { cookie, "Content-Type": "application/json" }, body: JSON.stringify({ revision: 2, action: "draft", content: websiteContent }) })));
     assert.deepEqual(racingSaves.map(response => response.status).sort(), [200, 409]);
     await request("/api/admin/website", "PUT", { revision: 3, action: "restore" });
@@ -115,6 +128,7 @@ try {
     const unsafe = await fetch(`${base}/api/admin/website`, { method: "PUT", headers: { cookie, "Content-Type": "application/json" }, body: JSON.stringify({ revision: 4, action: "draft", content: { pages: { home: [{ id: "custom-unsafe", kind: "photo", fields: { photo: "javascript:alert(1)" } }] } } }) });
     assert.equal(unsafe.status, 400);
     // Styling remains a bounded set of choices, including across save and publish.
+    const beforeInvalidStyles = await readFile(join(root, "app-data/website.json"));
     const invalidStyles = [
         null, [], { title: [] }, { title: null }, { "invalid_field": { size: "small" } },
         { ["x".repeat(161)]: { size: "small" } }, { title: { size: "huge" } },
@@ -122,12 +136,18 @@ try {
         { title: { weight: 900 } }, { photo: { fit: "stretch" } },
         { photo: { position: "100% 0%" } }, { photo: { ratio: "10000 / 1" } },
         { title: { fontSize: "500px" } }, { photo: { backgroundImage: "url(https://example.invalid)" } },
+        { photo: { focalX: -1 } }, { photo: { focalY: 100.01 } }, { photo: { focalX: "50" } }, { photo: { focalY: null } }, { photo: { focalX: Infinity } },
         Object.fromEntries(Array.from({ length: 1001 }, (_, index) => [`field-${index}`, { size: "small" }])),
     ];
     for (const fieldStyles of invalidStyles) {
         const response = await fetch(`${base}/api/admin/website`, { method: "PUT", headers: { cookie, "Content-Type": "application/json" }, body: JSON.stringify({ revision: 4, action: "draft", content: { pages: { home: [{ ...websiteContent.pages.home[0], fieldStyles }] } } }) });
         assert.equal(response.status, 400, `Invalid field style accepted: ${JSON.stringify(fieldStyles).slice(0, 100)}`);
     }
+    for (const links of [null, [], { primary: null }, { primary: [] }, { primary: { href: "/Contact", newTab: "yes" } }, { primary: { href: "/Contact", onclick: "alert(1)" } }, { "invalid_key": { href: "/Contact" } }, ...["javascript:alert(1)", "data:text/html,example", "//example.com", "/\\example.com", "https://user:password@example.com", "https://example.com/\n", "mailto:studio@example.com%0aBcc:other@example.com", "http://example.com", "tel:alert(1)"].map(href => ({ primary: { href } }))]) {
+        const response = await fetch(`${base}/api/admin/website`, { method: "PUT", headers: { cookie, "Content-Type": "application/json" }, body: JSON.stringify({ revision: 4, action: "draft", content: { pages: { home: [{ ...websiteContent.pages.home[0], links }] } } }) });
+        assert.equal(response.status, 400, `Invalid link accepted: ${JSON.stringify(links)}`);
+    }
+    assert.deepEqual(await readFile(join(root, "app-data/website.json")), beforeInvalidStyles, "Invalid links and focal values cannot modify the saved document");
     const afterRejectedStyles = await (await request("/api/admin/website")).json();
     assert.equal(afterRejectedStyles.revision, 4);
     assert.deepEqual(afterRejectedStyles.draft.pages, {});
@@ -165,6 +185,42 @@ try {
     historyDocument = await (await request("/api/admin/website")).json();
     assert.deepEqual(historyDocument.draft.pages, {});
     assert.deepEqual(historyDocument.published.pages, {});
+
+    // A ready page can go live without publishing another page's unfinished draft.
+    const pageSection = (id, title) => ({ id, kind: "text", fields: { title } });
+    const persistedContent = content => JSON.parse(JSON.stringify(normalizeWebsiteContent(content)));
+    const livePages = { pages: { home: [pageSection("custom-ready-home", "Current home")], pricing: [pageSection("custom-pricing", "Current pricing")] } };
+    historyDocument = await (await request("/api/admin/website", "PUT", { revision: historyDocument.revision, action: "publish", content: livePages })).json();
+    const readyHomeDraft = { pages: { home: [pageSection("custom-ready-home", "Ready home")], pricing: [pageSection("custom-pricing", "Unfinished pricing")] } };
+    const beforeSelectedPublish = historyDocument;
+    const selectedPublish = { revision: historyDocument.revision, action: "publish", content: readyHomeDraft, pages: ["home"] };
+    const beforeInvalidPublish = await readFile(join(root, "app-data/website.json"));
+    for (const pages of [null, [], "home", ["home", "home"], ["unknown"], ["__proto__"], ["home", 1]]) {
+        const response = await fetch(`${base}/api/admin/website`, { method: "PUT", headers: { cookie, "Content-Type": "application/json" }, body: JSON.stringify({ ...selectedPublish, pages }) });
+        assert.equal(response.status, 400, `Invalid publish selection accepted: ${JSON.stringify(pages)}`);
+        assert.deepEqual(await readFile(join(root, "app-data/website.json")), beforeInvalidPublish);
+    }
+    const publishRace = await Promise.all([0, 1].map(() => fetch(`${base}/api/admin/website`, { method: "PUT", headers: { cookie, "Content-Type": "application/json" }, body: JSON.stringify(selectedPublish) })));
+    assert.deepEqual(publishRace.map(response => response.status).sort(), [200, 409]);
+    historyDocument = await (await request("/api/admin/website")).json();
+    assert.deepEqual(historyDocument.draft, persistedContent(readyHomeDraft));
+    assert.equal(historyDocument.published.pages.home[0].fields.title, "Ready home");
+    assert.equal(historyDocument.published.pages.pricing[0].fields.title, "Current pricing");
+    assert.deepEqual(historyDocument.previousPublished, beforeSelectedPublish.published);
+    assert.deepEqual(historyDocument.history[0].content, historyDocument.published, "A publication snapshot contains the live site, not unfinished private pages");
+    assert.deepEqual(await (await request("/api/public/website")).json(), historyDocument.published);
+    const selectedPublication = historyDocument.published;
+    historyDocument = await (await request("/api/admin/website", "PUT", { revision: historyDocument.revision, action: "restore" })).json();
+    assert.deepEqual(historyDocument.published, beforeSelectedPublish.published);
+    assert.deepEqual(historyDocument.previousPublished, selectedPublication);
+    assert.ok(historyDocument.history.some(version => JSON.stringify(version.content) === JSON.stringify(normalizeWebsiteContent(readyHomeDraft))), "Restoring a publication preserves the unfinished draft in history");
+    historyDocument = await (await request("/api/admin/website", "PUT", { revision: historyDocument.revision, action: "publish", content: readyHomeDraft })).json();
+    assert.deepEqual(historyDocument.published, persistedContent(readyHomeDraft), "Omitting pages still publishes the entire draft");
+    const resetHomeDraft = { pages: { pricing: readyHomeDraft.pages.pricing } };
+    historyDocument = await (await request("/api/admin/website", "PUT", { revision: historyDocument.revision, action: "publish", content: resetHomeDraft, pages: ["home"] })).json();
+    assert.equal(historyDocument.published.pages.home, undefined, "Publishing an absent page override restores the original page");
+    assert.deepEqual(historyDocument.published.pages.pricing, persistedContent(readyHomeDraft).pages.pricing);
+    assert.deepEqual(historyDocument.draft, persistedContent(resetHomeDraft));
 
     // Section presets and bounded layout controls survive persistence and reject invalid values.
     const presetContent = { pages: { home: ["hero", "gallery", "faq", "packages"].map(kind => ({ id: `custom-${kind}`, kind, fields: { title: kind, "photo-1": "/assets/editorial/nikki.webp" }, layoutSettings: { paddingTop: 0, paddingBottom: 240, columnSplit: 75, gap: 96 } })) } };
@@ -247,6 +303,7 @@ try {
     const restoredWebsite = await (await request("/api/admin/website")).json();
     assert.deepEqual(restoredWebsite, expectedWebsite);
     assert.deepEqual(restoredWebsite.previousPublished.pages.home[0].fieldStyles, websiteStyles);
+    assert.deepEqual(restoredWebsite.previousPublished.pages.home[0].links, websiteLinks);
     assert.equal((await (await request("/api/public/settings")).json()).heroTitle, marker);
     assert.equal((await (await request("/api/admin/leads")).json()).length, 1);
     assert.equal(JSON.parse(await readFile(join(root, "app-data/settings.json"), "utf8")).heroTitle, marker);
@@ -261,7 +318,7 @@ try {
     assert.equal((await request("/api/public/settings")).status, 200);
     const blockedRecovery = await fetch(`${base}/api/admin/website`, { method: "PUT", headers: { cookie, "Content-Type": "application/json" }, body: JSON.stringify({ revision: expectedWebsite.revision, action: "recover", versionId: expectedWebsite.history[0].id }) });
     assert.equal(blockedRecovery.status, 503);
-    console.log("Local storage verified: auth, CRM writes, website draft/publish/rollback/conflict protection, private page/version recovery, coalesced bounded history, section presets/layout validation, bounded text/photo styles, restart persistence, media upload/move/delete, and maintenance write hold.");
+    console.log("Local storage verified: auth, CRM writes, selected-page/whole-site publishing, draft/rollback/conflict protection, private page/version recovery, coalesced bounded history, section presets/layout validation, bounded text/photo styles, restart persistence, media upload/move/delete, and maintenance write hold.");
 } finally {
     await stop();
     await rm(root, { recursive: true, force: true });

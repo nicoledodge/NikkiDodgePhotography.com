@@ -1,0 +1,18 @@
+img[data-website-framing=true] { transform: none !important; transition: none !important; }
+.website-photo-framing { position: fixed; inset: 0; z-index: 2147483100; pointer-events: none; font: 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #fff; }
+.website-photo-framing-backdrop { position: fixed; inset: 0; pointer-events: auto; background: #36253218; }
+.website-photo-framing-surface { position: fixed; pointer-events: auto; cursor: grab; touch-action: none; user-select: none; outline: 2px solid #fff; outline-offset: -2px; box-shadow: 0 0 0 1px #6b4d63; }
+.website-photo-framing-surface.is-dragging { cursor: grabbing; }
+.website-photo-framing-surface:focus-visible { outline: 3px solid #fff; box-shadow: 0 0 0 3px #6b4d63; }
+.website-photo-framing-grid { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, transparent calc(33.333% - .5px), #fff8 calc(33.333% - .5px), #fff8 calc(33.333% + .5px), transparent calc(33.333% + .5px), transparent calc(66.666% - .5px), #fff8 calc(66.666% - .5px), #fff8 calc(66.666% + .5px), transparent calc(66.666% + .5px)), linear-gradient(transparent calc(33.333% - .5px), #fff8 calc(33.333% - .5px), #fff8 calc(33.333% + .5px), transparent calc(33.333% + .5px), transparent calc(66.666% - .5px), #fff8 calc(66.666% - .5px), #fff8 calc(66.666% + .5px), transparent calc(66.666% + .5px)); }
+.website-photo-framing-toolbar { position: fixed; box-sizing: border-box; pointer-events: auto; transform-origin: left top; padding: 13px; border: 1px solid #ffffff30; border-radius: 10px; background: #6b4d63; box-shadow: 0 8px 28px #39273340; text-align: left; overflow-y: auto; }
+.website-photo-framing-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; justify-content: space-between; }
+.website-photo-framing-heading strong { color: #fff; font-size: 13px; font-weight: 600; }
+.website-photo-framing-heading span { color: #eadde6; font-size: 10px; font-variant-numeric: tabular-nums; }
+.website-photo-framing-toolbar p { margin: 6px 0 11px; color: #eadde6; font: 11px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.website-photo-framing-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.website-photo-framing-actions > span { flex: 1; }
+.website-photo-framing-actions button { min-height: 30px; padding: 7px 10px; border: 1px solid #ffffff35; border-radius: 5px; background: transparent; color: #fff; cursor: pointer; font: 600 11px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-transform: none; letter-spacing: 0; white-space: nowrap; }
+.website-photo-framing-actions button:hover { background: #ffffff1a; }
+.website-photo-framing-actions button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.website-photo-framing-actions button.website-photo-framing-done { background: #fff8fc; color: #6b4d63; border-color: #fff8fc; }

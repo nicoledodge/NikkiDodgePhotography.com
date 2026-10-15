@@ -2,7 +2,7 @@ import { useId } from "react";
 import type { WebsiteField, WebsiteFieldStyle } from "../shared/website.js";
 import "../styles/website-field-design.css";
 
-type Props = { field: WebsiteField; value: WebsiteFieldStyle; onChange: (next: WebsiteFieldStyle) => void };
+type Props = { field: WebsiteField; value: WebsiteFieldStyle; onChange: (next: WebsiteFieldStyle) => void; onReposition?: () => void };
 const colors = [
     { value: "#242923", name: "Ink" }, { value: "#62665e", name: "Stone" },
     { value: "#6b4d63", name: "Plum" }, { value: "#6b705c", name: "Olive" },
@@ -17,7 +17,7 @@ function AlignIcon({ align }: { align: "left" | "center" | "right" }) {
 function FocusIcon({ position }: { position: NonNullable<WebsiteFieldStyle["position"]> }) {
     return <svg viewBox="0 0 28 24" fill="none" stroke="currentColor" strokeWidth="1.3" aria-hidden="true"><rect x="3" y="3" width="22" height="18" rx="2" opacity=".45" /><circle cx={position === "left" ? 8 : position === "right" ? 20 : 14} cy={position === "top" ? 7 : position === "bottom" ? 17 : 12} r="2.6" fill="currentColor" stroke="none" /></svg>;
 }
-export default function WebsiteFieldDesign({ field, value, onChange }: Props) {
+export default function WebsiteFieldDesign({ field, value, onChange, onReposition }: Props) {
     const id = useId();
     if (field.id === "alt" || field.id.endsWith(".alt")) {
         return <section className="website-field-design field-design-metadata" aria-label="Photo description appearance">
@@ -30,9 +30,19 @@ export default function WebsiteFieldDesign({ field, value, onChange }: Props) {
     const set = <K extends keyof WebsiteFieldStyle>(key: K, next: WebsiteFieldStyle[K]) => {
         const updated = { ...value };
         if (next === undefined) delete updated[key]; else updated[key] = next;
+        if (key === "position") { delete updated.focalX; delete updated.focalY; }
         onChange(updated);
     };
     const original = (key: keyof WebsiteFieldStyle) => <button type="button" className="field-design-inherit" disabled={value[key] === undefined} onClick={() => set(key, undefined)} title={`Use the original ${key}`}>{value[key] === undefined ? "Original" : "Reset"}</button>;
+    const hasFocal = value.focalX !== undefined || value.focalY !== undefined;
+    const presetX = value.position === "left" ? 0 : value.position === "right" ? 100 : 50;
+    const presetY = value.position === "top" ? 0 : value.position === "bottom" ? 100 : 50;
+    const focalX = value.focalX ?? presetX, focalY = value.focalY ?? presetY;
+    const setFocal = (axis: "focalX" | "focalY", next: number) => {
+        const updated = { ...value, focalX, focalY, [axis]: next };
+        delete updated.position;
+        onChange(updated);
+    };
     const customized = Object.keys(value).some(key => value[key as keyof WebsiteFieldStyle] !== undefined);
     return <section className="website-field-design" aria-label={`${field.label} appearance`}>
         {field.kind === "text" ? <>
@@ -55,6 +65,7 @@ export default function WebsiteFieldDesign({ field, value, onChange }: Props) {
                 {value.color && <output className="field-design-color-value">{value.color.toUpperCase()}</output>}
             </fieldset>
         </> : <>
+            {onReposition && <button type="button" className="field-design-reposition" onClick={onReposition} disabled={!field.value}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3v18M3 12h18m-12-6 3-3 3 3m-6 12 3 3 3-3M6 9l-3 3 3 3m12-6 3 3-3 3" /></svg><span>Reposition on page</span><span aria-hidden="true">↗</span></button>}
             <fieldset className="field-design-group">
                 <legend>Photo shape</legend>{original("ratio")}
                 <div className="field-design-ratios">{(["square", "portrait", "landscape"] as const).map(ratio => <button type="button" key={ratio} aria-label={`${ratio[0].toUpperCase()}${ratio.slice(1)} photo shape`} aria-pressed={value.ratio === ratio} onClick={() => set("ratio", ratio)}><span className="field-design-ratio-preview"><span className={`is-${ratio}`} /></span><span>{ratio[0].toUpperCase()}{ratio.slice(1)}</span></button>)}</div>
@@ -68,9 +79,16 @@ export default function WebsiteFieldDesign({ field, value, onChange }: Props) {
                 <p className="field-design-note" id={`${id}-fit-note`}>{value.fit === "contain" ? "Keeps the whole photograph visible inside the frame." : value.fit === "cover" ? "Fills the frame. The edges may be cropped." : "Keeps the page’s original photo fit."}</p>
             </fieldset>
             <fieldset className="field-design-group">
-                <legend>Keep in focus</legend>{original("position")}
-                <div className="field-design-position">{positions.map(position => <button type="button" key={position} aria-label={`Focus photo ${position}`} aria-pressed={value.position === position} onClick={() => set("position", position)}><FocusIcon position={position} /><span>{positionNames[position]}</span></button>)}</div>
+                <legend>Keep in focus</legend><button type="button" className="field-design-inherit" disabled={value.position === undefined && !hasFocal} onClick={() => set("position", undefined)} title="Use the original photo position">{value.position === undefined && !hasFocal ? "Original" : "Reset"}</button>
+                <div className="field-design-position">{positions.map(position => <button type="button" key={position} aria-label={`Focus photo ${position}`} aria-pressed={!hasFocal && value.position === position} onClick={() => set("position", position)}><FocusIcon position={position} /><span>{positionNames[position]}</span></button>)}</div>
                 <p className="field-design-note">Choose which part stays in view when the photo is cropped.</p>
+                <details className="field-design-focal" open={hasFocal || undefined}>
+                    <summary>Fine-tune position{hasFocal && <span>Custom</span>}</summary>
+                    <label htmlFor={`${id}-focal-x`}><span>Horizontal</span><output>{Math.round(focalX)}%</output></label><input id={`${id}-focal-x`} type="range" min="0" max="100" step="1" value={focalX} onChange={event => setFocal("focalX", Number(event.target.value))} />
+                    <div className="field-design-focal-ends"><span>Left</span><span>Right</span></div>
+                    <label htmlFor={`${id}-focal-y`}><span>Vertical</span><output>{Math.round(focalY)}%</output></label><input id={`${id}-focal-y`} type="range" min="0" max="100" step="1" value={focalY} onChange={event => setFocal("focalY", Number(event.target.value))} />
+                    <div className="field-design-focal-ends"><span>Top</span><span>Bottom</span></div>
+                </details>
             </fieldset>
         </>}
         <button type="button" className="field-design-reset" disabled={!customized} onClick={() => onChange({})}>Reset {field.kind === "text" ? "text" : "photo"} appearance</button>

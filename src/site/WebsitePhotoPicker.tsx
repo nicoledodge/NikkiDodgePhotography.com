@@ -5,7 +5,7 @@ import { curatedStories, type CuratedPhoto } from "../data/curatedPortfolio";
 import { portfolioDimensions, portfolioPreview } from "../functions/portfolioPreview";
 import "../styles/website-photo-picker.css";
 
-type PhotoPickerProps = { currentUrl?: string; onChoose: (url: string) => void; onClose: () => void };
+type PhotoPickerProps = { currentUrl?: string; onChoose: (url: string, description: string) => void; onClose: () => void };
 type Photo = {
     id: string;
     item: MediaItem;
@@ -150,7 +150,7 @@ export default function WebsitePhotoPicker({ currentUrl, onChoose, onClose }: Ph
 
     useEffect(() => { setLimit(48); scrollArea.current?.scrollTo({ top: 0 }); }, [query, category, session]);
     const chooseCategory = (value: string) => { setCategory(value); setSession(""); };
-    const usePhoto = () => { if (selectedUrl) onChoose(selectedUrl); };
+    const usePhoto = () => { if (selectedUrl && selected) onChoose(selectedUrl, selected.description); };
     const countLabel = `${matches.length.toLocaleString()} ${matches.length === 1 ? "photo" : "photos"}`;
 
     return createPortal(<dialog ref={dialog} className="website-photo-picker" aria-labelledby="website-photo-picker-title" aria-describedby="website-photo-picker-description" onClick={event => { if (event.target === event.currentTarget) { const rect = event.currentTarget.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) onClose(); } }}>
