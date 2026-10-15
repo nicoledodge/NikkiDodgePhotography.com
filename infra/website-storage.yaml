@@ -71,4 +71,4 @@ spec:
     - images.nikkidodgephotography.com
   issuerRef:
     name: letsencrypt-http01-prod
-    kind: ClusterIssuer
+    kind: Issuer
