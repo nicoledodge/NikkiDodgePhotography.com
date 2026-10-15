@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -16,6 +16,7 @@ async function start(readOnly = false) {
         env: { ...process.env, PORT: String(port), NODE_ENV: "test", CRM_S3_BUCKET: "", APP_S3_BUCKET: "",
             CRM_LOCAL_STORAGE_ROOT: root, CRM_PUBLIC_ASSET_BASE_URL: "", CRM_S3_MEDIA_PREFIX: "",
             CRM_STORAGE_READ_ONLY: String(readOnly), ADMIN_USERNAME: "storage-check",
+            CRM_MAX_SERVER_UPLOAD_BYTES: String(25 * 1024 * 1024),
             ADMIN_PASSWORD: "storage-check", ADMIN_SESSION_SECRET: "isolated-storage-check",
             DISCORD_WEBHOOK_URL: "" },
         stdio: ["ignore", "ignore", "pipe"],
@@ -66,6 +67,31 @@ try {
     assert.deepEqual(Buffer.from(await (await fetch(base + media.publicUrl)).arrayBuffer()), payload);
     const moved = await (await request("/api/admin/media/move", "POST", { key: media.key, prefix: `${folder}/moved` })).json();
     assert.deepEqual(Buffer.from(await (await fetch(base + moved.publicUrl)).arrayBuffer()), payload);
+    const bulkPayload = new Blob([Buffer.alloc(8 * 1024 * 1024, 0x5a)], { type: "application/octet-stream" });
+    const bulkItems = await Promise.all(Array.from({ length: 4 }, async (_, index) => {
+        const body = new FormData();
+        body.set("file", bulkPayload, `parallel-${index}.bin`);
+        body.set("prefix", `${folder}/bulk`);
+        const response = await fetch(`${base}/api/admin/media/upload`, { method: "POST", headers: { cookie }, body });
+        assert.equal(response.status, 201);
+        return response.json();
+    }));
+    for (const item of bulkItems) {
+        assert.equal((await stat(join(root, "media", item.key))).size, bulkPayload.size);
+        await request(`/api/admin/media?key=${encodeURIComponent(item.key)}`, "DELETE");
+    }
+    for (const extraByte of [0, 1]) {
+        const body = new FormData();
+        body.set("file", new Blob([Buffer.alloc(25 * 1024 * 1024 + extraByte)]), "boundary.bin");
+        body.set("prefix", `${folder}/boundary`);
+        const response = await fetch(`${base}/api/admin/media/upload`, { method: "POST", headers: { cookie }, body });
+        assert.equal(response.status, extraByte ? 400 : 201);
+        if (!extraByte) {
+            const item = await response.json();
+            await request(`/api/admin/media?key=${encodeURIComponent(item.key)}`, "DELETE");
+        }
+    }
+    assert.deepEqual(await readdir(join(root, "upload-staging")), []);
     await stop();
     await start();
     assert.equal((await (await request("/api/public/settings")).json()).heroTitle, marker);

@@ -942,7 +942,7 @@ export default function Admin() {
             });
 
             if (uploadTarget.method === "s3") {
-                setUploadEntry(index, { status: "uploading", message: "Uploading to S3" });
+                setUploadEntry(index, { status: "uploading", message: "Uploading" });
                 const response = await fetch(uploadTarget.uploadUrl, {
                     method: "PUT",
                     headers: uploadTarget.headers,
@@ -950,14 +950,14 @@ export default function Admin() {
                 });
 
                 if (!response.ok) {
-                    throw new Error(`S3 rejected ${file.name} with status ${response.status}.`);
+                    throw new Error(`Upload failed for ${file.name} with status ${response.status}.`);
                 }
 
                 setUploadEntry(index, { status: "complete", message: uploadTarget.relativeKey });
                 return;
             }
 
-            setUploadEntry(index, { status: "uploading", message: "Uploading through the local server" });
+            setUploadEntry(index, { status: "uploading", message: "Uploading" });
             const formData = new FormData();
             formData.append("file", file);
             formData.append("prefix", prefix);
@@ -1383,7 +1383,7 @@ export default function Admin() {
                             <dd>{formatMediaTimestamp(selectedMediaFile)}</dd>
                         </div>
                         <div>
-                            <dt>S3 key</dt>
+                            <dt>File path</dt>
                             <dd>{selectedMediaFile.key}</dd>
                         </div>
                     </dl>
@@ -1921,7 +1921,7 @@ export default function Admin() {
                                     <div className="admin-section-heading">
                                         <div>
                                             <h2>Secure Upload Space</h2>
-                                            <p className="admin-muted">Signed uploads write directly to the configured S3 media prefix after admin login.</p>
+                                            <p className="admin-muted">Manage published website photos and assets. Original photo masters remain in the SFTP Library.</p>
                                         </div>
                                         <button
                                             className="admin-secondary-button"
@@ -2141,7 +2141,7 @@ export default function Admin() {
                                     </div>
 
                                     <div className="admin-file-manager">
-                                        <aside className="admin-file-manager-sidebar" aria-label="S3 folder tree">
+                                        <aside className="admin-file-manager-sidebar" aria-label="Website media folders">
                                             <button
                                                 className={selectedMediaNode.path === mediaTree.path ? "admin-tree-root-button is-selected" : "admin-tree-root-button"}
                                                 type="button"

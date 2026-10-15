@@ -544,6 +544,27 @@ export const storage = {
         };
     },
 
+    async importLocalMedia(params: {
+        fileName: string;
+        stagingPath: string;
+        prefix?: string;
+    }): Promise<MediaItem> {
+        if (isS3Enabled) {
+            throw new Error("Local media imports require local storage.");
+        }
+        const key = buildMediaKey(params.fileName, params.prefix);
+        const destinationPath = resolve(config.localMediaDir, key);
+        await fs.mkdir(dirname(destinationPath), { recursive: true });
+        const handle = await fs.open(params.stagingPath, "r+");
+        try {
+            await handle.sync();
+        } finally {
+            await handle.close();
+        }
+        await fs.rename(params.stagingPath, destinationPath);
+        return getMediaItemForKey(key);
+    },
+
     async uploadMedia(params: {
         fileName: string;
         contentType: string;

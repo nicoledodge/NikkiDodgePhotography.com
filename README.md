@@ -36,7 +36,7 @@ Production uses the dedicated `default/nikki-website-data` 64 GiB Longhorn PVC. 
 
 ## Admin media uploads
 
-The media manager browses only the dedicated website media directory. Browser uploads pass through the authenticated API and are stored on the website PVC. `CRM_MAX_SERVER_UPLOAD_BYTES` controls their maximum size; production uses 200 MiB with a 210 MiB ingress limit to allow multipart form overhead. CRM JSON writes use a synced temporary file and atomic rename.
+The media manager browses only the dedicated website media directory. Browser uploads stream through the authenticated API into private staging on the website PVC, then publish by atomic rename after syncing the file. Four concurrent uploads do not require four entire files in server memory. `CRM_MAX_SERVER_UPLOAD_BYTES` controls their maximum size; production uses 200 MiB with a 210 MiB ingress limit to allow multipart form overhead. CRM JSON writes use a synced temporary file and atomic rename.
 
 Set `CRM_STORAGE_READ_ONLY=true` only during a storage cutover. API writes then return HTTP 503 with `Retry-After`; public reads remain available. Restore it to `false` after the final document snapshot has been verified.
 

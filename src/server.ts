@@ -1,7 +1,7 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import multer from "multer";
 import { randomUUID } from "node:crypto";
-import { existsSync } from "node:fs";
+import { existsSync, promises as fs } from "node:fs";
 import { resolve } from "node:path";
 import type { CalendarEvent, CalendarEventStatus, CalendarFeed, CalendarSnapshot, Lead, LeadStatus, MediaFolderCreateResult } from "./shared/crm.js";
 import { mergeSiteSettings } from "./shared/siteSettings.js";
@@ -13,9 +13,19 @@ import { storage } from "./server/storage.js";
 
 const app = express();
 const upload = multer({
-    storage: multer.memoryStorage(),
+    storage: isS3Enabled ? multer.memoryStorage() : multer.diskStorage({
+        destination: (_req, _file, callback) => {
+            const stagingDirectory = resolve(config.localMediaDir, "..", "upload-staging");
+            void fs.mkdir(stagingDirectory, { recursive: true, mode: 0o700 }).then(
+                () => callback(null, stagingDirectory),
+                (error: Error) => callback(error, stagingDirectory),
+            );
+        },
+        filename: (_req, _file, callback) => callback(null, randomUUID()),
+    }),
     limits: {
-        fileSize: config.maxUploadBytes,
+        // Busboy signals its limit at equality; allow the advertised exact size.
+        fileSize: config.maxUploadBytes + 1,
     },
 });
 
@@ -449,14 +459,29 @@ app.post("/api/admin/media/upload", requireAdmin, upload.single("file"), asyncHa
     }
 
     const prefix = trimText(req.body.prefix);
-    const uploadedItem = await storage.uploadMedia({
-        fileName: req.file.originalname,
-        contentType: req.file.mimetype,
-        buffer: req.file.buffer,
-        prefix,
-    });
-
-    res.status(201).json(uploadedItem);
+    try {
+        if (req.file.size > config.maxUploadBytes) {
+            res.status(400).json({ error: `Files must be ${Math.floor(config.maxUploadBytes / 1024 / 1024)} MB or smaller.` });
+            return;
+        }
+        const uploadedItem = req.file.path
+            ? await storage.importLocalMedia({
+                fileName: req.file.originalname,
+                stagingPath: req.file.path,
+                prefix,
+            })
+            : await storage.uploadMedia({
+                fileName: req.file.originalname,
+                contentType: req.file.mimetype,
+                buffer: req.file.buffer,
+                prefix,
+            });
+        res.status(201).json(uploadedItem);
+    } finally {
+        if (req.file.path) {
+            await fs.rm(req.file.path, { force: true });
+        }
+    }
 }));
 
 app.post("/api/admin/media/move", requireAdmin, asyncHandler(async (req, res) => {
