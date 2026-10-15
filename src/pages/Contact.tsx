@@ -1,5 +1,7 @@
 import PageComposer from "../site/PageComposer";
 import ContactForm from "../components/Contacts/Contact";
+import { curatedStories, storyPhotoUrl } from "../data/curatedPortfolio";
+import { portfolioPreview, portfolioSrcSet } from "../functions/portfolioPreview";
 import { useSearchParams } from "react-router-dom";
 import { useSiteSettings } from "../site/SiteSettingsContext";
 import "../styles/inner-pages.css";
@@ -25,6 +27,9 @@ const sessionIntros = {
 export default function Contact() {
     const { siteSettings } = useSiteSettings();
     const [searchParams] = useSearchParams();
+    const wedding = curatedStories.find((story) => story.name === "FoothillsWedding2024");
+    const photo = wedding?.photos[7];
+    const image = wedding && photo ? storyPhotoUrl(wedding, photo) : "/assets/editorial/couple-river.webp";
     const requestedSession = searchParams.get("session");
     const session = requestedSession && Object.prototype.hasOwnProperty.call(sessionIntros, requestedSession)
         ? requestedSession as keyof typeof sessionIntros
@@ -45,7 +50,7 @@ export default function Contact() {
                         <a href={`tel:${siteSettings.contactPhone.replace(/[^+\d]/g, "")}`}>{siteSettings.contactPhone}</a>
                         <p>{siteSettings.serviceArea}</p>
                     </div>
-                    <img className="inner-contact-photo" src="/assets/editorial/couple-river.webp" srcSet="/assets/editorial/couple-river-640.webp 640w, /assets/editorial/couple-river.webp 1200w" sizes="(max-width: 700px) calc(100vw - 40px), 40vw" alt="A surprise proposal overlooking the river" width="1200" height="800" />
+                    <img className="inner-contact-photo" src={portfolioPreview(image)} srcSet={portfolioSrcSet(image)} sizes="(max-width: 420px) 88px, (max-width: 700px) 104px, 40vw" alt={photo?.alt || "A surprise proposal overlooking the river"} width={photo?.width || 1200} height={photo?.height || 800} loading="lazy" decoding="async" />
                     <a className="inner-social-link" href={siteSettings.instagramUrl} target="_blank" rel="noreferrer">Follow along on Instagram <span aria-hidden="true">↗</span></a>
                 </aside>
                 <ContactForm initialSubject={session} />

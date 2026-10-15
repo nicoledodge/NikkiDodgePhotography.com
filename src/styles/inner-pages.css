@@ -1,5 +1,5 @@
 .inner-page {
-  --inner-line: rgba(36, 41, 35, 0.2);
+  --inner-line: rgba(36, 41, 35, 0.17);
   --inner-muted: #62665c;
 }
 .inner-page p {
@@ -23,12 +23,16 @@
 .inner-page h2 em {
   font-weight: 400;
 }
+:is(.inner-about, .inner-pricing, .inner-contact) :is(h1, h2, h3) {
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
 .inner-page .eyebrow {
   margin: 0 0 22px;
 }
 .inner-intro {
-  padding-top: 90px;
-  padding-bottom: 76px;
+  padding-top: clamp(64px, 6.5vw, 104px);
+  padding-bottom: clamp(48px, 5.6vw, 80px);
 }
 .inner-intro h1 {
   max-width: 880px;
@@ -39,13 +43,13 @@
 }
 .inner-intro-split {
   display: grid;
-  grid-template-columns: 1.5fr 1fr;
-  gap: 90px;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: clamp(42px, 6vw, 90px);
   align-items: end;
 }
 .inner-page .inner-lead {
   font-size: 17px;
-  line-height: 1.85;
+  line-height: 1.75;
 }
 .inner-intro-split > .inner-lead {
   max-width: 365px;
@@ -76,11 +80,21 @@
   align-items: center;
   justify-content: space-between;
   gap: 35px;
+  min-height: 52px;
+  max-width: 100%;
 }
 .inner-page .text-link {
   display: inline-flex;
   align-items: center;
-  gap: 28px;
+  gap: 24px;
+  font-size: 12px;
+  min-height: 38px;
+  max-width: 100%;
+  border-bottom-color: #9b9e8b;
+  transition: border-color .2s;
+}
+.inner-page .text-link:hover {
+  border-bottom-color: var(--ink);
 }
 .inner-cta {
   padding-top: 112px;
@@ -98,12 +112,13 @@
   max-width: 540px;
   margin: 0 auto 26px;
   color: var(--inner-muted);
+  font-size: 15px;
 }
 
 /* A personal, direct inquiry page. */
 .inner-contact-layout {
   display: grid;
-  grid-template-columns: 0.86fr 1.14fr;
+  grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
   gap: clamp(48px, 8vw, 126px);
   padding-bottom: 110px;
 }
@@ -116,10 +131,14 @@
   flex-direction: column;
   align-items: start;
   gap: 10px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .inner-contact-info a {
   overflow-wrap: anywhere;
+}
+.inner-contact-info .text-link {
+  font-size: 14px;
+  min-height: 0;
 }
 .inner-contact-info p {
   margin: 4px 0 32px;
@@ -136,10 +155,10 @@
   justify-content: space-between;
   gap: 16px;
   margin-top: 16px;
-  padding: 8px 0;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
+  padding: 11px 0;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  border-bottom: 1px solid var(--inner-line);
 }
 .inner-inquiry {
   border-top: 1px solid var(--inner-line);
@@ -159,16 +178,16 @@
   max-width: 440px;
   margin: 0 0 16px;
   color: var(--inner-muted);
-  font-size: 14px;
+  font-size: 15px;
 }
 .inner-required-note {
   margin: 0 0 32px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--inner-muted);
 }
 .inner-inquiry-form {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 28px 26px;
 }
 .inner-field {
@@ -181,12 +200,12 @@
 }
 .inner-field label {
   margin-bottom: 8px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   line-height: 1.6;
 }
 .inner-field label span {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 400;
   color: var(--inner-muted);
 }
@@ -227,13 +246,13 @@
   border-bottom-color: #9c3930;
 }
 .inner-field-help {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.7;
   color: var(--inner-muted);
   max-width: 420px;
 }
 .inner-field-error {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.7;
   margin-top: 9px;
   color: #8e3027;
@@ -263,7 +282,7 @@
   opacity: 0.6;
 }
 .inner-email-fallback {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--inner-muted);
   text-decoration: underline;
   text-underline-offset: 4px;
@@ -272,7 +291,7 @@
 /* Simple, transparent collections. */
 .inner-wedding {
   display: grid;
-  grid-template-columns: 1.1fr 1fr;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
   gap: clamp(48px, 8vw, 120px);
   align-items: center;
   padding-bottom: 110px;
@@ -282,8 +301,10 @@
   max-height: 850px;
 }
 .inner-wedding-photo figcaption {
-  padding-top: 15px;
-  font-size: 11px;
+  padding-top: 16px;
+  font-size: 12px;
+  line-height: 1.65;
+  letter-spacing: .015em;
   color: var(--inner-muted);
 }
 .inner-wedding-copy h2 {
@@ -292,14 +313,14 @@
   line-height: 1;
   letter-spacing: -0.035em;
 }
-.inner-wedding-copy > p:not(.eyebrow):not(.inner-price) {
+.inner-wedding-copy > p:not(.eyebrow):not(.inner-price):not(.inner-fine-print) {
   max-width: 440px;
   color: var(--inner-muted);
-  font-size: 14px;
+  font-size: 15px;
 }
 .inner-page .inner-price {
   margin: 35px 0 23px;
-  font-size: 42px;
+  font-size: clamp(44px, 4vw, 58px);
   line-height: 1.1;
   font-family: "Cormorant Garamond", Georgia, serif;
 }
@@ -307,7 +328,7 @@
   display: block;
   margin-bottom: 10px;
   font-family: "Manrope", sans-serif;
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.15em;
 }
@@ -323,13 +344,14 @@
   border-top: 1px solid var(--inner-line);
 }
 .inner-inclusions li {
-  padding: 12px 0;
+  padding: 13px 0;
   border-bottom: 1px solid var(--inner-line);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.65;
 }
 .inner-wedding-copy > .inner-fine-print {
-  font-size: 11px !important;
+  font-size: 13px;
+  color: var(--inner-muted);
   margin: 0 0 26px;
 }
 .inner-other-work {
@@ -339,10 +361,10 @@
 }
 .inner-service-row {
   display: grid;
-  grid-template-columns: 40px 1fr 1fr 100px;
+  grid-template-columns: 36px minmax(0, 1fr) minmax(0, 1fr) 100px;
   gap: 28px;
   align-items: center;
-  padding: 34px 0;
+  padding: 38px 0;
   border-top: 1px solid var(--inner-line);
 }
 .inner-service-row:last-child {
@@ -356,18 +378,18 @@
 .inner-service-row p {
   margin: 0;
   max-width: 345px;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--inner-muted);
 }
 .inner-service-row > a {
   justify-self: end;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 /* The person behind the photographs. */
 .inner-about-hero {
   display: grid;
-  grid-template-columns: 1fr 1.1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
   align-items: center;
   gap: clamp(50px, 8vw, 120px);
   padding-top: 80px;
@@ -382,7 +404,9 @@
   justify-content: space-between;
   gap: 20px;
   padding-top: 16px;
-  font-size: 11px;
+  font-size: 12px;
+  line-height: 1.65;
+  letter-spacing: .015em;
 }
 .inner-profile figcaption span {
   color: var(--inner-muted);
@@ -400,7 +424,7 @@
   margin-bottom: 25px;
 }
 .inner-about-copy > p:not(.eyebrow):not(.inner-lead) {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--inner-muted);
 }
 .inner-about-location {
@@ -408,7 +432,7 @@
   margin-bottom: 30px;
 }
 .inner-about-copy > .text-link {
-  font-size: 11px;
+  font-size: 12px;
 }
 .inner-approach {
   border-top: 1px solid var(--inner-line);
@@ -417,8 +441,8 @@
 }
 .inner-approach-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 65px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(28px, 4.6vw, 65px);
 }
 .inner-approach-item {
   padding-top: 24px;
@@ -431,12 +455,12 @@
 }
 .inner-approach-item p {
   margin: 0;
-  font-size: 13px;
+  font-size: 15px;
   color: var(--inner-muted);
 }
 .inner-about-statement {
   padding: 108px 0;
-  background: #eaece4;
+  background: #ecece3;
   text-align: center;
 }
 .inner-about-statement h2 {
@@ -447,7 +471,7 @@
 }
 .inner-about-statement p:not(.eyebrow) {
   margin: 0 0 26px;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 /* Useful planning notes, at your own pace. */
@@ -545,14 +569,14 @@
     gap: 50px;
   }
   .inner-contact-layout {
-    grid-template-columns: 0.8fr 1.2fr;
+    grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
     gap: 42px;
   }
   .inner-inquiry-form {
     grid-template-columns: 1fr;
   }
   .inner-service-row {
-    grid-template-columns: 28px 1fr 1fr;
+    grid-template-columns: 28px minmax(0, 1fr) minmax(0, 1fr);
     gap: 24px;
   }
   .inner-service-row > a {
@@ -591,25 +615,72 @@
   }
   .inner-contact-layout {
     grid-template-columns: 1fr;
-    gap: 50px;
+    gap: 30px;
     padding-bottom: 64px;
   }
+  .inner-contact .inner-intro {
+    padding-top: 34px;
+    padding-bottom: 28px;
+  }
+  .inner-contact .inner-intro h1 {
+    font-size: clamp(2.65rem, 10vw, 4rem);
+  }
+  .inner-contact .inner-intro .eyebrow {
+    margin-bottom: 16px;
+  }
+  /* Keep the contact details in reading order, with a small photographic aside. */
+  .inner-contact-aside {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 104px;
+    gap: 14px 20px;
+    align-items: start;
+  }
   .inner-contact-aside > .inner-lead {
+    grid-column: 1 / -1;
     max-width: 100%;
+    margin-bottom: 2px;
+  }
+  .inner-contact-info {
+    grid-column: 1;
+    grid-row: 2;
+    gap: 6px;
+    min-width: 0;
+    font-size: 13px;
+  }
+  .inner-contact-info .text-link {
+    font-size: 13px;
+    padding-bottom: 5px;
   }
   .inner-contact-info p {
-    margin-bottom: 24px;
+    margin: 2px 0 0;
+    max-width: none;
+    font-size: 12px;
+    line-height: 1.65;
   }
   .inner-contact-photo {
-    aspect-ratio: 5/3;
-    max-height: 280px;
+    grid-column: 2;
+    grid-row: 2;
+    aspect-ratio: 3/4;
+    height: 138px;
+    max-height: 138px;
     object-position: center 40%;
   }
+  .inner-social-link {
+    grid-column: 1 / -1;
+    margin-top: 0;
+    padding-block: 8px;
+    font-size: 11px;
+  }
   .inner-inquiry {
-    padding-top: 28px;
+    padding-top: 24px;
   }
   .inner-inquiry h2 {
-    font-size: 2.5rem;
+    font-size: clamp(2rem, 8vw, 2.6rem);
+    margin-bottom: 12px;
+  }
+  .inner-form-intro {
+    font-size: 14px;
+    margin-bottom: 12px;
   }
   .inner-required-note {
     margin-bottom: 25px;
@@ -633,7 +704,7 @@
     max-height: 570px;
   }
   .inner-wedding-copy h2 {
-    font-size: 3.4rem;
+    font-size: clamp(2.75rem, 10.4vw, 3.4rem);
   }
   .inner-wedding-copy > p:not(.eyebrow):not(.inner-price) {
     max-width: none;
@@ -649,7 +720,7 @@
     font-size: 2.8rem;
   }
   .inner-service-row {
-    grid-template-columns: 26px 1fr;
+    grid-template-columns: 26px minmax(0, 1fr);
     gap: 16px;
     padding: 28px 0;
   }
@@ -672,7 +743,7 @@
     font-size: 3rem;
   }
   .inner-cta > p:not(.eyebrow) {
-    font-size: 13px;
+    font-size: 14px;
   }
   .inner-about-hero {
     grid-template-columns: 1fr;
@@ -685,7 +756,7 @@
     max-height: 600px;
   }
   .inner-about-copy h1 {
-    font-size: clamp(3.3rem, 10vw, 4.4rem);
+    font-size: clamp(2.8rem, 10vw, 4.4rem);
     margin-bottom: 25px;
   }
   .inner-approach {
@@ -703,10 +774,10 @@
     padding: 70px 0;
   }
   .inner-about-statement h2 {
-    font-size: 3.5rem;
+    font-size: clamp(2.7rem, 10.5vw, 3.5rem);
   }
   .inner-about-statement p:not(.eyebrow) {
-    font-size: 13px;
+    font-size: 14px;
   }
   .inner-journal-grid {
     grid-template-columns: 1fr;
@@ -718,6 +789,20 @@
   }
   .inner-note-meta > .eyebrow {
     margin-bottom: 0;
+  }
+}
+@media (max-width: 420px) {
+  .inner-contact-aside {
+    grid-template-columns: minmax(0, 1fr) 88px;
+    column-gap: 16px;
+  }
+  .inner-contact-photo {
+    height: 118px;
+    max-height: 118px;
+  }
+  .inner-profile figcaption {
+    gap: 12px;
+    font-size: 11px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -1,17 +1,22 @@
 import PageComposer from "../site/PageComposer";
 import { Link } from "react-router-dom";
 import { CONTACT } from "./Contact";
+import { curatedStories, storyPhotoUrl } from "../data/curatedPortfolio";
+import { portfolioPreview, portfolioSrcSet } from "../functions/portfolioPreview";
 import "../styles/inner-pages.css";
 
 export const PRICING = "/pricing";
 
 const otherSessions = [
-    { number: "01", title: "Portraits & milestones", description: "Graduates, growing families, new headshots, and the people you want to remember just as they are." },
-    { number: "02", title: "Music & live events", description: "The atmosphere, the crowd, and everything that happens between the big moments." },
-    { number: "03", title: "Sports & creative work", description: "Athletes in their element and imagery that gives your brand a point of view." },
+    { number: "01", title: "Portraits & milestones", inquiry: "Portraits", description: "Graduates, growing families, new headshots, and the people you want to remember just as they are." },
+    { number: "02", title: "Music & live events", inquiry: "Events", description: "The atmosphere, the crowd, and everything that happens between the big moments." },
+    { number: "03", title: "Sports & creative work", inquiry: "Creative", description: "Athletes in their element and imagery that gives your brand a point of view." },
 ];
 
 export default function Pricing() {
+    const wedding = curatedStories.find((story) => story.name === "FoothillsWedding2024");
+    const photo = wedding?.photos[3];
+    const image = wedding && photo ? storyPhotoUrl(wedding, photo) : "/assets/editorial/wedding-details.webp";
     return (
         <div className="inner-page inner-pricing">
 <PageComposer page="pricing">
@@ -24,7 +29,7 @@ export default function Pricing() {
             </header>
             <section className="inner-wedding site-container" aria-labelledby="wedding-collection-title">
                 <figure className="inner-wedding-photo">
-                    <img src="/assets/editorial/wedding-details.webp" srcSet="/assets/editorial/wedding-details-640.webp 640w, /assets/editorial/wedding-details.webp 1200w" sizes="(max-width: 700px) calc(100vw - 40px), 48vw" alt="A lace wedding dress hanging against a sunlit redwood tree" width="1200" height="1800" />
+                    <img src={portfolioPreview(image)} srcSet={portfolioSrcSet(image)} sizes="(max-width: 700px) calc(100vw - 40px), 48vw" alt={photo?.alt || "A lace wedding dress hanging against a sunlit redwood tree"} width={photo?.width || 1200} height={photo?.height || 1800} decoding="async" />
                     <figcaption>For the day, and everything it means.</figcaption>
                 </figure>
                 <div className="inner-wedding-copy">
@@ -39,7 +44,7 @@ export default function Pricing() {
                         <li>Online delivery with high-resolution downloads</li>
                     </ul>
                     <p className="inner-fine-print">Bridal, couples, and engagement sessions can be discussed as part of your collection. Share your plans for a personal quote.</p>
-                    <Link className="button" to={CONTACT}>Let’s talk about your day <span aria-hidden="true">↗</span></Link>
+                    <Link className="button" to={`${CONTACT}?session=Weddings`}>Let’s talk about your day <span aria-hidden="true">↗</span></Link>
                 </div>
             </section>
             <section className="inner-other-work site-container" aria-labelledby="other-sessions-title">
@@ -54,7 +59,7 @@ export default function Pricing() {
                             <span className="inner-index" aria-hidden="true">{session.number}</span>
                             <h3>{session.title}</h3>
                             <p>{session.description}</p>
-                            <Link className="text-link" to={CONTACT} aria-label={`Inquire about ${session.title.toLowerCase()}`}>Inquire <span aria-hidden="true">↗</span></Link>
+                            <Link className="text-link" to={`${CONTACT}?session=${session.inquiry}`} aria-label={`Inquire about ${session.title.toLowerCase()}`}>Inquire <span aria-hidden="true">↗</span></Link>
                         </div>
                     ))}
                 </div>

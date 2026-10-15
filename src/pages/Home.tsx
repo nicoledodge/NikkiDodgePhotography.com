@@ -22,9 +22,11 @@ const labels: Record<string, string> = {
 
 export default function Home() {
   const { siteSettings } = useSiteSettings();
-  const proposal = curatedStories.find((story) => story.category === "Engagements");
-  const wedding = curatedStories.find((story) => story.category === "Weddings");
-  const highlights = curatedStories.filter((story) => story.category !== "Engagements");
+  const opening = curatedStories.find((story) => story.name === "FoothillsWedding2024");
+  const wedding = curatedStories.find((story) => story.name === "AlpineWedding2025");
+  const highlights = ["AlpineWedding2025", "SummerPortraits2025", "ElectricHoney2026", "LakesideFamily2026"]
+    .flatMap((name) => curatedStories.filter((story) => story.name === name));
+  const closingPhoto = wedding?.photos[6];
 
   return (
     <PageComposer page="home">
@@ -43,23 +45,23 @@ export default function Home() {
       </section>
 
       <section className="story-hero" aria-label="Featured photography">
-        {proposal && (
-          <Link className="story-hero-main" to={storyUrl(proposal)} aria-label={`Explore ${proposal.title.toLowerCase()}`}>
-            <img src={storyPhotoUrl(proposal)} srcSet={portfolioSrcSet(storyPhotoUrl(proposal))}
-              sizes="(max-width: 700px) 100vw, 67vw"
-              alt={proposal.photos[proposal.cover].alt}
-              width={proposal.photos[proposal.cover].width} height={proposal.photos[proposal.cover].height}
+        {opening && (
+          <Link className="story-hero-main" to={storyUrl(opening)} aria-label={`Explore ${opening.title.toLowerCase()}`}>
+            <img src={storyPhotoUrl(opening)} srcSet={portfolioSrcSet(storyPhotoUrl(opening))}
+              sizes="(max-width: 760px) calc(100vw - 24px), 66vw"
+              alt={opening.photos[opening.cover].alt}
+              width={opening.photos[opening.cover].width} height={opening.photos[opening.cover].height}
               fetchPriority="high" />
-            <span className="story-hero-caption"><span>A little adventure. A very big yes.</span><span aria-hidden="true">↗</span></span>
+            <span className="story-hero-caption"><span>All the little things. All the love.</span><span aria-hidden="true">↗</span></span>
           </Link>
         )}
         {wedding && (
           <Link className="story-hero-side" to={storyUrl(wedding)} aria-label={`Explore ${wedding.title.toLowerCase()}`}>
             <img src={portfolioPreview(storyPhotoUrl(wedding))} srcSet={portfolioSrcSet(storyPhotoUrl(wedding))}
-              sizes="(max-width: 700px) 50vw, 33vw"
+              sizes="(max-width: 760px) 1px, 34vw"
               alt={wedding.photos[wedding.cover].alt}
               width={wedding.photos[wedding.cover].width} height={wedding.photos[wedding.cover].height} />
-            <span className="story-hero-caption"><span>Just the two of you.</span><span aria-hidden="true">↗</span></span>
+            <span className="story-hero-caption"><span>A day in the mountains.</span><span aria-hidden="true">↗</span></span>
           </Link>
         )}
       </section>
@@ -86,7 +88,7 @@ export default function Home() {
             return (
               <Link className="new-story" key={story.name} to={storyUrl(story)}>
                 <div className="new-story-photo"><img src={portfolioPreview(src)} srcSet={portfolioSrcSet(src)}
-                  sizes="(max-width: 700px) calc(50vw - 28px), 24vw" alt={photo.alt}
+                  sizes="(max-width: 540px) calc(100vw - 40px), (max-width: 1000px) calc(50vw - 48px), 24vw" alt={photo.alt}
                   loading="lazy" decoding="async" width={photo.width} height={photo.height} /></div>
                 <p className="new-story-category">{labels[story.category] || story.category}</p>
                 <div className="new-story-title"><h3>{story.title}</h3><span aria-hidden="true">↗</span></div>
@@ -126,8 +128,8 @@ export default function Home() {
         </div>
       </section>
       <div className="closing-image">
-        <img src="/assets/editorial/forest-wedding.webp" srcSet="/assets/editorial/forest-wedding-640.webp 640w, /assets/editorial/forest-wedding.webp 1800w"
-          sizes="100vw" alt="An intimate wedding ceremony surrounded by towering forest trees" loading="lazy" width="1800" height="1200" />
+        {wedding && closingPhoto && <img src={storyPhotoUrl(wedding, closingPhoto)} srcSet={portfolioSrcSet(storyPhotoUrl(wedding, closingPhoto))}
+          sizes="100vw" alt={closingPhoto.alt} loading="lazy" decoding="async" width={closingPhoto.width} height={closingPhoto.height} />}
       </div>
     </PageComposer>
   );

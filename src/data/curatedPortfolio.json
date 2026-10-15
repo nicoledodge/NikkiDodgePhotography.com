@@ -1044,6 +1044,493 @@
           ]
         }
       ]
+    },
+    {
+      "category": "Weddings",
+      "name": "AlpineWedding2025",
+      "title": "A day in the mountains",
+      "description": "Mountain air, aspen shade, and the people who make a wedding feel like home.",
+      "cover": 4,
+      "photos": [
+        {
+          "file": "web-9e4a60b02e52-1920.webp",
+          "width": 1920,
+          "height": 2880,
+          "alt": "A bride getting ready beside a sunlit window",
+          "variants": [
+            {
+              "file": "web-9e4a60b02e52-640.webp",
+              "width": 640
+            },
+            {
+              "file": "web-9e4a60b02e52-960.webp",
+              "width": 960
+            },
+            {
+              "file": "web-9e4a60b02e52-1920.webp",
+              "width": 1920
+            }
+          ]
+        },
+        {
+          "file": "web-8a19864d844a-1920.webp",
+          "width": 1920,
+          "height": 2880,
+          "alt": "A bride and guest laughing together with mountains in the distance",
+          "variants": [
+            {
+              "file": "web-8a19864d844a-640.webp",
+              "width": 640
+            },
+            {
+              "file": "web-8a19864d844a-960.webp",
+              "width": 960
+            },
+            {
+              "file": "web-8a19864d844a-1920.webp",
+              "width": 1920
+            }
+          ]
+        },
+        {
+          "file": "web-6abff4cb24ff-1920.webp",
+          "width": 1920,
+          "height": 2880,
+          "alt": "A bride approaching her partner for a first look beneath the trees",
+          "variants": [
+            {
+              "file": "web-6abff4cb24ff-640.webp",
+              "width": 640
+            },
+            {
+              "file": "web-6abff4cb24ff-960.webp",
+              "width": 960
+            },
+            {
+              "file": "web-6abff4cb24ff-1920.webp",
+              "width": 1920
+            }
+          ]
+        },
+        {
+          "file": "web-c5f5e65eead5-1920.webp",
+          "width": 1920,
+          "height": 2880,
+          "alt": "A black-and-white portrait of newlyweds in a mountain meadow",
+          "variants": [
+            {
+              "file": "web-c5f5e65eead5-640.webp",
+              "width": 640
+            },
+            {
+              "file": "web-c5f5e65eead5-960.webp",
+              "width": 960
+            },
+            {
+              "file": "web-c5f5e65eead5-1920.webp",
+              "width": 1920
+            }
+          ]
+        },
+        {
+          "file": "web-64669b957761-1920.webp",
+          "width": 1920,
+          "height": 2880,
+          "alt": "Newlyweds laughing in an embrace beneath sunlit aspens",
+          "variants": [
+            {
+              "file": "web-64669b957761-640.webp",
+              "width": 640
+            },
+            {
+              "file": "web-64669b957761-960.webp",
+              "width": 960
+            },
+            {
+              "file": "web-64669b957761-1920.webp",
+              "width": 1920
+            }
+          ]
+        },
+        {
+          "file": "web-94bf63a48525-1920.webp",
+          "width": 1920,
+          "height": 1280,
+          "alt": "A bride with friends in green dresses beside a mountain lake",
+          "variants": [
+            {
+              "file": "web-94bf63a48525-640.webp",
+              "width": 640
+            },
+            {
+              "file": "web-94bf63a48525-960.webp",
+              "width": 960
+            },
+            {
+              "file": "web-94bf63a48525-1920.webp",
+              "width": 1920
+            }
+          ]
+        },
+        {
+          "file": "web-4d3d56e040b1-1920.webp",
+          "width": 1920,
+          "height": 1280,
+          "alt": "Newlyweds running hand in hand beside a lake beneath the mountains",
+          "variants": [
+            {
+              "file": "web-4d3d56e040b1-640.webp",
+              "width": 640
+            },
+            {
+              "file": "web-4d3d56e040b1-960.webp",
+              "width": 960
+            },
+            {
+              "file": "web-4d3d56e040b1-1920.webp",
+              "width": 1920
+            }
+          ]
+        },
+        {
+          "file": "web-0ad00aaee4a9-1920.webp",
+          "width": 1920,
+          "height": 1280,
+          "alt": "A bride and guests relaxing on the grass beside a wedding tent at dusk",
+          "variants": [
+            {
+              "file": "web-0ad00aaee4a9-640.webp",
+              "width": 640
+            },
+            {
+              "file": "web-0ad00aaee4a9-960.webp",
+              "width": 960
+            },
+            {
+              "file": "web-0ad00aaee4a9-1920.webp",
+              "width": 1920
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Weddings",
+      "name": "FoothillsWedding2024",
+      "title": "Close to the heart",
+      "description": "A wind-swept veil, a quiet embrace, and a celebration tucked into the foothills.",
+      "cover": 5,
+      "photos": [
+        {
+          "file": "web-d55402c1a850-1920.webp",
+          "width": 1920,
+          "height": 2880,
+          "alt": "A lace wedding dress hanging against exposed brick",
+          "variants": [
+            {
+              "file": "web-d55402c1a850-640.webp",
+              "width": 640
+            },
+            {
+              "file": "web-d55402c1a850-960.webp",
+              "width": 960
+            },
+            {
+              "file": "web-d55402c1a850-1920.webp",
+              "width": 1920
+            }
+          ]
+        },
+        {
+          "file": "web-532a80ac0e94-1920.webp",
+          "width": 1920,
+          "height": 1280,
+          "alt": "A bride with her bouquet on a burgundy chaise beside bright windows",
+          "variants": [
+            {
+              "file": "web-532a80ac0e94-640.webp",
+              "width": 640
+            },
+            {
+              "file": "web-532a80ac0e94-960.webp",
+              "width": 960
+            },
+            {
+              "file": "web-532a80ac0e94-1920.webp",
+              "width": 1920
+            }
+          ]
+        },
+        {
+          "file": "web-ac848446cb07-1920.webp",
+          "width": 1920,
+          "height": 2880,
+          "alt": "Newlyweds walking through a green foothills meadow",
+          "variants": [
+            {
+              "file": "web-ac848446cb07-640.webp",
+              "width": 640
+            },
+            {
+              "file": "web-ac848446cb07-960.webp",
+              "width": 960
+            },
+            {
+              "file": "web-ac848446cb07-1920.webp",
+              "width": 1920
+            }
+          ]
+        },
+        {
+          "file": "web-04c776a4f27f-1920.webp",
+          "width": 1920,
+          "height": 2880,
+          "alt": "A bride and groom looking at each other as her veil catches the breeze",
+          "variants": [
+            {
+              "file": "web-04c776a4f27f-640.webp",
+              "width": 640
+            },
+            {
+              "file": "web-04c776a4f27f-960.webp",
+              "width": 960
+            },
+            {
+              "file": "web-04c776a4f27f-1920.webp",
+              "width": 1920
+            }
+          ]
+        },
+        {
+          "file": "web-07ae142f87de-1920.webp",
+          "width": 1920,
+          "height": 1280,
+          "alt": "Newlyweds walking down an outdoor aisle as guests celebrate",
+          "variants": [
+            {
+              "file": "web-07ae142f87de-640.webp",
+              "width": 640
+            },
+            {
+              "file": "web-07ae142f87de-960.webp",
+              "width": 960
+            },
+            {
+              "file": "web-07ae142f87de-1920.webp",
+              "width": 1920
+            }
+          ]
+        },
+        {
+          "file": "web-0eccc26bc770-1920.webp",
+          "width": 1920,
+          "height": 1280,
+          "alt": "A bride and groom sharing a kiss on the steps of a white porch",
+          "variants": [
+            {
+              "file": "web-0eccc26bc770-640.webp",
+              "width": 640
+            },
+            {
+              "file": "web-0eccc26bc770-960.webp",
+              "width": 960
+            },
+            {
+              "file": "web-0eccc26bc770-1920.webp",
+              "width": 1920
+            }
+          ]
+        },
+        {
+          "file": "web-b1156ea23ace-1920.webp",
+          "width": 1920,
+          "height": 2880,
+          "alt": "A wedding cake decorated with pale roses beside a window",
+          "variants": [
+            {
+              "file": "web-b1156ea23ace-640.webp",
+              "width": 640
+            },
+            {
+              "file": "web-b1156ea23ace-960.webp",
+              "width": 960
+            },
+            {
+              "file": "web-b1156ea23ace-1920.webp",
+              "width": 1920
+            }
+          ]
+        },
+        {
+          "file": "web-23ebdb609d49-1920.webp",
+          "width": 1920,
+          "height": 2880,
+          "alt": "Newlyweds touching foreheads in soft evening light",
+          "variants": [
+            {
+              "file": "web-23ebdb609d49-640.webp",
+              "width": 640
+            },
+            {
+              "file": "web-23ebdb609d49-960.webp",
+              "width": 960
+            },
+            {
+              "file": "web-23ebdb609d49-1920.webp",
+              "width": 1920
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Music",
+      "name": "ElectricHoney2026",
+      "title": "After the sun goes down",
+      "description": "Desert light gives way to a night of music, movement, and a crowd in its element.",
+      "cover": 3,
+      "photos": [
+        {
+          "file": "web-7bc43eafd77f-1920.webp",
+          "width": 1920,
+          "height": 1280,
+          "alt": "Festivalgoers dancing outdoors in warm afternoon light",
+          "variants": [
+            {
+              "file": "web-7bc43eafd77f-640.webp",
+              "width": 640
+            },
+            {
+              "file": "web-7bc43eafd77f-960.webp",
+              "width": 960
+            },
+            {
+              "file": "web-7bc43eafd77f-1920.webp",
+              "width": 1920
+            }
+          ]
+        },
+        {
+          "file": "web-0f1609072e27-1920.webp",
+          "width": 1920,
+          "height": 2880,
+          "alt": "A DJ at the decks with the crowd beyond the stage",
+          "variants": [
+            {
+              "file": "web-0f1609072e27-640.webp",
+              "width": 640
+            },
+            {
+              "file": "web-0f1609072e27-960.webp",
+              "width": 960
+            },
+            {
+              "file": "web-0f1609072e27-1920.webp",
+              "width": 1920
+            }
+          ]
+        },
+        {
+          "file": "web-9f418ddc7a67-1920.webp",
+          "width": 1920,
+          "height": 2880,
+          "alt": "A flame-lit performance beneath green stage lasers",
+          "variants": [
+            {
+              "file": "web-9f418ddc7a67-640.webp",
+              "width": 640
+            },
+            {
+              "file": "web-9f418ddc7a67-960.webp",
+              "width": 960
+            },
+            {
+              "file": "web-9f418ddc7a67-1920.webp",
+              "width": 1920
+            }
+          ]
+        },
+        {
+          "file": "web-794226dd2272-1920.webp",
+          "width": 1920,
+          "height": 1280,
+          "alt": "A festival stage framed by purple lasers, fire, and a cheering crowd",
+          "variants": [
+            {
+              "file": "web-794226dd2272-640.webp",
+              "width": 640
+            },
+            {
+              "file": "web-794226dd2272-960.webp",
+              "width": 960
+            },
+            {
+              "file": "web-794226dd2272-1920.webp",
+              "width": 1920
+            }
+          ]
+        },
+        {
+          "file": "web-19a66c1f0c84-1920.webp",
+          "width": 1920,
+          "height": 2880,
+          "alt": "Aerial performers suspended above a colorful festival stage",
+          "variants": [
+            {
+              "file": "web-19a66c1f0c84-640.webp",
+              "width": 640
+            },
+            {
+              "file": "web-19a66c1f0c84-960.webp",
+              "width": 960
+            },
+            {
+              "file": "web-19a66c1f0c84-1920.webp",
+              "width": 1920
+            }
+          ]
+        },
+        {
+          "file": "web-4ca6448ade33-1920.webp",
+          "width": 1920,
+          "height": 1280,
+          "alt": "An outdoor music stage beneath red sandstone cliffs",
+          "variants": [
+            {
+              "file": "web-4ca6448ade33-640.webp",
+              "width": 640
+            },
+            {
+              "file": "web-4ca6448ade33-960.webp",
+              "width": 960
+            },
+            {
+              "file": "web-4ca6448ade33-1920.webp",
+              "width": 1920
+            }
+          ]
+        },
+        {
+          "file": "web-e01eada442c4-1920.webp",
+          "width": 1920,
+          "height": 1280,
+          "alt": "A crowd facing a brightly lit stage under the night sky",
+          "variants": [
+            {
+              "file": "web-e01eada442c4-640.webp",
+              "width": 640
+            },
+            {
+              "file": "web-e01eada442c4-960.webp",
+              "width": 960
+            },
+            {
+              "file": "web-e01eada442c4-1920.webp",
+              "width": 1920
+            }
+          ]
+        }
+      ]
     }
   ]
 }

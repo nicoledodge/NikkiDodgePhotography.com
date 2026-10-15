@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import mediaLibrary from "../components/MediaLibrary/MediaLibrary";
 import {
@@ -8,8 +8,16 @@ import {
   portfolioAlt,
 } from "../functions/portfolioPreview";
 import { formatSessionName } from "./Portfolio";
+import "../styles/gallery-presentation.css";
 
 export const GALLERY = "/gallery";
+const categoryLabels: Record<string, string> = {
+  Engagements: "Couples", Graduations: "Seniors & graduates", Lifestyles: "Lifestyle",
+  Representatives: "Community", Homes: "Spaces", Music: "Live music",
+};
+function GalleryArrow({ previous = false }: { previous?: boolean }) {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={previous ? "M20 12H4m6-6-6 6 6 6" : "M4 12h16m-6-6 6 6-6 6"} /></svg>;
+}
 
 export default function Gallery() {
   const { categoryName, sessionName } = useParams();
@@ -20,12 +28,16 @@ export default function Gallery() {
   const [active, setActive] = useState<number | null>(null);
   const [visibleCount, setVisibleCount] = useState(24);
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const images =
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const openerRef = useRef<HTMLButtonElement | null>(null);
+  const images = useMemo(() =>
     session?.mediaFiles
       .filter((file) => /\.(jpe?g|png|webp|avif)$/i.test(file))
       .map((file) => `${category!.path}/${session.name}/${file}`)
-      .filter((src) => Boolean(portfolioDimensions(src))) || [];
+      .filter((src) => Boolean(portfolioDimensions(src))) || [], [category, session]);
   const title = session?.title || formatSessionName(sessionName || "");
+  const categoryLabel = category ? categoryLabels[category.category] || category.category : "";
+  const viewerOpen = active !== null && Boolean(images[active]);
   const availableStories = category?.sessions.filter((item) => item.featuredHorizontal) || [];
   const currentStory = availableStories.findIndex((item) => item.name === sessionName);
   const next = availableStories.length > 1
@@ -34,17 +46,15 @@ export default function Gallery() {
 
   useEffect(() => {
     dialogRef.current?.close();
+    openerRef.current = null;
     setActive(null);
     setVisibleCount(24);
   }, [categoryName, sessionName]);
   useEffect(() => {
     const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (active === null || !images[active]) {
-      if (dialog.open) dialog.close();
-      return;
-    }
+    if (!dialog || !viewerOpen) return;
     if (!dialog.open) dialog.showModal();
+    closeRef.current?.focus({ preventScroll: true });
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const handleKey = (event: KeyboardEvent) => {
@@ -60,13 +70,19 @@ export default function Gallery() {
           index === null ? null : (index - 1 + images.length) % images.length,
         );
       }
+      if (event.key === "Home" || event.key === "End") {
+        event.preventDefault();
+        setActive(event.key === "Home" ? 0 : images.length - 1);
+      }
     };
     document.addEventListener("keydown", handleKey);
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", handleKey);
+      if (dialog.open) dialog.close();
+      if (openerRef.current?.isConnected) openerRef.current.focus({ preventScroll: true });
     };
-  }, [active, images.length]);
+  }, [viewerOpen, images.length]);
   const close = () => {
     dialogRef.current?.close();
     setActive(null);
@@ -84,18 +100,21 @@ export default function Gallery() {
       </section>
     );
   return (
-    <>
-      <section className="gallery-intro site-container">
+    <div className="gallery-presentation">
+      <section className="gallery-intro site-container" aria-labelledby="gallery-story-title">
         <Link className="gallery-back" to={`/Portfolio/${category.category}`}>
-          ← Back to {category.name.toLowerCase()}
+          <GalleryArrow previous />Back to {categoryLabel.toLowerCase()}
         </Link>
-        <p className="eyebrow">{category.category} / A photo story</p>
-        <h1>{title}</h1>
-        {session.description && <p className="gallery-description">{session.description}</p>}
-        <p>{images.length} photographs. A moment worth keeping.</p>
-        <Link className="text-link gallery-inquire" to={`/Contact?session=${category.category}`}>
-          Plan a session with Nikki <span aria-hidden="true">↗</span>
-        </Link>
+        <div className="gallery-story-heading">
+          <div><p className="eyebrow">{categoryLabel} / A photo story</p><h1 id="gallery-story-title">{title}</h1></div>
+          <div className="gallery-story-introduction">
+            {session.description && <p className="gallery-description">{session.description}</p>}
+            <Link className="text-link gallery-inquire" to={`/Contact?session=${category.category}`}>
+              Plan a session with Nikki <span aria-hidden="true">↗</span>
+            </Link>
+          </div>
+        </div>
+        <div className="gallery-story-meta"><span>{images.length} {images.length === 1 ? "photograph" : "photographs"}</span><span>Open a photograph to see it in full</span></div>
       </section>
       <section
         className="gallery-masonry site-container"
@@ -113,19 +132,20 @@ export default function Gallery() {
                     className="gallery-photo"
                     type="button"
                     key={src}
-                    onClick={() => setActive(index)}
+                    onClick={event => { openerRef.current = event.currentTarget; setActive(index); }}
                     aria-label={`View photograph ${index + 1} of ${title}`}
                   >
                     <img
                       src={portfolioPreview(src)}
                       srcSet={portfolioSrcSet(src)}
-                      sizes="(max-width: 600px) calc(50vw - 27px), (max-width: 1000px) calc(50vw - 45px), 32vw"
+                      sizes="(max-width: 600px) calc(100vw - 36px), (max-width: 1100px) calc(50vw - 51px), (min-width: 1512px) 449px, calc(33.33vw - 55px)"
                       alt={portfolioAlt(src) || `${title}, photograph ${index + 1}`}
                       width={width}
                       height={height}
                       loading={index < 3 ? "eager" : "lazy"}
                       decoding="async"
                     />
+                    <span className="gallery-photo-open" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M4 9V4h5m6 0h5v5M4 15v5h5m6 0h5v-5" /></svg></span>
                   </button>
                 );
               })}
@@ -134,7 +154,7 @@ export default function Gallery() {
         )}
         {visibleCount < images.length && (
           <div className="gallery-load-more">
-            <p>
+            <p aria-live="polite">
               Showing {Math.min(visibleCount, images.length)} of {images.length}{" "}
               photographs
             </p>
@@ -148,45 +168,47 @@ export default function Gallery() {
           </div>
         )}
       </section>
-      <div className="gallery-next site-container">
-        <Link className="text-link" to={`/Contact?session=${category.category}`}>
-          Let’s tell your story ↗
-        </Link>
+      <nav className="gallery-next site-container" aria-label="Continue exploring">
+        <div className="gallery-next-inquiry"><p className="eyebrow">Your story, next</p><h2>Let’s tell your story.</h2><Link className="text-link" to={`/Contact?session=${category.category}`}>Plan a session with Nikki <span aria-hidden="true">↗</span></Link></div>
         {next && (
           <Link
-            className="text-link"
+            className="gallery-next-story"
             to={`/gallery/${category.category}/${encodeURIComponent(next.name)}`}
           >
-            Next story: {next.title || formatSessionName(next.name)} ↗
+            <img src={portfolioPreview(`${category.path}/${next.name}/${next.featuredHorizontal}`)} alt="" width="100" height="120" loading="lazy" />
+            <span><span className="eyebrow">Next story</span><strong>{next.title || formatSessionName(next.name)}</strong><span className="gallery-next-view">View photographs <GalleryArrow /></span></span>
           </Link>
         )}
-      </div>
+      </nav>
       <dialog
-        className="lightbox"
+        className="lightbox gallery-lightbox"
         ref={dialogRef}
         aria-label={`${title} photograph viewer`}
-        onCancel={close}
+        onCancel={event => { event.preventDefault(); close(); }}
         onClose={() => setActive(null)}
       >
         {active !== null && images[active] && (
           <div className="lightbox-content">
             <div className="lightbox-top">
-              <span>{title}</span>
+              <div><span className="gallery-lightbox-category">{categoryLabel}</span><span className="gallery-lightbox-title">{title}</span></div>
               <button
+                ref={closeRef}
                 type="button"
                 onClick={close}
                 aria-label="Close photograph viewer"
               >
-                Close ×
+                <span>Close</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
               </button>
             </div>
-            <div className="lightbox-image">
+            <div className="lightbox-image" onClick={event => { if (event.target === event.currentTarget) close(); }}>
               <img
                 src={images[active]}
                 alt={portfolioAlt(images[active]) || `${title}, photograph ${active + 1}`}
               />
             </div>
-            <div className="lightbox-bottom">
+            <div className="gallery-lightbox-footer">
+              <p className="gallery-lightbox-caption">{portfolioAlt(images[active]) || `${title}, photograph ${active + 1}`}</p>
+              <div className="lightbox-bottom">
               <button
                 type="button"
                 onClick={() =>
@@ -194,22 +216,24 @@ export default function Gallery() {
                 }
                 aria-label="Previous photograph"
               >
-                ←
+                <GalleryArrow previous />
               </button>
-              <span aria-live="polite">
-                {active + 1} / {images.length}
+              <span aria-live="polite" aria-atomic="true">
+                <span className="visually-hidden">Photograph </span>{active + 1}<span aria-hidden="true"> / </span><span className="visually-hidden"> of </span>{images.length}
               </span>
               <button
                 type="button"
                 onClick={() => setActive((active + 1) % images.length)}
                 aria-label="Next photograph"
               >
-                →
+                <GalleryArrow />
               </button>
+              </div>
+              <span className="gallery-lightbox-hint">← → to explore <span aria-hidden="true">·</span> Esc to close</span>
             </div>
           </div>
         )}
       </dialog>
-    </>
+    </div>
   );
 }
