@@ -1,0 +1,74 @@
+# The nikki-website-nvme disk tag is restricted to verified NVMe devices on
+# R610-A and R510-C. Never add the archive HDDs to this tag.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nikki-website-nvme
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "2"
+  diskSelector: nikki-website-nvme
+  fsType: ext4
+  dataLocality: disabled
+  replicaAutoBalance: disabled
+  staleReplicaTimeout: "2880"
+  dataEngine: v1
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nikki-website-data
+  namespace: default
+  labels:
+    app: nikkidodgephotography
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: nikki-website-nvme
+  resources:
+    requests:
+      storage: 64Gi
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nikki-website-images
+  namespace: default
+  annotations:
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /uploads/$1
+    nginx.ingress.kubernetes.io/proxy-body-size: 200m
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: images.nikkidodgephotography.com
+      http:
+        paths:
+          - path: /(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: nikkidodgephotography
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - images.nikkidodgephotography.com
+      secretName: nikki-website-images-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nikki-website-images
+  namespace: default
+spec:
+  secretName: nikki-website-images-tls
+  dnsNames:
+    - images.nikkidodgephotography.com
+  issuerRef:
+    name: letsencrypt-http01-prod
+    kind: ClusterIssuer

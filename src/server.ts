@@ -107,8 +107,19 @@ app.set("trust proxy", 1);
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 
+// Briefly pause writes while the final CRM snapshot moves between storage backends.
+app.use("/api", (req, res, next) => {
+    if (config.storageReadOnly && !["GET", "HEAD", "OPTIONS"].includes(req.method)) {
+        res.setHeader("Retry-After", "60");
+        res.status(503).json({ error: "Storage maintenance is in progress. Please try again shortly." });
+        return;
+    }
+    next();
+});
+
 if (!isS3Enabled) {
     app.use(config.localUploadPath, express.static(config.localMediaDir));
+    app.use("/assets", express.static(resolve(config.localMediaDir, "assets")));
 }
 
 app.get("/api/health", (_req, res) => {

@@ -221,6 +221,8 @@ jobs:
           TLS_SECRET: ${{ vars.TLS_SECRET_NAME || 'nikkidodgephotography-tls' }}
           SECRET_NAME: ${{ vars.APP_SECRET_NAME }}
           SERVICE_TYPE: ${{ env.SERVICE_TYPE }}
+          WEBSITE_DATA_PVC: ${{ steps.namespace.outputs.namespace == 'default' && vars.WEBSITE_DATA_PVC || '' }}
+          MEMORY_LIMIT: 1Gi
         run: |
           set -euo pipefail
           chmod +x scripts/deploy-k8s.sh

@@ -48,8 +48,9 @@ if (isProduction && adminSessionSecret.length === 0) {
 export const config = {
     rootDir,
     distDir: resolve(rootDir, "dist"),
-    localDataDir: resolve(rootDir, "data", "app-data"),
-    localMediaDir: resolve(rootDir, "data", "media"),
+    localDataDir: resolve(process.env.CRM_LOCAL_STORAGE_ROOT?.trim() || resolve(rootDir, "data"), "app-data"),
+    localMediaDir: resolve(process.env.CRM_LOCAL_STORAGE_ROOT?.trim() || resolve(rootDir, "data"), "media"),
+    storageReadOnly: process.env.CRM_STORAGE_READ_ONLY === "true",
     localUploadPath: "/uploads",
     isProduction,
     port,

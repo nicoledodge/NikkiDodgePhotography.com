@@ -191,11 +191,11 @@ function getLocalMediaPath(relativeKey = ""): string {
 }
 
 function getPublicUrlForMediaKey(key: string): string {
-    if (isS3Enabled) {
-        if (config.publicAssetBaseUrl.length > 0) {
-            return `${config.publicAssetBaseUrl}/${encodePathSegments(key)}`;
-        }
+    if (config.publicAssetBaseUrl.length > 0) {
+        return `${config.publicAssetBaseUrl}/${encodePathSegments(key)}`;
+    }
 
+    if (isS3Enabled) {
         return `https://${config.s3Bucket}.s3.${config.s3Region}.amazonaws.com/${encodePathSegments(key)}`;
     }
 
@@ -293,7 +293,19 @@ async function writeJsonDocument<T>(documentName: DataDocumentName, payload: T):
     await ensureLocalStorage();
     const filePath = getLocalDataPath(documentName);
     await fs.mkdir(dirname(filePath), { recursive: true });
-    await fs.writeFile(filePath, serializedPayload, "utf8");
+    const temporaryPath = `${filePath}.${randomUUID()}.tmp`;
+    try {
+        const handle = await fs.open(temporaryPath, "wx", 0o600);
+        try {
+            await handle.writeFile(serializedPayload, "utf8");
+            await handle.sync();
+        } finally {
+            await handle.close();
+        }
+        await fs.rename(temporaryPath, filePath);
+    } finally {
+        await fs.rm(temporaryPath, { force: true });
+    }
 }
 
 async function walkLocalMedia(relativePrefix = ""): Promise<MediaItem[]> {

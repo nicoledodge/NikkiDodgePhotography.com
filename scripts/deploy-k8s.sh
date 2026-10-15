@@ -19,6 +19,7 @@ TLS_SECRET="${TLS_SECRET:-}"
 SECRET_NAME="${SECRET_NAME:-}"
 CONFIGMAP_NAME="${CONFIGMAP_NAME:-}"
 IMAGE_PULL_SECRET="${IMAGE_PULL_SECRET:-}"
+WEBSITE_DATA_PVC="${WEBSITE_DATA_PVC:-}"
 
 hosts=()
 if [[ -n "$HOSTNAME" ]]; then
@@ -129,6 +130,25 @@ cat <<EOF >> "$deployment_file"
               memory: ${MEMORY_LIMIT:-512Mi}
 EOF
 
+if [[ -n "$WEBSITE_DATA_PVC" ]]; then
+  # A single writer owns the CRM files. Recreate also permits RWO attachment to move nodes.
+  python3 - "$deployment_file" "$WEBSITE_DATA_PVC" <<'PY'
+import sys
+path, claim = sys.argv[1:]
+text = open(path).read()
+text = text.replace("type: RollingUpdate\n    rollingUpdate:\n      maxSurge: 1\n      maxUnavailable: 0", "type: Recreate")
+text += f"""          volumeMounts:
+            - name: website-data
+              mountPath: /app/data
+      volumes:
+        - name: website-data
+          persistentVolumeClaim:
+            claimName: {claim}
+"""
+open(path, "w").write(text)
+PY
+fi
+
 kubectl apply -f "$deployment_file"
 
 cat <<EOF > "$service_file"
@@ -161,6 +181,7 @@ metadata:
   namespace: ${NAMESPACE}
   annotations:
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "200m"
 spec:
   ingressClassName: ${INGRESS_CLASS}
   rules:
@@ -201,5 +222,5 @@ EOF
   kubectl apply -f "$ingress_file"
 fi
 
-kubectl -n "$NAMESPACE" rollout status deployment/"$APP_NAME" --timeout=120s || true
+kubectl -n "$NAMESPACE" rollout status deployment/"$APP_NAME" --timeout=300s
 kubectl -n "$NAMESPACE" get deploy,svc,ingress -o wide | grep "$APP_NAME" || true
