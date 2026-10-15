@@ -200,8 +200,8 @@ export default function Admin() {
     const [username, setUsername] = useState("");
     const [loginForm, setLoginForm] = useState({ username: "admin", password: "" });
     const [loginError, setLoginError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<AdminTab>("leads");
-    const [websiteOpened, setWebsiteOpened] = useState(false);
+    const [activeTab, setActiveTab] = useState<AdminTab>(() => new URLSearchParams(window.location.search).get("workspace") === "website" ? "website" : "leads");
+    const [websiteOpened, setWebsiteOpened] = useState(activeTab === "website");
     const [websiteDirty, setWebsiteDirty] = useState(false);
     useEffect(() => { if (activeTab === "website") setWebsiteOpened(true); }, [activeTab]);
     const [notice, setNotice] = useState<string | null>(null);
