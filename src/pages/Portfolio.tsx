@@ -1,3 +1,4 @@
+import PageComposer from "../site/PageComposer";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import mediaLibrary from "../components/MediaLibrary/MediaLibrary";
@@ -65,6 +66,7 @@ export default function Portfolio() {
     .sort((a, b) => Number(Boolean(b.session.curated)) - Number(Boolean(a.session.curated)));
   return (
     <div className="site-container">
+<PageComposer page="portfolio" enabled={!categoryName && !routeSearch}>
       <section className="page-intro portfolio-intro">
         <div>
           <p className="eyebrow">
@@ -188,6 +190,7 @@ export default function Portfolio() {
           </div>
         )}
       </section>
-    </div>
+    </PageComposer>
+</div>
   );
 }

@@ -1,3 +1,4 @@
+import PageComposer from "../site/PageComposer";
 import { Link } from "react-router-dom";
 import { useSiteSettings } from "../site/SiteSettingsContext";
 import { curatedStories, storyPhotoUrl, storyUrl } from "../data/curatedPortfolio";
@@ -26,7 +27,7 @@ export default function Home() {
   const highlights = curatedStories.filter((story) => story.category !== "Engagements");
 
   return (
-    <>
+    <PageComposer page="home">
       <section className="home-intro site-container" aria-labelledby="home-title">
         <div className="intro-meta">
           <p className="eyebrow">Highlands Ranch · Denver · Colorado</p>
@@ -128,6 +129,6 @@ export default function Home() {
         <img src="/assets/editorial/forest-wedding.webp" srcSet="/assets/editorial/forest-wedding-640.webp 640w, /assets/editorial/forest-wedding.webp 1800w"
           sizes="100vw" alt="An intimate wedding ceremony surrounded by towering forest trees" loading="lazy" width="1800" height="1200" />
       </div>
-    </>
+    </PageComposer>
   );
 }

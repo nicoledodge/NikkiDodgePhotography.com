@@ -1,3 +1,4 @@
+import PageComposer from "../site/PageComposer";
 import { Link } from "react-router-dom";
 import { useSiteSettings } from "../site/SiteSettingsContext";
 import { CONTACT } from "./Contact";
@@ -17,6 +18,7 @@ export default function Howdy() {
 
     return (
         <div className="inner-page inner-about">
+<PageComposer page="about">
             <section className="inner-about-hero site-container" aria-labelledby="about-title">
                 <figure className="inner-profile">
                     <img src={useDefaultProfile ? "/assets/editorial/nikki.webp" : siteSettings.profilePhotoUrl}
@@ -56,6 +58,7 @@ export default function Howdy() {
                     <Link className="text-link" to="/portfolio">Explore the work <span aria-hidden="true">↗</span></Link>
                 </div>
             </section>
-        </div>
+        </PageComposer>
+</div>
     );
 }

@@ -1,3 +1,4 @@
+import WebsiteEditor from "../site/WebsiteEditor";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import "../styles/admin.css";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -12,7 +13,7 @@ import type {
 import { defaultSiteSettings, type SiteSettings } from "../shared/siteSettings.js";
 import { useSiteSettings } from "../site/SiteSettingsContext";
 
-type AdminTab = "leads" | "calendar" | "settings";
+type AdminTab = "leads" | "calendar" | "website" | "settings";
 
 interface SessionResponse {
     authenticated: boolean;
@@ -42,7 +43,8 @@ interface NotificationStatus {
 const tabLabels: Record<AdminTab, string> = {
     leads: "Leads",
     calendar: "Calendar",
-    settings: "Site Settings",
+    website: "Website",
+    settings: "Business Settings",
 };
 
 const settingsFields: Array<{
@@ -199,6 +201,9 @@ export default function Admin() {
     const [loginForm, setLoginForm] = useState({ username: "admin", password: "" });
     const [loginError, setLoginError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<AdminTab>("leads");
+    const [websiteOpened, setWebsiteOpened] = useState(false);
+    const [websiteDirty, setWebsiteDirty] = useState(false);
+    useEffect(() => { if (activeTab === "website") setWebsiteOpened(true); }, [activeTab]);
     const [notice, setNotice] = useState<string | null>(null);
     const [dashboardError, setDashboardError] = useState<string | null>(null);
     const [loadingDashboard, setLoadingDashboard] = useState(false);
@@ -322,6 +327,7 @@ export default function Admin() {
     };
 
     const handleLogout = async () => {
+        if (websiteDirty && !window.confirm("Sign out and discard unsaved website changes? Save your draft first to keep them.")) return;
         await request<SessionResponse>("/api/auth/logout", {
             method: "POST",
         });
@@ -983,12 +989,14 @@ export default function Admin() {
                             </section>
                         )}
 
+                        {websiteOpened && <div hidden={activeTab !== "website"}><WebsiteEditor onDirtyChange={setWebsiteDirty} /></div>}
+
                         {activeTab === "settings" && (
                             <form className="admin-card admin-settings-form" onSubmit={saveSettings}>
                                 <div className="admin-section-heading">
                                     <div>
-                                        <h2>Site Settings</h2>
-                                        <p className="admin-muted">Update the contact details and about information shown on the public site. The editorial layout, colors, and other page copy are managed in the site source.</p>
+                                        <h2>Business Settings</h2>
+                                        <p className="admin-muted">Update your contact details and profile. Open Website to edit page layouts, sections, text, and photographs.</p>
                                     </div>
                                 </div>
 

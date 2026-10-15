@@ -1,3 +1,4 @@
+import { normalizeWebsiteContent } from "./shared/website.js";
 import express, { type NextFunction, type Request, type Response } from "express";
 import multer from "multer";
 import { randomUUID } from "node:crypto";
@@ -400,6 +401,35 @@ app.put("/api/admin/settings", requireAdmin, asyncHandler(async (req, res) => {
     const settings = mergeSiteSettings(req.body);
     await storage.saveSettings(settings);
     res.json(settings);
+}));
+
+// Serialize read/compare/write so two editor sessions cannot silently overwrite each other.
+let websiteWriteQueue: Promise<void> = Promise.resolve();
+app.get("/api/public/website", asyncHandler(async (_req, res) => {
+    const document = await storage.getWebsite();
+    res.json(document.published);
+}));
+app.get("/api/admin/website", requireAdmin, asyncHandler(async (_req, res) => { res.json(await storage.getWebsite()); }));
+app.put("/api/admin/website", requireAdmin, asyncHandler(async (req, res) => {
+    const update = websiteWriteQueue.then(async () => {
+        const document = await storage.getWebsite();
+        if (req.body.revision !== document.revision) { res.status(409).json({ error: "Another editor saved changes. Reload the draft before saving." }); return; }
+        const action = req.body.action;
+        if (!["draft", "publish", "restore"].includes(action)) { res.status(400).json({ error: "Unknown website action." }); return; }
+        try {
+            const content = action === "restore" ? document.previousPublished : normalizeWebsiteContent(req.body.content);
+            if (!content) { res.status(400).json({ error: "There is no previous published version." }); return; }
+            const next = { ...document, revision: document.revision + 1, draft: content,
+                ...(action === "publish" || action === "restore" ? { previousPublished: document.published, published: content, publishedAt: new Date().toISOString() } : {}) };
+            await storage.saveWebsite(next);
+            res.json(next);
+        } catch (error) {
+            if (error instanceof Error && !('code' in error)) { res.status(400).json({ error: error.message }); return; }
+            throw error;
+        }
+    });
+    websiteWriteQueue = update.catch(() => {});
+    await update;
 }));
 
 app.get("/api/admin/media", requireAdmin, asyncHandler(async (req, res) => {

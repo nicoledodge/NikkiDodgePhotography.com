@@ -47,6 +47,24 @@ try {
     assert.equal((await (await request("/api/health")).json()).storage, "local");
     const login = await request("/api/auth/login", "POST", { username: "storage-check", password: "storage-check" });
     cookie = login.headers.get("set-cookie").split(";")[0];
+    // Drafts, optimistic revision checks, publishing and rollback use one atomic document.
+    assert.equal((await fetch(`${base}/api/admin/website`)).status, 401);
+    const originalWebsite = await (await request("/api/admin/website")).json();
+    assert.equal(originalWebsite.revision, 0);
+    const websiteContent = { pages: { home: [{ id: "custom-storage-check", name: "Verification", kind: "text", fields: { title: "Draft-only heading", body: "Isolated verification" } }] } };
+    const savedWebsite = await (await request("/api/admin/website", "PUT", { revision: 0, action: "draft", content: websiteContent })).json();
+    assert.equal(savedWebsite.revision, 1);
+    assert.deepEqual((await (await request("/api/public/website")).json()).pages, {});
+    const conflict = await fetch(`${base}/api/admin/website`, { method: "PUT", headers: { cookie, "Content-Type": "application/json" }, body: JSON.stringify({ revision: 0, action: "draft", content: websiteContent }) });
+    assert.equal(conflict.status, 409);
+    await request("/api/admin/website", "PUT", { revision: 1, action: "publish", content: websiteContent });
+    assert.equal((await (await request("/api/public/website")).json()).pages.home[0].fields.title, "Draft-only heading");
+    const racingSaves = await Promise.all([0, 1].map(() => fetch(`${base}/api/admin/website`, { method: "PUT", headers: { cookie, "Content-Type": "application/json" }, body: JSON.stringify({ revision: 2, action: "draft", content: websiteContent }) })));
+    assert.deepEqual(racingSaves.map(response => response.status).sort(), [200, 409]);
+    await request("/api/admin/website", "PUT", { revision: 3, action: "restore" });
+    assert.deepEqual((await (await request("/api/public/website")).json()).pages, {});
+    const unsafe = await fetch(`${base}/api/admin/website`, { method: "PUT", headers: { cookie, "Content-Type": "application/json" }, body: JSON.stringify({ revision: 4, action: "draft", content: { pages: { home: [{ id: "custom-unsafe", kind: "photo", fields: { photo: "javascript:alert(1)" } }] } } }) });
+    assert.equal(unsafe.status, 400);
     const settings = await (await request("/api/admin/settings")).json();
     const marker = `Storage check ${randomUUID()}`;
     await request("/api/admin/settings", "PUT", { ...settings, heroTitle: marker });
@@ -94,6 +112,7 @@ try {
     assert.deepEqual(await readdir(join(root, "upload-staging")), []);
     await stop();
     await start();
+    assert.equal((await (await request("/api/admin/website")).json()).revision, 4);
     assert.equal((await (await request("/api/public/settings")).json()).heroTitle, marker);
     assert.equal((await (await request("/api/admin/leads")).json()).length, 1);
     assert.equal(JSON.parse(await readFile(join(root, "app-data/settings.json"), "utf8")).heroTitle, marker);
@@ -106,7 +125,7 @@ try {
     assert.equal(blocked.status, 503);
     assert.equal(blocked.headers.get("retry-after"), "60");
     assert.equal((await request("/api/public/settings")).status, 200);
-    console.log("Local storage verified: auth, CRM writes, restart persistence, media upload/move/delete, and maintenance write hold.");
+    console.log("Local storage verified: auth, CRM writes, website draft/publish/rollback/conflict protection, restart persistence, media upload/move/delete, and maintenance write hold.");
 } finally {
     await stop();
     await rm(root, { recursive: true, force: true });

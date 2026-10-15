@@ -1,3 +1,4 @@
+import PageComposer from "../site/PageComposer";
 import { Link } from "react-router-dom";
 import { CONTACT } from "./Contact";
 import "../styles/inner-pages.css";
@@ -13,6 +14,7 @@ const otherSessions = [
 export default function Pricing() {
     return (
         <div className="inner-page inner-pricing">
+<PageComposer page="pricing">
             <header className="inner-intro site-container inner-intro-split">
                 <div>
                     <p className="eyebrow">The investment</p>
@@ -63,6 +65,7 @@ export default function Pricing() {
                 <p>Tell me the when, the where, and what you’re hoping to remember. We’ll take it from there.</p>
                 <Link className="text-link" to={CONTACT}>Ask about availability <span aria-hidden="true">↗</span></Link>
             </section>
-        </div>
+        </PageComposer>
+</div>
     );
 }

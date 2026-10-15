@@ -1,3 +1,4 @@
+import { emptyWebsiteDocument, type WebsiteDocument } from "../shared/website.js";
 import type { S3Client } from "@aws-sdk/client-s3";
 import { randomUUID } from "node:crypto";
 import { dirname, join, relative, resolve } from "node:path";
@@ -7,9 +8,10 @@ import type { CalendarEvent, CalendarFeed, Lead, MediaFolderCreateResult, MediaI
 import { defaultSiteSettings, mergeSiteSettings, type SiteSettings } from "../shared/siteSettings.js";
 import { config, isS3Enabled } from "./config.js";
 
-type DataDocumentName = "leads" | "calendar" | "calendarFeeds" | "settings";
+type DataDocumentName = "leads" | "calendar" | "calendarFeeds" | "settings" | "website";
 
 const dataFileNames: Record<DataDocumentName, string> = {
+    website: "website.json",
     leads: "leads.json",
     calendar: "calendar.json",
     calendarFeeds: "calendar-feeds.json",
@@ -386,6 +388,9 @@ async function removeEmptyDirectories(startPath: string): Promise<void> {
 }
 
 export const storage = {
+    async getWebsite(): Promise<WebsiteDocument> { return readJsonDocument("website", emptyWebsiteDocument()); },
+    async saveWebsite(document: WebsiteDocument): Promise<void> { await writeJsonDocument("website", document); },
+
     async getLeads(): Promise<Lead[]> {
         const leads = await readJsonDocument<Lead[]>("leads", []);
         return leads.sort((left, right) => right.createdAt.localeCompare(left.createdAt));

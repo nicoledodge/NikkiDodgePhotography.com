@@ -1,3 +1,4 @@
+import PageComposer from "../site/PageComposer";
 import ContactForm from "../components/Contacts/Contact";
 import { useSearchParams } from "react-router-dom";
 import { useSiteSettings } from "../site/SiteSettingsContext";
@@ -31,6 +32,7 @@ export default function Contact() {
 
     return (
         <div className="inner-page inner-contact site-container">
+<PageComposer page="contact">
             <header className="inner-intro">
                 <p className="eyebrow">A good place to begin</p>
                 <h1>Tell me what<br />you have in mind.</h1>
@@ -48,6 +50,7 @@ export default function Contact() {
                 </aside>
                 <ContactForm initialSubject={session} />
             </div>
-        </div>
+        </PageComposer>
+</div>
     );
 }
