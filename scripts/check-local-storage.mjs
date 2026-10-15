@@ -5,6 +5,8 @@ import { mkdtemp, readFile, readdir, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
+import { normalizeWebsiteContent } from "../dist-server/shared/website.js";
+import { nextWebsiteHistory, readWebsiteHistory, WEBSITE_HISTORY_BYTES, WEBSITE_HISTORY_LIMIT } from "../dist-server/shared/websiteHistory.js";
 
 const root = await mkdtemp(join(tmpdir(), "nikki-storage-check-"));
 const port = 18000 + Math.floor(Math.random() * 10000);
@@ -42,7 +44,42 @@ async function request(path, method = "GET", body) {
     assert.ok(response.ok, `${method} ${path}: ${response.status}`);
     return response;
 }
+// Deterministic clocks verify autosave coalescing without a minute-long integration wait.
+function verifyHistoryCheckpoints() {
+    const empty = { pages: {} };
+    const content = title => normalizeWebsiteContent({ pages: { home: [{ id: "custom-history-check", kind: "text", fields: { title } }] } });
+    const now = Date.parse("2030-01-01T00:00:00Z");
+    let document = { revision: 0, draft: empty, published: empty };
+    const save = (title, at) => {
+        const next = content(title);
+        document = { ...document, revision: document.revision + 1, draft: next, history: nextWebsiteHistory(document, "draft", next, at) };
+    };
+    save("First idea", now);
+    const first = document.history[0];
+    assert.deepEqual(first.content, empty);
+    save("Second idea", now + 30_000);
+    assert.deepEqual(document.history, [first], "Autosave must keep the pre-edit checkpoint instead of replacing it");
+    save("Third idea", now + 61_000);
+    assert.equal(document.history.length, 2);
+    assert.equal(document.history[0].content.pages.home[0].fields.title, "Second idea");
+    assert.deepEqual(nextWebsiteHistory(document, "draft", document.draft, now + 90_000), document.history, "Unchanged saves must not duplicate history");
+    assert.ok(document.history.some(version => version.id === first.id), "The original publication remains recoverable");
+
+    const versions = Array.from({ length: 40 }, (_, index) => ({ id: `version-${index}`, revision: index, createdAt: new Date(now + index * 61_000).toISOString(), label: index ? "draft" : "publish", content: content(`Version ${index}`) })).reverse();
+    const capped = readWebsiteHistory({ revision: 40, draft: content("Current"), published: content("Version 0"), history: versions });
+    assert.equal(capped.length, WEBSITE_HISTORY_LIMIT);
+    assert.equal(capped[0].id, "version-39");
+    assert.ok(capped.some(version => version.id === "version-0"), "The latest publication survives draft checkpoint trimming");
+
+    const large = Array.from({ length: 30 }, (_, index) => ({ ...versions[0], id: `large-${index}`, revision: index, content: normalizeWebsiteContent({ pages: { home: [{ id: "custom-large", kind: "text", fields: { title: String(index), ...Object.fromEntries(Array.from({ length: 20 }, (_, field) => [`field-${field}`, "λ".repeat(12000)])) } }] } }) })).reverse();
+    const bounded = readWebsiteHistory({ revision: 40, draft: content("Current"), published: large[large.length - 1].content, history: large });
+    assert.ok(bounded.length < large.length, "The byte budget must trim history before its count limit");
+    assert.ok(Buffer.byteLength(JSON.stringify(bounded, null, 2)) <= WEBSITE_HISTORY_BYTES);
+    assert.equal(bounded[0].id, "large-29");
+    assert.ok(bounded.some(version => version.id === "large-0"));
+}
 try {
+    verifyHistoryCheckpoints();
     await start();
     assert.equal((await (await request("/api/health")).json()).storage, "local");
     const login = await request("/api/auth/login", "POST", { username: "storage-check", password: "storage-check" });
@@ -51,6 +88,8 @@ try {
     assert.equal((await fetch(`${base}/api/admin/website`)).status, 401);
     const originalWebsite = await (await request("/api/admin/website")).json();
     assert.equal(originalWebsite.revision, 0);
+    assert.deepEqual(originalWebsite.history, []);
+    await assert.rejects(stat(join(root, "app-data/website.json")), { code: "ENOENT" });
     const websiteStyles = {
         title: { size: "display", color: "#6b4d63", align: "center", weight: "bold" },
         photo: { fit: "cover", position: "top", ratio: "portrait" },
@@ -58,6 +97,9 @@ try {
     const websiteContent = { pages: { home: [{ id: "custom-storage-check", name: "Verification", kind: "split", fields: { title: "Draft-only heading", body: "Isolated verification", photo: "/assets/editorial/nikki.webp" }, fieldStyles: { ...websiteStyles, body: {} } }] } };
     const savedWebsite = await (await request("/api/admin/website", "PUT", { revision: 0, action: "draft", content: websiteContent })).json();
     assert.equal(savedWebsite.revision, 1);
+    assert.equal(savedWebsite.history.length, 1);
+    assert.deepEqual(savedWebsite.history[0].content.pages, {});
+    const baselineVersionId = savedWebsite.history[0].id;
     assert.deepEqual(savedWebsite.draft.pages.home[0].fieldStyles, websiteStyles);
     assert.deepEqual((await (await request("/api/public/website")).json()).pages, {});
     const conflict = await fetch(`${base}/api/admin/website`, { method: "PUT", headers: { cookie, "Content-Type": "application/json" }, body: JSON.stringify({ revision: 0, action: "draft", content: websiteContent }) });
@@ -89,6 +131,72 @@ try {
     const afterRejectedStyles = await (await request("/api/admin/website")).json();
     assert.equal(afterRejectedStyles.revision, 4);
     assert.deepEqual(afterRejectedStyles.draft.pages, {});
+    // Recovery changes private drafts, including page-only recovery and removal of absent overrides.
+    const publishedVersion = afterRejectedStyles.history.find(version => version.label === "publish" && version.revision === 2);
+    assert.ok(publishedVersion);
+    let historyDocument = await (await request("/api/admin/website", "PUT", { revision: 4, action: "recover", versionId: publishedVersion.id })).json();
+    assert.equal(historyDocument.draft.pages.home[0].fields.title, "Draft-only heading");
+    assert.deepEqual(historyDocument.published, afterRejectedStyles.published);
+    assert.deepEqual(historyDocument.previousPublished, afterRejectedStyles.previousPublished);
+    assert.equal(historyDocument.publishedAt, afterRejectedStyles.publishedAt);
+    const multiPage = { pages: { ...historyDocument.draft.pages, about: [{ id: "custom-about", kind: "text", fields: { title: "Keep this page" } }] } };
+    const unsavedMultiPage = { pages: { ...multiPage.pages, home: [{ ...multiPage.pages.home[0], fields: { ...multiPage.pages.home[0].fields, title: "Unsaved home edit" } }] } };
+    historyDocument = await (await request("/api/admin/website", "PUT", { revision: historyDocument.revision, action: "recover", versionId: publishedVersion.id, page: "home", content: unsavedMultiPage })).json();
+    assert.equal(historyDocument.draft.pages.about[0].fields.title, "Keep this page");
+    assert.equal(historyDocument.draft.pages.home[0].fields.title, "Draft-only heading");
+    assert.ok(historyDocument.history.some(version => JSON.stringify(version.content) === JSON.stringify(normalizeWebsiteContent(unsavedMultiPage))), "Recovery atomically checkpoints unsaved changes without a separate draft save");
+    const beforeRecovery = historyDocument.draft;
+    historyDocument = await (await request("/api/admin/website", "PUT", { revision: historyDocument.revision, action: "recover", versionId: baselineVersionId, page: "about" })).json();
+    assert.equal(historyDocument.draft.pages.about, undefined);
+    assert.equal(historyDocument.draft.pages.home[0].fields.title, "Draft-only heading");
+    assert.ok(historyDocument.history.some(version => JSON.stringify(version.content) === JSON.stringify(beforeRecovery)), "Recovery must preserve the draft it replaces");
+    assert.deepEqual((await (await request("/api/public/website")).json()).pages, {});
+    const beforeNoOp = historyDocument.history;
+    historyDocument = await (await request("/api/admin/website", "PUT", { revision: historyDocument.revision, action: "draft", content: historyDocument.draft })).json();
+    assert.deepEqual(historyDocument.history, beforeNoOp);
+    const unchangedFile = await readFile(join(root, "app-data/website.json"));
+    for (const [payload, status] of [[{ versionId: "not-a-version" }, 404], [{ versionId: publishedVersion.id, page: "not-a-page" }, 400], [{ versionId: publishedVersion.id, content: { pages: { home: [{ id: "custom-unsafe-recovery", kind: "photo", fields: { photo: "javascript:alert(1)" } }] } } }, 400]]) {
+        const response = await fetch(`${base}/api/admin/website`, { method: "PUT", headers: { cookie, "Content-Type": "application/json" }, body: JSON.stringify({ revision: historyDocument.revision, action: "recover", ...payload }) });
+        assert.equal(response.status, status);
+        assert.deepEqual(await readFile(join(root, "app-data/website.json")), unchangedFile);
+    }
+    const racingRecoveries = await Promise.all([0, 1].map(() => fetch(`${base}/api/admin/website`, { method: "PUT", headers: { cookie, "Content-Type": "application/json" }, body: JSON.stringify({ revision: historyDocument.revision, action: "recover", versionId: baselineVersionId }) })));
+    assert.deepEqual(racingRecoveries.map(response => response.status).sort(), [200, 409]);
+    historyDocument = await (await request("/api/admin/website")).json();
+    assert.deepEqual(historyDocument.draft.pages, {});
+    assert.deepEqual(historyDocument.published.pages, {});
+
+    // Section presets and bounded layout controls survive persistence and reject invalid values.
+    const presetContent = { pages: { home: ["hero", "gallery", "faq", "packages"].map(kind => ({ id: `custom-${kind}`, kind, fields: { title: kind, "photo-1": "/assets/editorial/nikki.webp" }, layoutSettings: { paddingTop: 0, paddingBottom: 240, columnSplit: 75, gap: 96 } })) } };
+    historyDocument = await (await request("/api/admin/website", "PUT", { revision: historyDocument.revision, action: "draft", content: presetContent })).json();
+    assert.deepEqual(historyDocument.draft.pages.home.map(section => section.kind), ["hero", "gallery", "faq", "packages"]);
+    assert.deepEqual(historyDocument.draft.pages.home[0].layoutSettings, presetContent.pages.home[0].layoutSettings);
+    for (const layoutSettings of [null, [], { gap: -1 }, { paddingTop: 241 }, { columnSplit: 24 }, { gap: "12" }, { position: "absolute" }]) {
+        const response = await fetch(`${base}/api/admin/website`, { method: "PUT", headers: { cookie, "Content-Type": "application/json" }, body: JSON.stringify({ revision: historyDocument.revision, action: "draft", content: { pages: { home: [{ ...presetContent.pages.home[0], layoutSettings }] } } }) });
+        assert.equal(response.status, 400);
+    }
+    const unsafeGallery = await fetch(`${base}/api/admin/website`, { method: "PUT", headers: { cookie, "Content-Type": "application/json" }, body: JSON.stringify({ revision: historyDocument.revision, action: "draft", content: { pages: { home: [{ ...presetContent.pages.home[1], fields: { "photo-6": "https://example.invalid/private.jpg" } }] } } }) });
+    assert.equal(unsafeGallery.status, 400);
+    for (let index = 0; index < 32; index++) {
+        const content = { pages: { home: [{ ...websiteContent.pages.home[0], fields: { ...websiteContent.pages.home[0].fields, title: `Publication ${index}` } }] } };
+        historyDocument = await (await request("/api/admin/website", "PUT", { revision: historyDocument.revision, action: "publish", content })).json();
+    }
+    assert.equal(historyDocument.history.length, WEBSITE_HISTORY_LIMIT);
+    assert.equal(historyDocument.history[0].label, "publish");
+    assert.equal(historyDocument.history[0].revision, historyDocument.revision);
+    // Recover the oldest retained version while atomically preserving unsaved edits. A separate
+    // save here would evict that version before it could be recovered.
+    const oldestVersion = historyDocument.history.at(-1);
+    const unsavedAtLimit = { pages: { home: [{ ...websiteContent.pages.home[0], fields: { ...websiteContent.pages.home[0].fields, title: "Unsaved at the history limit" } }] } };
+    const beforeAtomicRecovery = historyDocument;
+    historyDocument = await (await request("/api/admin/website", "PUT", { revision: historyDocument.revision, action: "recover", versionId: oldestVersion.id, content: unsavedAtLimit })).json();
+    assert.deepEqual(historyDocument.draft, oldestVersion.content);
+    assert.deepEqual(historyDocument.published, beforeAtomicRecovery.published);
+    assert.deepEqual(historyDocument.previousPublished, beforeAtomicRecovery.previousPublished);
+    assert.equal(historyDocument.revision, beforeAtomicRecovery.revision + 1);
+    assert.equal(historyDocument.history.length, WEBSITE_HISTORY_LIMIT);
+    assert.ok(historyDocument.history.some(version => version.content.pages.home?.[0].fields.title === "Unsaved at the history limit"));
+    const expectedWebsite = historyDocument;
     const settings = await (await request("/api/admin/settings")).json();
     const marker = `Storage check ${randomUUID()}`;
     await request("/api/admin/settings", "PUT", { ...settings, heroTitle: marker });
@@ -137,7 +245,7 @@ try {
     await stop();
     await start();
     const restoredWebsite = await (await request("/api/admin/website")).json();
-    assert.equal(restoredWebsite.revision, 4);
+    assert.deepEqual(restoredWebsite, expectedWebsite);
     assert.deepEqual(restoredWebsite.previousPublished.pages.home[0].fieldStyles, websiteStyles);
     assert.equal((await (await request("/api/public/settings")).json()).heroTitle, marker);
     assert.equal((await (await request("/api/admin/leads")).json()).length, 1);
@@ -151,7 +259,9 @@ try {
     assert.equal(blocked.status, 503);
     assert.equal(blocked.headers.get("retry-after"), "60");
     assert.equal((await request("/api/public/settings")).status, 200);
-    console.log("Local storage verified: auth, CRM writes, website draft/publish/rollback/conflict protection, bounded text/photo styles, restart persistence, media upload/move/delete, and maintenance write hold.");
+    const blockedRecovery = await fetch(`${base}/api/admin/website`, { method: "PUT", headers: { cookie, "Content-Type": "application/json" }, body: JSON.stringify({ revision: expectedWebsite.revision, action: "recover", versionId: expectedWebsite.history[0].id }) });
+    assert.equal(blockedRecovery.status, 503);
+    console.log("Local storage verified: auth, CRM writes, website draft/publish/rollback/conflict protection, private page/version recovery, coalesced bounded history, section presets/layout validation, bounded text/photo styles, restart persistence, media upload/move/delete, and maintenance write hold.");
 } finally {
     await stop();
     await rm(root, { recursive: true, force: true });

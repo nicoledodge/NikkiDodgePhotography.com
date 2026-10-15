@@ -1,9 +1,13 @@
 import React, { Children, cloneElement, isValidElement, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
 import { normalizeWebsiteContent, websitePages, type WebsiteContent, type WebsiteField, type WebsitePage, type WebsiteSection, type WebsiteSectionCatalog } from "../shared/website.js";
 import { websiteFieldStyle } from "./websiteFieldStyle";
+import { renderWebsiteSection, customSectionFields } from "./WebsiteSections";
+export { customSectionFields } from "./WebsiteSections";
 import "../styles/website-editor.css";
 import "../styles/website-canvas.css";
+import "../styles/website-layout.css";
+import { isWebsiteColumnGrid, websiteLayoutProps } from "./websiteLayout";
+import { useWebsiteLayoutControls, type WebsiteCanvasGesture } from "./useWebsiteLayoutControls";
 
 type ElementProps = { children?: ReactNode; src?: string; alt?: string; className?: string; style?: React.CSSProperties; to?: string; href?: string; [key: string]: unknown };
 function textOf(node: ReactNode): string {
@@ -35,6 +39,7 @@ function transform(node: ReactNode, section: WebsiteSection, fields: WebsiteFiel
         const props: ElementProps = {};
         const className = child.props.className || "";
         const descendantContext = `${contextClass} ${className}`;
+        if (isWebsiteColumnGrid(className)) props["data-website-layout-grid"] = "true";
         if (child.type === "img" && typeof child.props.src === "string") {
             const key = `${id}.image`;
             fields.push({ id: key, kind: "image", label: child.props.alt || "Photograph", value: child.props.src, alt: child.props.alt });
@@ -85,32 +90,12 @@ function transform(node: ReactNode, section: WebsiteSection, fields: WebsiteFiel
         return cloneElement(child, props);
     });
 }
-function customSection(section: WebsiteSection, editing: boolean, selectedField: string | null) {
-    const f = section.fields;
-    const text = (field: string, placeholder: string) => ({ "data-website-field": field, "data-website-kind": "text", "data-website-selected": field === selectedField ? "true" : undefined, style: websiteFieldStyle(section.fieldStyles?.[field], "text"), "data-website-placeholder": editing && !f[field] ? "true" : undefined, children: f[field] || (editing ? placeholder : "") });
-    return <section className={`website-custom website-custom-${section.kind} site-container`}>
-        {(section.kind === "photo" || section.kind === "split") && (f.photo
-            ? <figure><img src={f.photo} alt={f.alt || ""} loading="lazy" data-website-field="photo" data-website-kind="image" data-website-selected={selectedField === "photo" ? "true" : undefined} style={websiteFieldStyle(section.fieldStyles?.photo, "image")} /></figure>
-            : editing && <button className="website-canvas-photo-placeholder" type="button" data-website-field="photo" data-website-kind="image" data-website-selected={selectedField === "photo" ? "true" : undefined}><CanvasIcon name="photo" /><span>Choose a photograph</span><small>From your website collection</small></button>)}
-        {section.kind !== "photo" && <div><p className="eyebrow" {...text("eyebrow", "Add a small introduction")} />
-            <h2 {...text("title", "Write your heading")} /><p {...text("body", "Tell your story. Double-click to start writing.")} />
-            {section.kind === "invitation" && <Link className="text-link" to="/Contact"><span data-website-field="button" data-website-kind="text" data-website-selected={selectedField === "button" ? "true" : undefined} style={websiteFieldStyle(section.fieldStyles?.button, "text")}>{f.button || "Start your inquiry"}</span> ↗</Link>}</div>}
-        {section.kind === "photo" && (f.caption || editing) && <p {...text("caption", "Add a caption (optional)")} />}
-    </section>;
-}
-export function customSectionFields(section: WebsiteSection): WebsiteField[] {
-    const labels: Record<string, string> = { eyebrow: "Small introduction", title: "Heading", body: "Paragraph", caption: "Caption", button: "Link label", photo: "Photograph", alt: "Photo description" };
-    return [
-        ...(section.kind !== "photo" ? ["eyebrow", "title", "body"] : ["caption"]),
-        ...(section.kind === "invitation" ? ["button"] : []),
-        ...(section.kind === "photo" || section.kind === "split" ? ["photo", "alt"] : []),
-    ].map(id => ({ id, kind: id === "photo" ? "image" : "text", label: labels[id] || id, value: section.fields[id] || "" }));
-}
-function CanvasIcon({ name }: { name: "up" | "down" | "hide" | "edit" | "photo" | "design" | "add" }) {
+function CanvasIcon({ name }: { name: "up" | "down" | "hide" | "edit" | "photo" | "design" | "add" | "grip" }) {
     return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         {name === "up" && <path d="m6 14 6-6 6 6" />}{name === "down" && <path d="m6 10 6 6 6-6" />}
         {name === "hide" && <><path d="m3 3 18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.4 5.3A12 12 0 0 1 12 5c6 0 10 7 10 7a20 20 0 0 1-3.1 3.6M6.1 6.1A21 21 0 0 0 2 12s4 7 10 7a12 12 0 0 0 5.1-1.2" /></>}
         {name === "edit" && <><path d="m15 5 4 4M4 20l4-1 12-12a2.8 2.8 0 0 0-4-4L4 15z" /><path d="M12 20h8" /></>}
+        {name === "grip" && <><circle cx="8" cy="5" r="1" /><circle cx="16" cy="5" r="1" /><circle cx="8" cy="12" r="1" /><circle cx="16" cy="12" r="1" /><circle cx="8" cy="19" r="1" /><circle cx="16" cy="19" r="1" /></>}
         {name === "add" && <path d="M12 5v14M5 12h14" />}
         {name === "design" && <><path d="M4 7h16M4 17h16" /><circle cx="9" cy="7" r="3" fill="currentColor" stroke="none" /><circle cx="15" cy="17" r="3" fill="currentColor" stroke="none" /></>}
         {name === "photo" && <><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8" cy="8" r="1.5" /><path d="m21 16-6-6-12 10" /></>}
@@ -136,6 +121,7 @@ export default function PageComposer({ page, children, enabled = true }: { page:
     const [canvasScale, setCanvasScale] = useState(1);
     const [editingText, setEditingText] = useState(false);
     const editRef = useRef<InlineEdit | null>(null);
+    const gestureRef = useRef<WebsiteCanvasGesture | null>(null);
     const latestContentRef = useRef<WebsiteContent>({ pages: {} });
     const previewModeRef = useRef(false);
     const editing = preview && enabled && !previewMode;
@@ -143,6 +129,7 @@ export default function PageComposer({ page, children, enabled = true }: { page:
     const sectionElement = useCallback((id: string | null) => id ? Array.from(document.querySelectorAll<HTMLElement>("[data-website-section]")).find(item => item.dataset.websiteSection === id) : undefined, []);
     const beginTextEdit = useCallback((element: HTMLElement) => {
         if (element.dataset.websiteKind !== "text" || editRef.current?.element === element) return;
+        gestureRef.current?.finish(true);
         editRef.current?.end(true);
         const section = element.closest<HTMLElement>("[data-website-section]")?.dataset.websiteSection;
         const field = element.dataset.websiteField;
@@ -227,6 +214,8 @@ export default function PageComposer({ page, children, enabled = true }: { page:
         const range = document.createRange(); range.selectNodeContents(element);
         const selection = window.getSelection(); selection?.removeAllRanges(); selection?.addRange(range);
     }, [page, send, selectCanvasSection]);
+    const finishInlineEdit = useCallback(() => { editRef.current?.end(true); }, []);
+    const layoutControls = useWebsiteLayoutControls({ page, editing: editing && !editingText, selectedId, canvasScale, content, latestContentRef, setContent, gestureRef, beforeStart: finishInlineEdit, sectionElement, send });
     useEffect(() => {
         let active = true;
         if (!preview) void fetch("/api/public/website").then(r => { if (!r.ok) throw Error(); return r.json(); }).then(value => { if (active) setContent(normalizeWebsiteContent(value)); }).catch(() => {});
@@ -241,11 +230,12 @@ export default function PageComposer({ page, children, enabled = true }: { page:
             }
             if (event.data?.type === "website-preview-mode") {
                 const nextMode = event.data.preview === true;
-                if (nextMode !== previewModeRef.current) { editRef.current?.end(true); previewModeRef.current = nextMode; setPreviewMode(nextMode); }
+                if (nextMode !== previewModeRef.current) { gestureRef.current?.finish(true); editRef.current?.end(true); previewModeRef.current = nextMode; setPreviewMode(nextMode); }
                 return;
             }
             if (event.data?.type === "website-canvas-scale" && typeof event.data.scale === "number") { setCanvasScale(Math.max(.25, Math.min(1, event.data.scale))); return; }
             if (event.data?.type === "website-flush") {
+                gestureRef.current?.finish(true);
                 editRef.current?.end(true);
                 send({ type: "website-flushed", requestId: event.data.requestId });
                 return;
@@ -254,11 +244,11 @@ export default function PageComposer({ page, children, enabled = true }: { page:
             try {
                 const normalized = normalizeWebsiteContent(event.data.content);
                 latestContentRef.current = normalized;
-                if (!editRef.current) setContent(normalized);
+                if (!editRef.current && !gestureRef.current) setContent(normalized);
             } catch { /* Ignore invalid preview messages. */ }
         };
         window.addEventListener("message", receive);
-        return () => { active = false; editRef.current?.end(false); window.removeEventListener("message", receive); };
+        return () => { active = false; gestureRef.current?.finish(false); editRef.current?.end(false); window.removeEventListener("message", receive); };
     }, [page, preview, sectionElement, send, selectCanvasSection]);
     useEffect(() => {
         if (!preview) return;
@@ -292,8 +282,8 @@ export default function PageComposer({ page, children, enabled = true }: { page:
             if (!editing || !(event.metaKey || event.ctrlKey) || event.altKey) return;
             const key = event.key.toLowerCase();
             if (key === "s") {
-                event.preventDefault(); editRef.current?.end(true); send({ type: "website-shortcut", shortcut: "save" });
-            } else if (!editRef.current && (key === "z" || key === "y")) {
+                event.preventDefault(); gestureRef.current?.finish(true); editRef.current?.end(true); send({ type: "website-shortcut", shortcut: "save" });
+            } else if (!editRef.current && !gestureRef.current && (key === "z" || key === "y")) {
                 event.preventDefault(); send({ type: "website-shortcut", shortcut: key === "y" || event.shiftKey ? "redo" : "undo" });
             }
         };
@@ -315,20 +305,25 @@ export default function PageComposer({ page, children, enabled = true }: { page:
         const index = Number(section.id.slice(9));
         let element: ReactNode;
         const fieldSelection = editing && selectedId === section.id ? selectedField : null;
-        if (section.kind) { element = customSection(section, editing, fieldSelection); fields.push(...customSectionFields(section)); }
+        if (section.kind) { element = renderWebsiteSection(section, editing, fieldSelection); fields.push(...customSectionFields(section)); }
         else element = transform(originals[index], section, fields, "root", false, "", fieldSelection);
-        catalog.push({ id: section.id, name: section.name || (section.kind ? "New section" : websitePages[page].sections[index]) || "Section", fields });
+        const hasColumns = (node: ReactNode): boolean => Children.toArray(node).some(child => isValidElement<ElementProps>(child) && (isWebsiteColumnGrid(child.props.className || "") || hasColumns(child.props.children)));
+        catalog.push({ id: section.id, name: section.name || (section.kind ? "New section" : websitePages[page].sections[index]) || "Section", fields, ...(hasColumns(element) ? { supportsColumns: true } : {}) });
         if (section.hidden || !element) return null;
         const root = Children.toArray(element)[0];
         if (!isValidElement<ElementProps>(root)) return root;
-        return cloneElement(root, { key: section.id, "data-website-section": section.id,
+        const layout = websiteLayoutProps(section.layoutSettings);
+        return cloneElement(root, { key: section.id, "data-website-section": section.id, ...layout, "data-website-layout-grid": isWebsiteColumnGrid(root.props.className || "") ? "true" : undefined,
             className: `${root.props.className || ""} website-section${editing ? " website-section-preview" : ""}${editing && selectedId === section.id ? " website-section-highlight" : ""} website-layout-${section.layout || "original"} website-spacing-${section.spacing || "original"}`,
-            style: { ...root.props.style, ...(section.background ? { backgroundColor: section.background } : {}) },
+            style: { ...root.props.style, ...layout.style, ...(section.background ? { backgroundColor: section.background } : {}) },
         });
     });
     const catalogJson = JSON.stringify(catalog);
     const stableCatalog = useMemo(() => JSON.parse(catalogJson) as WebsiteSectionCatalog[], [catalogJson]);
-    useEffect(() => { if (preview) send({ type: "website-catalog", sections: stableCatalog }); }, [preview, send, stableCatalog]);
+    const layoutDefaultsJson = JSON.stringify(layoutControls.layoutDefaults);
+    useEffect(() => {
+        if (preview) send({ type: "website-catalog", sections: stableCatalog.map(section => section.id === selectedId && layoutDefaultsJson ? { ...section, layoutDefaults: JSON.parse(layoutDefaultsJson) } : section) });
+    }, [preview, send, stableCatalog, selectedId, layoutDefaultsJson]);
     useEffect(() => {
         if (!editing) return;
         let frame = 0;
@@ -384,12 +379,13 @@ export default function PageComposer({ page, children, enabled = true }: { page:
             if (element) beginTextEdit(element); else send({ type: "website-select", section: selectedId, field: activeField.id, intent: "edit" });
         }
     };
-    return <>{enabled ? rendered : children}{editing && <div className="website-canvas-overlays" data-website-overlay="true">
+    return <>{enabled ? rendered : children}{layoutControls.overlays}{editing && <div className="website-canvas-overlays" data-website-overlay="true">
         {hoverBox && hoveredId !== selectedId && <div className="website-canvas-hover-label" style={{ left: Math.max(10 * scale, hoverBox.left + 10 * scale), top: Math.max(10 * scale, hoverBox.top + 10 * scale), transform: `scale(${scale})` }}>{stableCatalog.find(section => section.id === hoveredId)?.name}</div>}
-        {!editingText && insertionPoints.map(point => <div key={point.after} className={`website-canvas-insert ${point.after === selectedId ? "is-adjacent" : ""}`} style={{ top: point.top, left: point.left, width: point.width }}>
+        {!editingText && !layoutControls.active && insertionPoints.map(point => <div key={point.after} className={`website-canvas-insert ${point.after === selectedId ? "is-adjacent" : ""}`} style={{ top: point.top, left: point.left, width: point.width }}>
             <button type="button" aria-label="Add section here" title="Add section here" style={{ transform: `translate(-50%, -50%) scale(${scale})` }} onClick={() => send({ type: "website-insert", after: point.after })}><CanvasIcon name="add" /><span>Add section here</span></button>
         </div>)}
         {selectedBox && selectedCatalog && <div ref={toolbarRef} className={`website-canvas-toolbar${window.innerWidth * canvasScale < 480 ? " is-compact" : ""}`} role="toolbar" aria-label={`${selectedField && activeField ? activeField.label : selectedCatalog.name} controls`} style={toolbarPosition}>
+            {!editingText && <button className="website-canvas-reorder-grip" type="button" aria-label="Move section" title="Drag to move this section. Arrow keys move up or down." {...layoutControls.gripProps}><CanvasIcon name="grip" /></button>}
             <span className="website-canvas-section-name" title={selectedCatalog.name}><small>{selectedCatalog.name}</small><strong>{selectedField && activeField ? activeField.label : "Section"}</strong></span>
             {!editingText && activeField && <button className="website-canvas-edit" type="button" onClick={editSelectedField}><CanvasIcon name={activeField.kind === "image" ? "photo" : "edit"} /><span>{activeField.kind === "image" ? "Change photo" : "Edit text"}</span></button>}
             {!editingText && <>

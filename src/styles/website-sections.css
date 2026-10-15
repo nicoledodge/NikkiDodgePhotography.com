@@ -1,0 +1,36 @@
+.website-custom > .website-section-intro { max-width: 760px; margin-bottom: clamp(28px, 4vw, 56px); }
+.website-custom > .website-section-gallery, .website-custom > .website-section-packages, .website-custom > .website-section-hero { max-width: none; }
+.website-section-gallery { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--website-column-gap, clamp(14px, 2vw, 30px)); align-items: start; }
+.website-section-gallery > figure { min-width: 0; }
+.website-section-gallery img { aspect-ratio: 4 / 5; object-fit: cover; }
+.website-section-gallery .website-canvas-photo-placeholder { width: 100%; aspect-ratio: 4 / 5; min-height: 0; padding: 24px 12px; }
+.website-section-hero { position: relative; min-height: clamp(400px, 62vw, 760px); isolation: isolate; overflow: hidden; background: #d7cfc9; }
+.website-section-hero-media { position: absolute; inset: 0; z-index: -2; }
+.website-section-hero-media::after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, #17100ecd 0%, #17100e33 60%, transparent); pointer-events: none; }
+.website-section-hero-media > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.website-section-hero-media > .website-canvas-photo-placeholder { width: 100%; height: 100%; }
+.website-section-hero-content { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; padding: clamp(28px, 6vw, 88px); color: #fffaf5; pointer-events: none; }
+.website-section-hero-content > * { max-width: 760px; pointer-events: auto; }
+.website-section-hero-content > p { color: #fffaf5d9; }
+.website-section-hero-content > h2 { font-size: clamp(38px, 5.6vw, 84px); }
+.website-section-hero-content .eyebrow { color: #fffaf5c9; }
+.website-section-hero-content .website-section-inquiry { color: #fffaf5; border-color: #fffaf5aa; }
+.website-section-hero.is-empty .website-section-hero-media::after { background: linear-gradient(0deg, #e8dedc 0%, transparent); }
+.website-section-hero.is-empty .website-section-hero-content, .website-section-hero.is-empty .website-section-hero-content > p, .website-section-hero.is-empty .website-section-hero-content .eyebrow, .website-section-hero.is-empty .website-section-inquiry { color: #6b4d63; }
+.website-section-inquiry { margin-top: 25px; }
+.website-section-questions { width: 100%; }
+.website-section-question { border-top: 1px solid #d6d8cc; padding-block: 26px; }
+.website-section-question:last-child { border-bottom: 1px solid #d6d8cc; }
+.website-section-question > h3, .website-section-question > summary { margin: 0; font-family: var(--serif, Georgia, serif); font-size: clamp(25px, 2.4vw, 36px); line-height: 1.25; color: inherit; }
+.website-section-question > summary { display: flex; align-items: center; justify-content: space-between; gap: 24px; cursor: pointer; list-style: none; }
+.website-section-question > summary::-webkit-details-marker { display: none; }
+.website-section-question > summary::after { content: '+'; flex-shrink: 0; font-family: var(--sans, sans-serif); font-size: 23px; font-weight: 300; }
+.website-section-question[open] > summary::after { content: '−'; }
+.website-section-question > p { margin-top: 18px; max-width: 680px; }
+.website-section-packages { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--website-column-gap, clamp(16px, 2.5vw, 36px)); }
+.website-section-package { display: flex; flex-direction: column; padding: clamp(24px, 3vw, 44px); border: 1px solid #d6d8cc; min-width: 0; }
+.website-section-package > h3 { font-size: clamp(27px, 2.8vw, 40px); line-height: 1.2; }
+.website-section-package > p { margin-top: 24px; }
+.website-section-package > .website-section-package-price { margin-top: auto; padding-top: 36px; font-size: clamp(21px, 2vw, 28px); color: var(--ink, #242923); font-family: var(--serif, Georgia, serif); }
+@media (max-width: 800px) { .website-section-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); } .website-section-packages { grid-template-columns: 1fr; } .website-section-package { padding: 28px; } .website-section-hero-content > h2 { font-size: clamp(32px, 6vw, 50px); } }
+@media (max-width: 480px) { .website-section-gallery { grid-template-columns: 1fr; } .website-section-hero { min-height: 520px; } .website-section-hero-content { padding: 24px; } .website-section-hero-content > p:not(.eyebrow) { font-size: 13px; } }

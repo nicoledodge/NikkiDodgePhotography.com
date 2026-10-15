@@ -1,0 +1,15 @@
+/* Only explicitly selected layout values override the original responsive design. */
+.website-section[data-website-padding-top] { padding-top: var(--website-padding-top) !important; }
+.website-section[data-website-padding-bottom] { padding-bottom: var(--website-padding-bottom) !important; }
+@media (min-width: 761px) {
+  .website-section[data-website-column-split][data-website-layout-grid], .website-section[data-website-column-split] [data-website-layout-grid] { grid-template-columns: minmax(0, var(--website-column-first)) minmax(0, var(--website-column-second)) !important; }
+  .website-section[data-website-column-gap][data-website-layout-grid], .website-section[data-website-column-gap] [data-website-layout-grid] { column-gap: var(--website-column-gap) !important; }
+}
+@media (min-width: 601px) and (max-width: 760px) {
+  .website-custom-split[data-website-column-split] { grid-template-columns: minmax(0, var(--website-column-first)) minmax(0, var(--website-column-second)) !important; }
+  .website-custom-split[data-website-column-gap] { column-gap: var(--website-column-gap) !important; }
+}
+@media (min-width: 701px) and (max-width: 760px) {
+  .inner-intro-split[data-website-column-split], .inner-about-hero[data-website-column-split], .inner-wedding[data-website-column-split] { grid-template-columns: minmax(0, var(--website-column-first)) minmax(0, var(--website-column-second)) !important; }
+  .inner-intro-split[data-website-column-gap], .inner-about-hero[data-website-column-gap], .inner-wedding[data-website-column-gap] { column-gap: var(--website-column-gap) !important; }
+}

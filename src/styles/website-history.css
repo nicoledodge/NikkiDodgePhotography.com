@@ -1,0 +1,21 @@
+.studio-versions-dialog { width:min(850px,100%); }
+.studio-version-history > p { color:#776a73; font-size:13px; line-height:1.7; margin:0 0 22px; }
+.studio-version-workspace { display:grid; grid-template-columns:minmax(230px,.95fr) minmax(260px,1fr); gap:28px; }
+.studio-version-workspace ol { list-style:none; padding:0; margin:0; max-height:420px; overflow:auto; border:1px solid #e8e3e7; border-radius:9px; }
+.studio-version-workspace li + li { border-top:1px solid #eee8ed; }
+.studio-version-workspace li > button { display:flex; gap:12px; align-items:center; width:100%; border:0; background:white; padding:16px 14px; text-align:left; color:#41323c; }
+.studio-version-workspace li > button[aria-pressed=true] { background:#f5edf3; box-shadow:inset 3px 0 #6b4d63; }
+.studio-version-workspace li > button:hover { background:#f7f3f6; }
+.studio-version-workspace li > button > span:nth-child(2) { flex:1; }
+.studio-version-workspace strong { display:block; font-size:12px; font-weight:600; }
+.studio-version-workspace time,.studio-version-workspace small { display:block; color:#776a73; font-size:11px; margin-top:5px; }
+.studio-version-dot { width:9px; height:9px; border-radius:50%; background:#b7a2b0; flex:none; }.studio-version-dot.is-publish { background:#658878; }
+.studio-version-detail { padding:10px 0; }
+.studio-version-detail h3 { font-family:Georgia,serif; font-size:24px; margin:10px 0; font-weight:400; }
+.studio-version-detail p { font-size:12px; color:#776a73; line-height:1.7; }
+.studio-version-detail fieldset { border:0; padding:0; margin:24px 0 16px; }
+.studio-version-detail legend { font-size:11px; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; color:#776a73; float:none; }
+.studio-version-detail label { display:flex; align-items:flex-start; gap:11px; padding:12px; border:1px solid #e8e3e7; border-radius:7px; margin:0 0 8px; cursor:pointer; }.studio-version-detail label:has(input:checked) { background:#f7f1f6; border-color:#bca3b3; }
+.studio-version-detail input { margin-top:3px; accent-color:#6b4d63; }.studio-version-detail .studio-version-note { font-size:11px; }
+.studio-version-detail .studio-button { width:100%; margin-top:10px; }.studio-version-empty { padding:28px 12px; color:#776a73; text-align:center; }.studio-version-empty strong { color:#49323f; font-family:Georgia,serif; font-size:25px; font-weight:400; }.studio-version-empty p { font-size:12px; line-height:1.8; }
+@media(max-width:650px) { .studio-version-workspace { grid-template-columns:1fr; gap:12px; }.studio-version-workspace ol { max-height:200px; } }

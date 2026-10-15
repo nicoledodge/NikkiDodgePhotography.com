@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-export type IconName = "undo" | "redo" | "desktop" | "phone" | "eye" | "hide" | "plus" | "up" | "down" | "grip" | "close" | "arrow" | "check" | "pages" | "layers" | "photo" | "text" | "split" | "invitation" | "external" | "settings";
+export type IconName = "undo" | "redo" | "desktop" | "phone" | "eye" | "hide" | "plus" | "up" | "down" | "grip" | "close" | "arrow" | "check" | "pages" | "layers" | "photo" | "text" | "split" | "invitation" | "external" | "settings" | "history";
 const paths: Record<IconName, React.ReactNode> = {
     undo: <><path d="m9 5-5 5 5 5" /><path d="M4 10h10a6 6 0 0 1 0 12" /></>,
     redo: <><path d="m15 5 5 5-5 5" /><path d="M20 10H10a6 6 0 0 0 0 12" /></>,
@@ -17,6 +17,7 @@ const paths: Record<IconName, React.ReactNode> = {
     split: <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M11 3v18M14 8h4M14 12h4M14 16h3" /></>,
     invitation: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 6 9 7 9-7" /></>,
     external: <><path d="M14 3h7v7m0-7L10 14M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5" /></>,
+    history: <><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5" /><path d="M12 7v5l3 2" /></>,
     settings: <><path d="M4 7h16M4 17h16" /><circle cx="9" cy="7" r="3" /><circle cx="15" cy="17" r="3" /></>,
 };
 export default function WebsiteIcon({ name, style }: { name: IconName; style?: CSSProperties }) {

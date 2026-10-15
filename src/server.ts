@@ -1,4 +1,5 @@
-import { normalizeWebsiteContent } from "./shared/website.js";
+import { normalizeWebsiteContent, websitePages, type WebsiteContent, type WebsitePage } from "./shared/website.js";
+import { nextWebsiteHistory, readWebsiteHistory } from "./shared/websiteHistory.js";
 import express, { type NextFunction, type Request, type Response } from "express";
 import multer from "multer";
 import { randomUUID } from "node:crypto";
@@ -409,17 +410,43 @@ app.get("/api/public/website", asyncHandler(async (_req, res) => {
     const document = await storage.getWebsite();
     res.json(document.published);
 }));
-app.get("/api/admin/website", requireAdmin, asyncHandler(async (_req, res) => { res.json(await storage.getWebsite()); }));
+app.get("/api/admin/website", requireAdmin, asyncHandler(async (_req, res) => {
+    const document = await storage.getWebsite();
+    res.json({ ...document, history: readWebsiteHistory(document) });
+}));
 app.put("/api/admin/website", requireAdmin, asyncHandler(async (req, res) => {
     const update = websiteWriteQueue.then(async () => {
         const document = await storage.getWebsite();
         if (req.body.revision !== document.revision) { res.status(409).json({ error: "Another editor saved changes. Reload the draft before saving." }); return; }
         const action = req.body.action;
-        if (!["draft", "publish", "restore"].includes(action)) { res.status(400).json({ error: "Unknown website action." }); return; }
+        if (!["draft", "publish", "restore", "recover"].includes(action)) { res.status(400).json({ error: "Unknown website action." }); return; }
         try {
-            const content = action === "restore" ? document.previousPublished : normalizeWebsiteContent(req.body.content);
-            if (!content) { res.status(400).json({ error: "There is no previous published version." }); return; }
+            let content: WebsiteContent;
+            let checkpointDocument = document;
+            if (action === "recover") {
+                const page = req.body.page;
+                if (page !== undefined && (typeof page !== "string" || !Object.prototype.hasOwnProperty.call(websitePages, page))) {
+                    res.status(400).json({ error: "Choose a valid page to recover." }); return;
+                }
+                const version = typeof req.body.versionId === "string" ? readWebsiteHistory(document).find(item => item.id === req.body.versionId) : undefined;
+                if (!version) { res.status(404).json({ error: "This saved version is no longer available." }); return; }
+                // Capture unsaved editor changes in the same write, before history trimming can
+                // evict the chosen version. Other pages keep those changes during page recovery.
+                if (req.body.content !== undefined) checkpointDocument = { ...document, draft: normalizeWebsiteContent(req.body.content) };
+                if (page === undefined) content = normalizeWebsiteContent(version.content);
+                else {
+                    const pages = { ...checkpointDocument.draft.pages };
+                    const savedPage = version.content.pages[page as WebsitePage];
+                    if (savedPage === undefined) delete pages[page as WebsitePage];
+                    else pages[page as WebsitePage] = savedPage;
+                    content = normalizeWebsiteContent({ pages });
+                }
+            } else {
+                if (action === "restore" && !document.previousPublished) { res.status(400).json({ error: "There is no previous published version." }); return; }
+                content = normalizeWebsiteContent(action === "restore" ? document.previousPublished : req.body.content);
+            }
             const next = { ...document, revision: document.revision + 1, draft: content,
+                history: nextWebsiteHistory(checkpointDocument, action, content),
                 ...(action === "publish" || action === "restore" ? { previousPublished: document.published, published: content, publishedAt: new Date().toISOString() } : {}) };
             await storage.saveWebsite(next);
             res.json(next);
