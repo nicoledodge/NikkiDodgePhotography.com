@@ -124,12 +124,12 @@ export default function WebsiteEditor({ onDirtyChange }: { onDirtyChange: (dirty
         finally { setBusy(false); }
     };
     const photoMatches = (assets || []).filter(asset => asset.relativeKey.toLowerCase().includes(photoSearch.toLowerCase()));
-    return <section className="website-editor" aria-label="Website editor">
+    return <section className="website-editor" aria-label="Website editor" aria-busy={busy}>
         <header className="website-editor-toolbar">
             <div><h2>Your website</h2><p>{dirty ? "Unsaved draft" : unpublished ? "Draft saved · unpublished changes" : "Published website"}{document?.publishedAt ? ` · Last published ${new Date(document.publishedAt).toLocaleString()}` : ""}</p></div>
             <div className="website-toolbar-actions">
-                <button type="button" className="admin-secondary-button" disabled={!undo.length || busy} onClick={() => { setRedo(current => [...current, draft]); setDraft(undo[undo.length - 1]); setUndo(current => current.slice(0, -1)); }}>Undo</button>
-                <button type="button" className="admin-secondary-button" disabled={!redo.length || busy} onClick={() => { setUndo(current => [...current, draft]); setDraft(redo[redo.length - 1]); setRedo(current => current.slice(0, -1)); }}>Redo</button>
+                <button type="button" className="admin-secondary-button" disabled={!undo.length || busy} onClick={() => { setNotice(""); setRedo(current => [...current, draft]); setDraft(undo[undo.length - 1]); setUndo(current => current.slice(0, -1)); }}>Undo</button>
+                <button type="button" className="admin-secondary-button" disabled={!redo.length || busy} onClick={() => { setNotice(""); setUndo(current => [...current, draft]); setDraft(redo[redo.length - 1]); setRedo(current => current.slice(0, -1)); }}>Redo</button>
                 <button type="button" className="admin-secondary-button" disabled={!document || busy || !dirty} onClick={() => void save("draft")}>Save draft</button>
                 <button type="button" className="admin-primary-button" disabled={!document || busy || !unpublished} onClick={() => void save("publish")}>{busy ? "Saving…" : "Publish changes"}</button>
             </div>
@@ -137,7 +137,7 @@ export default function WebsiteEditor({ onDirtyChange }: { onDirtyChange: (dirty
         {error && <div className="admin-alert admin-alert-error" role="alert">{error} <button type="button" onClick={() => { if (!dirty || window.confirm("Discard your unsaved changes and reload the saved draft?")) void load(); }}>Reload saved draft</button></div>}
         {notice && <p className="admin-alert admin-alert-success" role="status">{notice}</p>}
         {confirmRestore && <div className="website-restore-confirm" role="alertdialog" aria-label="Restore previous website"><p>Restore the previous published website? This replaces your current draft and published version.</p><button type="button" className="admin-secondary-button" onClick={() => setConfirmRestore(false)}>Keep editing</button><button type="button" className="admin-primary-button" disabled={busy} onClick={() => { setConfirmRestore(false); void save("restore"); }}>Restore now</button></div>}
-        <div className="website-editor-workspace">
+        <div className="website-editor-workspace" inert={busy}>
             <aside className="website-editor-pages" aria-label="Pages and sections">
                 <label>Page<select value={page} onChange={event => { setPage(event.target.value as WebsitePage); setSelectedId("original-0"); setFocusedField(undefined); }}>{Object.entries(websitePages).map(([key, value]) => <option key={key} value={key}>{value.name}</option>)}</select></label>
                 <h3>Sections</h3><p>Choose a section, or click it in the preview.</p>
