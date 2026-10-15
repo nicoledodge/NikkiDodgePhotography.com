@@ -146,6 +146,13 @@ text += f"""          volumeMounts:
             claimName: {claim}
       affinity:
         nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - r610a.assessorly.com
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 100
               preference:
@@ -153,7 +160,6 @@ text += f"""          volumeMounts:
                   - key: kubernetes.io/hostname
                     operator: In
                     values:
-                      - r610a.assessorly.com
                       - r510c.assessorly.com
 """
 open(path, "w").write(text)

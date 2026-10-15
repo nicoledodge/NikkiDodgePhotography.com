@@ -27,7 +27,7 @@ Marketing site for Nikki Dodge Photography, built with React, TypeScript, and Vi
 Production uses the dedicated `default/nikki-website-data` 64 GiB Longhorn PVC. Its two replicas are restricted to verified NVMe devices on R610-A and R510-C by the `nikki-website-nvme` disk tag. The SFTP photo archive remains separate and is never mounted by the website.
 
 - Storage, the public image ingress, and certificate renewal are defined in `infra/website-storage.yaml`.
-- Set the GitHub repository variable `WEBSITE_DATA_PVC=nikki-website-data` to retain the `/app/data` mount on every production deployment. The deployment uses one writer and the Recreate strategy.
+- Set the GitHub repository variable `WEBSITE_DATA_PVC=nikki-website-data` to retain the `/app/data` mount on every production deployment. The deployment uses one writer and the Recreate strategy. Website compute prefers R510-C and avoids R610-A because its CNI sandbox setup was failing during migration; both NVMe storage replicas remain on their verified devices.
 - CRM documents live in `/app/data/app-data`; public website photos and static assets live in `/app/data/media`. Only the media directory is served publicly.
 - Leave `CRM_S3_BUCKET` and `APP_S3_BUCKET` unset or empty. Set `CRM_LOCAL_STORAGE_ROOT=/app/data`, `CRM_S3_MEDIA_PREFIX` to an empty string, and `CRM_PUBLIC_ASSET_BASE_URL=https://images.nikkidodgephotography.com`.
 - Keep `PORTFOLIO_IMAGE_BASE_URL=https://images.nikkidodgephotography.com/Portfolio`. That domain serves the website PVC through the local ingress.
