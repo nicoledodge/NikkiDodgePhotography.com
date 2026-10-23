@@ -10,8 +10,8 @@ export const PRICING = "/pricing";
 const otherSessions = [
     { number: "01", title: "Graduation sessions · $400", inquiry: "Graduations", description: "Celebrate your milestone with a graduation session that feels like you." },
     { number: "02", title: "Engagement sessions · $400", inquiry: "Engagements", description: "Photographs of the two of you, and the beginning of your next chapter." },
-    { number: "03", title: "Portraits & milestones", inquiry: "Portraits", description: "Growing families, new headshots, and the people you want to remember just as they are." },
-    { number: "04", title: "Music & live events", inquiry: "Events", description: "The atmosphere, the crowd, and everything that happens between the big moments." },
+    { number: "03", title: "Portraits & milestones · $400", inquiry: "Portraits", description: "Growing families, new headshots, and the people you want to remember just as they are." },
+    { number: "04", title: "Music · $100 per set / $300 per show", inquiry: "Events", description: "The atmosphere, the crowd, and everything that happens between the big moments." },
     { number: "05", title: "Sports & creative work", inquiry: "Creative", description: "Athletes in their element and imagery that gives your brand a point of view." },
 ];
 
@@ -54,7 +54,7 @@ export default function Pricing() {
                 <div className="inner-section-heading">
                     <p className="eyebrow">Beyond the wedding day</p>
                     <h2 id="other-sessions-title">There’s more to your story.</h2>
-                    <p>Graduation and engagement sessions are $400 each. Other portrait sessions, event coverage, and creative projects are quoted individually to fit your plans.</p>
+                    <p>Graduation, engagement, and portrait sessions are $400 each. Music coverage is $100 per set or $300 per show. Other event coverage and creative projects are quoted individually to fit your plans.</p>
                 </div>
                 <div className="inner-service-list">
                     {otherSessions.map((session) => (
