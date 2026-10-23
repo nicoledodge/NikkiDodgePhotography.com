@@ -8,9 +8,11 @@ import "../styles/inner-pages.css";
 export const PRICING = "/pricing";
 
 const otherSessions = [
-    { number: "01", title: "Portraits & milestones", inquiry: "Portraits", description: "Graduates, growing families, new headshots, and the people you want to remember just as they are." },
-    { number: "02", title: "Music & live events", inquiry: "Events", description: "The atmosphere, the crowd, and everything that happens between the big moments." },
-    { number: "03", title: "Sports & creative work", inquiry: "Creative", description: "Athletes in their element and imagery that gives your brand a point of view." },
+    { number: "01", title: "Graduation sessions · $400", inquiry: "Graduations", description: "Celebrate your milestone with a graduation session that feels like you." },
+    { number: "02", title: "Engagement sessions · $400", inquiry: "Engagements", description: "Photographs of the two of you, and the beginning of your next chapter." },
+    { number: "03", title: "Portraits & milestones", inquiry: "Portraits", description: "Growing families, new headshots, and the people you want to remember just as they are." },
+    { number: "04", title: "Music & live events", inquiry: "Events", description: "The atmosphere, the crowd, and everything that happens between the big moments." },
+    { number: "05", title: "Sports & creative work", inquiry: "Creative", description: "Athletes in their element and imagery that gives your brand a point of view." },
 ];
 
 export default function Pricing() {
@@ -36,14 +38,15 @@ export default function Pricing() {
                     <p className="eyebrow">Wedding photography</p>
                     <h2 id="wedding-collection-title">Your day.<br /><em>The whole feeling.</em></h2>
                     <p>From the quiet anticipation to the full dance floor. Coverage with space for the portraits you’ve imagined and the moments you couldn’t plan.</p>
-                    <p className="inner-price"><span>Collections beginning at</span>$3,000 <small>USD</small></p>
+                    <p className="inner-price"><span>Wedding collections</span>$3,500 <small>USD · 6 hours</small></p>
+                    <p className="inner-price">$4,000 <small>USD · 8 hours</small></p>
+                    <p className="inner-price">$4,800 <small>USD · 10 hours &amp; second shooter</small></p>
                     <ul className="inner-inclusions">
-                        <li>Up to eight hours of wedding day coverage</li>
                         <li>Planning support before the day</li>
                         <li>A professionally edited final gallery</li>
                         <li>Online delivery with high-resolution downloads</li>
                     </ul>
-                    <p className="inner-fine-print">Bridal, couples, and engagement sessions can be discussed as part of your collection. Share your plans for a personal quote.</p>
+                    <p className="inner-fine-print">Share your wedding plans to find the collection that fits your day.</p>
                     <Link className="button" to={`${CONTACT}?session=Weddings`}>Let’s talk about your day <span aria-hidden="true">↗</span></Link>
                 </div>
             </section>
@@ -51,7 +54,7 @@ export default function Pricing() {
                 <div className="inner-section-heading">
                     <p className="eyebrow">Beyond the wedding day</p>
                     <h2 id="other-sessions-title">There’s more to your story.</h2>
-                    <p>Portrait sessions, event coverage, and creative projects are quoted individually to fit the time, location, and images you need.</p>
+                    <p>Graduation and engagement sessions are $400 each. Other portrait sessions, event coverage, and creative projects are quoted individually to fit your plans.</p>
                 </div>
                 <div className="inner-service-list">
                     {otherSessions.map((session) => (
