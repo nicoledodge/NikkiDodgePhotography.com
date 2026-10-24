@@ -34,6 +34,32 @@ const otherSessions = [
     { number: "05", title: "Sports & creative work", inquiry: "Creative", photos: sportsPhotos, description: "Athletes in their element and imagery that gives your brand a point of view." },
 ];
 
+const weddingCollections = [
+    {
+        number: "01", name: "The Essential Collection", price: "$3,500", hours: "6 hours", recommended: false,
+        description: "For intimate celebrations and couples wanting the most meaningful moments captured.",
+        features: ["6 hours of wedding day coverage", "400+ hand-edited, high-resolution images", "Personalized wedding photography timeline assistance", "Private online gallery with unlimited downloads", "Personal printing rights", "Discounted engagement session — $300", "Additional second photographer available"],
+    },
+    {
+        number: "02", name: "The Signature Collection", price: "$4,000", hours: "8 hours", recommended: true,
+        description: "For couples wanting a fuller story, from getting ready to the dance floor.",
+        features: ["8 hours of wedding day coverage", "600+ hand-edited, high-resolution images", "Personalized wedding photography timeline assistance", "Private online gallery with unlimited downloads", "Personal printing rights", "Discounted engagement session — $300", "Sneak peek gallery within 72 hours", "Additional second photographer available"],
+    },
+    {
+        number: "03", name: "The Heirloom Collection", price: "$4,800", hours: "10 hours · two photographers", recommended: false,
+        description: "The complete wedding day experience, with two photographers capturing the story from more than one perspective.",
+        features: ["10 hours of wedding day coverage", "Second professional photographer included for all 10 hours", "800+ hand-edited, high-resolution images", "Comprehensive wedding photography timeline assistance", "Private online gallery with unlimited downloads", "Personal printing rights", "Complimentary engagement session", "Sneak peek gallery within 72 hours"],
+    },
+];
+
+const weddingAddOns = [
+    { name: "Second photographer", price: "$125 / hour", note: "4-hour minimum" },
+    { name: "Additional wedding coverage", price: "$400 / hour", note: "More time for your story" },
+    { name: "Engagement session", price: "$400", note: "A session for the two of you" },
+    { name: "Collection engagement session", price: "$300", note: "With Essential or Signature; included with Heirloom" },
+    { name: "Rehearsal dinner coverage", price: "$650", note: "2 hours of coverage" },
+];
+
 export default function Pricing() {
     return (
         <div className="inner-page inner-pricing">
@@ -54,16 +80,55 @@ export default function Pricing() {
                     <p className="eyebrow">Wedding photography</p>
                     <h2 id="wedding-collection-title">Your day.<br /><em>The whole feeling.</em></h2>
                     <p>From the quiet anticipation to the full dance floor. Coverage with space for the portraits you’ve imagined and the moments you couldn’t plan.</p>
-                    <p className="inner-price"><span>Wedding collections</span>$3,500 <small>USD · 6 hours</small></p>
-                    <p className="inner-price">$4,000 <small>USD · 8 hours</small></p>
-                    <p className="inner-price">$4,800 <small>USD · 10 hours &amp; second shooter</small></p>
-                    <ul className="inner-inclusions">
-                        <li>Planning support before the day</li>
-                        <li>A professionally edited final gallery</li>
-                        <li>Online delivery with high-resolution downloads</li>
-                    </ul>
-                    <p className="inner-fine-print">Share your wedding plans to find the collection that fits your day.</p>
-                    <Link className="button" to={`${CONTACT}?session=Weddings`}>Let’s talk about your day <span aria-hidden="true">↗</span></Link>
+                    <p className="inner-price"><span>Collections beginning at</span>$3,500 <small>USD</small></p>
+                    <p className="inner-fine-print">Three collections, from six hours of meaningful moments to ten hours with two photographers. Find the fit for your day below.</p>
+                    <a className="button" href="#wedding-collections">Explore the collections <span aria-hidden="true">↓</span></a>
+                </div>
+            </section>
+            <section className="pricing-collections site-container" id="wedding-collections" aria-labelledby="collections-title">
+                <div className="inner-section-heading">
+                    <p className="eyebrow">A little time. A lasting story.</p>
+                    <h2 id="collections-title">Your day, at your pace.</h2>
+                    <p>Every collection includes personalized planning, professional image editing, and a beautiful online gallery to relive, download, and share your favorite memories.</p>
+                </div>
+                <div className="pricing-collection-grid">
+                    {weddingCollections.map((collection, index) => (
+                        <article className={`pricing-collection${collection.recommended ? " pricing-collection-recommended" : ""}`} key={collection.number} aria-labelledby={`collection-${collection.number}`}>
+                            <div className="pricing-collection-topline">
+                                <span className="eyebrow">Collection {collection.number}</span>
+                                {collection.recommended && <span className="pricing-recommendation">Recommended</span>}
+                            </div>
+                            <PricingPhotoCard photos={[...weddingPhotos.slice(index), ...weddingPhotos.slice(0, index)]} category="Wedding" className="pricing-collection-photo" sizes="(max-width: 700px) calc(100vw - 80px), 30vw" />
+                            <div className="pricing-collection-body">
+                                <p className="pricing-collection-hours">{collection.hours}</p>
+                                <h3 id={`collection-${collection.number}`}>{collection.name}</h3>
+                                <p className="pricing-collection-description">{collection.description}</p>
+                                <p className="pricing-collection-price">{collection.price}<small>USD</small></p>
+                                <ul className="pricing-collection-inclusions">
+                                    {collection.features.map((feature) => <li key={feature}>{feature}</li>)}
+                                </ul>
+                                <Link className="text-link" to={`${CONTACT}?session=Weddings`}>Ask about {collection.name.replace("The ", "").replace(" Collection", "")} <span aria-hidden="true">↗</span></Link>
+                            </div>
+                        </article>
+                    ))}
+                </div>
+            </section>
+            <section className="pricing-add-ons site-container" aria-labelledby="add-ons-title">
+                <div className="pricing-add-ons-intro">
+                    <p className="eyebrow">Make it yours</p>
+                    <h2 id="add-ons-title">A little more<br /><em>of what matters.</em></h2>
+                    <p>Add time, another perspective, or the celebration before the celebration.</p>
+                </div>
+                <div>
+                    <dl className="pricing-add-on-list">
+                        {weddingAddOns.map((addOn) => (
+                            <div className="pricing-add-on" key={addOn.name}>
+                                <dt>{addOn.name}<span>{addOn.note}</span></dt>
+                                <dd>{addOn.price}</dd>
+                            </div>
+                        ))}
+                    </dl>
+                    <p className="pricing-add-on-note">Second photographers have a 4-hour minimum when added to Essential or Signature. Heirloom includes a second photographer for all 10 hours.</p>
                 </div>
             </section>
             <section className="inner-other-work site-container" aria-labelledby="other-sessions-title">
