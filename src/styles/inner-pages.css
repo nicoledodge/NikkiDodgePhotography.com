@@ -854,3 +854,30 @@
   .inner-service-with-photo p { grid-column: 2; grid-row: 3; }
   .inner-service-with-photo > a { grid-column: 2; grid-row: 4; }
 }
+
+/* Each flip reveals another real photograph from the same category. */
+.pricing-photo-card {
+  position: relative;
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: #252a24;
+  color: #fff;
+  cursor: pointer;
+  perspective: 1400px;
+  text-align: left;
+  isolation: isolate;
+}
+.pricing-photo-card:focus-visible { outline: 3px solid var(--inner-ink, #252a24); outline-offset: 6px; }
+.pricing-photo-turn { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform 600ms cubic-bezier(.2,.65,.3,1); }
+.pricing-photo-card[data-flipped="true"] .pricing-photo-turn { transform: rotateY(180deg); }
+.pricing-photo-face { position: absolute; inset: 0; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.pricing-photo-face-1 { transform: rotateY(180deg); }
+.inner-page .pricing-photo-face img { width: 100%; height: 100%; max-height: none; aspect-ratio: auto; object-fit: cover; display: block; }
+.pricing-photo-hint { position: absolute; inset: auto 0 0; display: flex; justify-content: space-between; gap: 12px; padding: 32px 18px 16px; background: linear-gradient(transparent, rgba(0,0,0,.72)); font: 11px/1.4 "Manrope", sans-serif; letter-spacing: .04em; pointer-events: none; }
+.inner-wedding-photo .pricing-wedding-card { width: 100%; aspect-ratio: 4 / 5; max-height: 850px; }
+.inner-service-with-photo .pricing-photo-card { aspect-ratio: 4 / 3; height: auto; }
+@media (prefers-reduced-motion: reduce) {
+  .pricing-photo-turn { transition: none; }
+}

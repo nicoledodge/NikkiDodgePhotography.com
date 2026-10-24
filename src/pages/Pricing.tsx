@@ -2,30 +2,35 @@ import PageComposer from "../site/PageComposer";
 import { Link } from "react-router-dom";
 import { CONTACT } from "./Contact";
 import { curatedStories, storyPhotoUrl } from "../data/curatedPortfolio";
-import { portfolioPreview, portfolioSrcSet } from "../functions/portfolioPreview";
+import PricingPhotoCard from "../components/Portfolio/PricingPhotoCard";
+import { SportsSessions } from "../components/MediaLibrary/Sports";
+import type { Categories } from "../components/MediaLibrary/MediaTypes";
 import { PortfolioPath } from "../components/MediaLibrary/MediaTypes";
 import "../styles/inner-pages.css";
 
-function sessionPhoto(name: string) {
-    const story = curatedStories.find((item) => item.name === name)!;
-    const photo = story.photos[story.cover];
-    return { src: storyPhotoUrl(story, photo), alt: photo.alt, width: photo.width, height: photo.height };
+function categoryPhotos(category: Categories) {
+    return curatedStories.filter((story) => story.category === category).flatMap((story) => {
+        const ordered = [story.photos[story.cover], ...story.photos.filter((_, index) => index !== story.cover)];
+        return ordered.map((photo) => ({ src: storyPhotoUrl(story, photo), alt: photo.alt, width: photo.width, height: photo.height }));
+    });
 }
+
+const weddingPhotos = categoryPhotos("Weddings");
+const sportsPhotos = SportsSessions.flatMap((session) => [session.featuredHorizontal, session.featuredVertical].map((file) => ({
+    src: `${PortfolioPath}/Sports/${session.name}/${file}`, alt: "College football photography from the sidelines", width: 1500, height: 1000,
+})));
 
 export const PRICING = "/pricing";
 
 const otherSessions = [
-    { number: "01", title: "Graduation sessions · $400", inquiry: "Graduations", photo: sessionPhoto("SummerPortraits2025"), description: "Celebrate your milestone with a graduation session that feels like you." },
-    { number: "02", title: "Engagement sessions · $400", inquiry: "Engagements", photo: sessionPhoto("FoothillsProposal2026"), description: "Photographs of the two of you, and the beginning of your next chapter." },
-    { number: "03", title: "Portraits & milestones · $400", inquiry: "Portraits", photo: sessionPhoto("LakesideFamily2026"), description: "Growing families, new headshots, and the people you want to remember just as they are." },
-    { number: "04", title: "Music · $100 per set / $300 per show", inquiry: "Events", photo: sessionPhoto("AllNighter2026"), description: "The atmosphere, the crowd, and everything that happens between the big moments." },
-    { number: "05", title: "Sports & creative work", inquiry: "Creative", photo: { src: `${PortfolioPath}/Sports/GeorgiaSouthern/IMG_0245.jpg`, alt: "Texas State football players running onto the field", width: 1500, height: 1000 }, description: "Athletes in their element and imagery that gives your brand a point of view." },
+    { number: "01", title: "Graduation sessions · $400", inquiry: "Graduations", photos: categoryPhotos("Graduations"), description: "Celebrate your milestone with a graduation session that feels like you." },
+    { number: "02", title: "Engagement sessions · $400", inquiry: "Engagements", photos: categoryPhotos("Engagements"), description: "Photographs of the two of you, and the beginning of your next chapter." },
+    { number: "03", title: "Portraits & milestones · $400", inquiry: "Portraits", photos: categoryPhotos("Family"), description: "Growing families, new headshots, and the people you want to remember just as they are." },
+    { number: "04", title: "Music · $100 per set / $300 per show", inquiry: "Events", photos: categoryPhotos("Music"), description: "The atmosphere, the crowd, and everything that happens between the big moments." },
+    { number: "05", title: "Sports & creative work", inquiry: "Creative", photos: sportsPhotos, description: "Athletes in their element and imagery that gives your brand a point of view." },
 ];
 
 export default function Pricing() {
-    const wedding = curatedStories.find((story) => story.name === "FoothillsWedding2024");
-    const photo = wedding?.photos[3];
-    const image = wedding && photo ? storyPhotoUrl(wedding, photo) : "/assets/editorial/wedding-details.webp";
     return (
         <div className="inner-page inner-pricing">
 <PageComposer page="pricing">
@@ -38,7 +43,7 @@ export default function Pricing() {
             </header>
             <section className="inner-wedding site-container" aria-labelledby="wedding-collection-title">
                 <figure className="inner-wedding-photo">
-                    <img src={portfolioPreview(image)} srcSet={portfolioSrcSet(image)} sizes="(max-width: 700px) calc(100vw - 40px), 48vw" alt={photo?.alt || "A lace wedding dress hanging against a sunlit redwood tree"} width={photo?.width || 1200} height={photo?.height || 1800} decoding="async" />
+                    <PricingPhotoCard photos={weddingPhotos} category="Wedding" className="pricing-wedding-card" sizes="(max-width: 700px) calc(100vw - 40px), 48vw" />
                     <figcaption>For the day, and everything it means.</figcaption>
                 </figure>
                 <div className="inner-wedding-copy">
@@ -70,7 +75,7 @@ export default function Pricing() {
                             <h3>{session.title}</h3>
                             <p>{session.description}</p>
                             <Link className="text-link" to={`${CONTACT}?session=${session.inquiry}`} aria-label={`Inquire about ${session.title.toLowerCase()}`}>Inquire <span aria-hidden="true">↗</span></Link>
-                            <img className="inner-service-photo" src={portfolioPreview(session.photo.src)} srcSet={portfolioSrcSet(session.photo.src)} sizes="(max-width: 700px) calc(100vw - 40px), 30vw" alt={session.photo.alt} width={session.photo.width} height={session.photo.height} loading="lazy" decoding="async" />
+                            <PricingPhotoCard photos={session.photos} category={session.inquiry === "Events" ? "Music" : session.inquiry === "Creative" ? "Sports" : session.inquiry} className="inner-service-photo" sizes="(max-width: 700px) calc(100vw - 40px), 30vw" />
                         </div>
                     ))}
                 </div>
