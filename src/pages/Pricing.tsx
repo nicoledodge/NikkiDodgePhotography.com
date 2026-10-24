@@ -3,16 +3,23 @@ import { Link } from "react-router-dom";
 import { CONTACT } from "./Contact";
 import { curatedStories, storyPhotoUrl } from "../data/curatedPortfolio";
 import { portfolioPreview, portfolioSrcSet } from "../functions/portfolioPreview";
+import { PortfolioPath } from "../components/MediaLibrary/MediaTypes";
 import "../styles/inner-pages.css";
+
+function sessionPhoto(name: string) {
+    const story = curatedStories.find((item) => item.name === name)!;
+    const photo = story.photos[story.cover];
+    return { src: storyPhotoUrl(story, photo), alt: photo.alt, width: photo.width, height: photo.height };
+}
 
 export const PRICING = "/pricing";
 
 const otherSessions = [
-    { number: "01", title: "Graduation sessions · $400", inquiry: "Graduations", description: "Celebrate your milestone with a graduation session that feels like you." },
-    { number: "02", title: "Engagement sessions · $400", inquiry: "Engagements", description: "Photographs of the two of you, and the beginning of your next chapter." },
-    { number: "03", title: "Portraits & milestones · $400", inquiry: "Portraits", description: "Growing families, new headshots, and the people you want to remember just as they are." },
-    { number: "04", title: "Music · $100 per set / $300 per show", inquiry: "Events", description: "The atmosphere, the crowd, and everything that happens between the big moments." },
-    { number: "05", title: "Sports & creative work", inquiry: "Creative", description: "Athletes in their element and imagery that gives your brand a point of view." },
+    { number: "01", title: "Graduation sessions · $400", inquiry: "Graduations", photo: sessionPhoto("SummerPortraits2025"), description: "Celebrate your milestone with a graduation session that feels like you." },
+    { number: "02", title: "Engagement sessions · $400", inquiry: "Engagements", photo: sessionPhoto("FoothillsProposal2026"), description: "Photographs of the two of you, and the beginning of your next chapter." },
+    { number: "03", title: "Portraits & milestones · $400", inquiry: "Portraits", photo: sessionPhoto("LakesideFamily2026"), description: "Growing families, new headshots, and the people you want to remember just as they are." },
+    { number: "04", title: "Music · $100 per set / $300 per show", inquiry: "Events", photo: sessionPhoto("AllNighter2026"), description: "The atmosphere, the crowd, and everything that happens between the big moments." },
+    { number: "05", title: "Sports & creative work", inquiry: "Creative", photo: { src: `${PortfolioPath}/Sports/GeorgiaSouthern/IMG_0245.jpg`, alt: "Texas State football players running onto the field", width: 1500, height: 1000 }, description: "Athletes in their element and imagery that gives your brand a point of view." },
 ];
 
 export default function Pricing() {
@@ -58,11 +65,12 @@ export default function Pricing() {
                 </div>
                 <div className="inner-service-list">
                     {otherSessions.map((session) => (
-                        <div className="inner-service-row" key={session.number}>
+                        <div className="inner-service-row inner-service-with-photo" key={session.number}>
                             <span className="inner-index" aria-hidden="true">{session.number}</span>
                             <h3>{session.title}</h3>
                             <p>{session.description}</p>
                             <Link className="text-link" to={`${CONTACT}?session=${session.inquiry}`} aria-label={`Inquire about ${session.title.toLowerCase()}`}>Inquire <span aria-hidden="true">↗</span></Link>
+                            <img className="inner-service-photo" src={portfolioPreview(session.photo.src)} srcSet={portfolioSrcSet(session.photo.src)} sizes="(max-width: 700px) calc(100vw - 40px), 30vw" alt={session.photo.alt} width={session.photo.width} height={session.photo.height} loading="lazy" decoding="async" />
                         </div>
                     ))}
                 </div>
