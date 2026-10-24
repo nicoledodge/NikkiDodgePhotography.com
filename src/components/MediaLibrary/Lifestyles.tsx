@@ -334,26 +334,6 @@ export const LifestyleSessions: Session[] = [
             "IMG_5192.jpg",
             "IMG_5212.jpg",
         ]
-    },
-    {
-        name: "RichardRandom",
-        featuredHorizontal: "",
-        featuredVertical: "_Z2A0625.jpg",
-        mediaFiles: [
-            "_Z2A0259.jpg",
-            "_Z2A0260.jpg",
-            "_Z2A0625.jpg",
-            "_Z2A0627.jpg",
-            "_Z2A1153.jpg",
-            "_Z2A1155.jpg",
-            "_Z2A1258.jpg",
-            "_Z2A1260.jpg",
-            "_Z2A1264.jpg",
-            "_Z2A1272.jpg",
-            "_Z2A1281.jpg",
-            "_Z2A1283.jpg",
-            "_Z2A5641.jpg",
-        ]
     }
 ]
 
