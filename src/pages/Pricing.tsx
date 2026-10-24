@@ -3,30 +3,34 @@ import { Link } from "react-router-dom";
 import { CONTACT } from "./Contact";
 import { curatedStories, storyPhotoUrl } from "../data/curatedPortfolio";
 import PricingPhotoCard from "../components/Portfolio/PricingPhotoCard";
-import { SportsSessions } from "../components/MediaLibrary/Sports";
+import pricingSessionPhotos from "../data/pricingSessionPhotos.json";
 import type { Categories } from "../components/MediaLibrary/MediaTypes";
-import { PortfolioPath } from "../components/MediaLibrary/MediaTypes";
 import "../styles/inner-pages.css";
 
-function categoryPhotos(category: Categories) {
-    return curatedStories.filter((story) => story.category === category).flatMap((story) => {
-        const ordered = [story.photos[story.cover], ...story.photos.filter((_, index) => index !== story.cover)];
-        return ordered.map((photo) => ({ src: storyPhotoUrl(story, photo), alt: photo.alt, width: photo.width, height: photo.height }));
+function categoryPhotos(category: Categories, sessionNames: string[] = []) {
+    // One photograph per session keeps each advance visually distinct.
+    const curated = curatedStories.filter((story) => story.category === category).map((story) => {
+        const photo = story.photos[story.cover];
+        return { src: storyPhotoUrl(story, photo), alt: photo.alt, width: photo.width, height: photo.height };
     });
+    const library = sessionNames.map((name) => pricingSessionPhotos.find((photo) => photo.category === category && photo.name === name)!);
+    return [...curated, ...library];
 }
 
-const weddingPhotos = categoryPhotos("Weddings");
-const sportsPhotos = SportsSessions.flatMap((session) => [session.featuredHorizontal, session.featuredVertical].map((file) => ({
-    src: `${PortfolioPath}/Sports/${session.name}/${file}`, alt: "College football photography from the sidelines", width: 1500, height: 1000,
-})));
+const weddingPhotos = categoryPhotos("Weddings", ["Aspinwall", "Baylor", "Bierbauer", "Cynthia&Isaac", "John&Sandy", "Karissa&Lee", "Sandy&Ben"]);
+const sportsPhotos = categoryPhotos("Sports", ["GeorgiaSouthern", "UTSA"]);
+const portraitPhotos = [
+    ...categoryPhotos("Lifestyles", ["MadiMiles", "CreepyCute", "Rainey"]),
+    ...categoryPhotos("Family", ["Hackfield"]),
+];
 
 export const PRICING = "/pricing";
 
 const otherSessions = [
-    { number: "01", title: "Graduation sessions · $400", inquiry: "Graduations", photos: categoryPhotos("Graduations"), description: "Celebrate your milestone with a graduation session that feels like you." },
-    { number: "02", title: "Engagement sessions · $400", inquiry: "Engagements", photos: categoryPhotos("Engagements"), description: "Photographs of the two of you, and the beginning of your next chapter." },
-    { number: "03", title: "Portraits & milestones · $400", inquiry: "Portraits", photos: categoryPhotos("Family"), description: "Growing families, new headshots, and the people you want to remember just as they are." },
-    { number: "04", title: "Music · $100 per set / $300 per show", inquiry: "Events", photos: categoryPhotos("Music"), description: "The atmosphere, the crowd, and everything that happens between the big moments." },
+    { number: "01", title: "Graduation sessions · $400", inquiry: "Graduations", photos: categoryPhotos("Graduations", ["Angel", "AshleyBrennan", "Bobby", "Julia", "Kristen", "Maddi", "Molly", "Olivia"]), description: "Celebrate your milestone with a graduation session that feels like you." },
+    { number: "02", title: "Engagement sessions · $400", inquiry: "Engagements", photos: categoryPhotos("Engagements", ["Carmen&Blake", "Ivan&Mikayla", "Sam&Sky"]), description: "Photographs of the two of you, and the beginning of your next chapter." },
+    { number: "03", title: "Portraits & milestones · $400", inquiry: "Portraits", photos: portraitPhotos, description: "Growing families, new headshots, and the people you want to remember just as they are." },
+    { number: "04", title: "Music · $100 per set / $300 per show", inquiry: "Events", photos: categoryPhotos("Music", ["Asorted", "BeyondExistence", "BOTA"]), description: "The atmosphere, the crowd, and everything that happens between the big moments." },
     { number: "05", title: "Sports & creative work", inquiry: "Creative", photos: sportsPhotos, description: "Athletes in their element and imagery that gives your brand a point of view." },
 ];
 
